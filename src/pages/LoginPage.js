@@ -81,6 +81,21 @@ const styles = {
   socialContainer: {
     marginTop: "10px",
     textAlign: "center",
+  },
+  pageContainer: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+  },
+  mainContent: {
+    flex: "1",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "20px",
+  },
+  footer: {
+    marginTop: "auto",
   }
 };
 
@@ -174,47 +189,51 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Đăng nhập</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Tên đăng nhập:</label>
-          <input
-            type="text"
-            style={styles.input}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            placeholder="Nhập tên đăng nhập hoặc email"
-          />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Mật khẩu:</label>
-          <input
-            type="password"
-            style={styles.input}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="Nhập mật khẩu"
-          />
-        </div>
-        {error && <div style={styles.error}>{error}</div>}
-        <button type="submit" style={styles.button}>Đăng nhập</button>
-      </form>
+    <div style={styles.pageContainer}>
+      <main style={styles.mainContent}>
+        <div style={styles.container}>
+          <h2 style={styles.title}>Đăng nhập</h2>
+          <form onSubmit={handleSubmit}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Tên đăng nhập:</label>
+              <input
+                type="text"
+                style={styles.input}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                placeholder="Nhập tên đăng nhập hoặc email"
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Mật khẩu:</label>
+              <input
+                type="password"
+                style={styles.input}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Nhập mật khẩu"
+              />
+            </div>
+            {error && <div style={styles.error}>{error}</div>}
+            <button type="submit" style={styles.button}>Đăng nhập</button>
+          </form>
 
-      <Link to="/forgot-password" style={styles.link}>Quên mật khẩu?</Link>
+          <Link to="/forgot-password" style={styles.link}>Quên mật khẩu?</Link>
 
-      <hr style={styles.divider} />
-      <div style={styles.socialContainer}>
-        <h3>Hoặc đăng nhập bằng</h3>
-        <div style={{ marginBottom: "10px" }}>
-          <GoogleLogin onSuccess={handleGoogleLogin} onError={handleGoogleError} />
+          <hr style={styles.divider} />
+          <div style={styles.socialContainer}>
+            <h3>Hoặc đăng nhập bằng</h3>
+            <div style={{ marginBottom: "10px" }}>
+              <GoogleLogin onSuccess={handleGoogleLogin} onError={handleGoogleError} />
+            </div>
+            <button style={styles.socialBtn} onClick={handleFacebookLogin}>
+              Đăng nhập với Facebook
+            </button>
+          </div>
         </div>
-        <button style={styles.socialBtn} onClick={handleFacebookLogin}>
-          Đăng nhập với Facebook
-        </button>
-      </div>
+      </main>
     </div>
   );
 };
