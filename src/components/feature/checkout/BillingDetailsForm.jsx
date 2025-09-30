@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import colorPattern from "../../../styles/colorPattern";
 
 const BillingDetailsForm = () => {
   const [form, setForm] = useState({
@@ -21,59 +22,59 @@ const BillingDetailsForm = () => {
   };
 
   return (
-    <form className="max-w-lg mx-auto p-0">
-      <h2 className="text-2xl font-semibold mb-6">Billing Details</h2>
+    <form className="w-full p-0">
+      <h2 style={{ color: colorPattern.text, fontSize: 24, fontWeight: 600, marginBottom: 24 }}>Billing Details</h2>
       <div className="flex flex-col gap-4">
         <div>
-          <label className="block text-gray-500 text-sm mb-1" htmlFor="firstName">
-            First Name<span className="text-red-500">*</span>
+          <label className="block text-sm mb-1" htmlFor="firstName" style={{ color: colorPattern.textLight }}>
+            First Name<span style={{ color: colorPattern.error }}>*</span>
           </label>
           <input
             id="firstName"
             name="firstName"
             type="text"
             required
-            className="w-full bg-gray-100 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary"
+            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
             value={form.firstName}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-gray-500 text-sm mb-1" htmlFor="companyName">
+          <label className="block text-sm mb-1" htmlFor="companyName" style={{ color: colorPattern.textLight }}>
             Company Name
           </label>
           <input
             id="companyName"
             name="companyName"
             type="text"
-            className="w-full bg-gray-100 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary"
+            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
             value={form.companyName}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-gray-500 text-sm mb-1" htmlFor="street">
-            Street Address<span className="text-red-500">*</span>
+          <label className="block text-sm mb-1" htmlFor="street" style={{ color: colorPattern.textLight }}>
+            Street Address<span style={{ color: colorPattern.error }}>*</span>
           </label>
           <input
             id="street"
             name="street"
             type="text"
             required
-            className="w-full bg-gray-100 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary"
+            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
             value={form.street}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-gray-500 text-sm mb-1" htmlFor="apartment">
+          <label className="block text-sm mb-1" htmlFor="apartment" style={{ color: colorPattern.textLight }}>
             Apartment, floor, etc. (optional)
           </label>
           <input
             id="apartment"
             name="apartment"
             type="text"
-            className="w-full bg-gray-100 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary"
+            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
             value={form.apartment}
             onChange={handleChange}
           />

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import colorPattern from "../../../styles/colorPattern";
 import ApplyCoupon from "../../common/ApplyCoupon";
 
 const paymentIcons = [
@@ -18,30 +19,30 @@ const CheckoutSummary = ({ cart = mockCart, subtotal = 1750, shipping = 0, total
   const [payment, setPayment] = useState("cod");
 
   return (
-    <div className={`max-w-lg mx-auto p-0 flex flex-col gap-6 ${className}`}>
+  <div className={`w-full p-0 flex flex-col gap-6 ${className}`} style={{color: colorPattern.text}}>
       <div className="flex flex-col gap-10 mb-6">
         {cart.map((item) => (
           <div key={item.id} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <img src={item.image} alt={item.name} className="w-10 h-10 object-contain rounded" />
-              <span className="text-base text-black">{item.name}</span>
+              <span className="text-base" style={{color: colorPattern.text}}>{item.name}</span>
             </div>
-            <span className="text-base text-black font-medium">${item.price}</span>
+            <span className="text-base font-medium" style={{color: colorPattern.text}}>${item.price}</span>
           </div>
         ))}
       </div>
       <div className="flex flex-col gap-6 border-t border-gray-200 pt-3">
         <div className="flex justify-between text-base">
-          <span>Subtotal:</span>
-          <span>${subtotal}</span>
+          <span style={{color: colorPattern.textLight}}>Subtotal:</span>
+          <span style={{color: colorPattern.text}}>${subtotal}</span>
         </div>
         <div className="flex justify-between text-base">
-          <span>Shipping:</span>
-          <span>{shipping === 0 ? "Free" : `$${shipping}`}</span>
+          <span style={{color: colorPattern.textLight}}>Shipping:</span>
+          <span style={{color: colorPattern.text}}>{shipping === 0 ? "Free" : `$${shipping}`}</span>
         </div>
-        <div className="flex justify-between text-base font-semibold border-t border-gray-200 pt-6">
-          <span>Total:</span>
-          <span>${total}</span>
+        <div className="flex justify-between text-base font-semibold border-t pt-6" style={{borderColor: colorPattern.border}}>
+          <span style={{color: colorPattern.textLight}}>Total:</span>
+          <span style={{color: colorPattern.text}}>${total}</span>
         </div>
       </div>
       <div className="flex flex-col gap-4">
@@ -80,7 +81,8 @@ const CheckoutSummary = ({ cart = mockCart, subtotal = 1750, shipping = 0, total
       <ApplyCoupon />
       <button
         type="button"
-        className="w-40 ml-0 bg-red-500 text-white rounded-md py-2 px-4 text-base font-semibold mt-2 hover:bg-red-600 transition"
+        style={{width: 160, background: colorPattern.primary, color: '#fff', borderRadius: 6, padding: '8px 16px', fontSize: 16, fontWeight: 600, marginTop: 8, transition: 'background 0.2s', textAlign: 'left'}}
+        className="hover:brightness-90"
       >
         Place Order
       </button>
