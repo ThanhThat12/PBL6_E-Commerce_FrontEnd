@@ -68,3 +68,58 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Tailwind CSS Setup Guide
+
+To use Tailwind CSS in this project, follow these steps:
+
+### 1. Install Tailwind CSS and Dependencies
+
+```bash
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+### 2. Configure `tailwind.config.cjs`
+
+Make sure your `tailwind.config.cjs` has the correct content paths, for example:
+
+```js
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}", "./public/index.html"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+```
+
+### 3. Add Tailwind Directives to Your CSS
+
+In your main CSS file (e.g., `src/index.css` or `src/styles/tailwind.css`), add:
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### 4. Import the CSS File
+
+Import your Tailwind CSS file in your main entry file (e.g., `src/index.js` or `src/App.js`):
+
+```js
+import "./styles/tailwind.css"; // or './index.css'
+```
+
+### 5. Start the Development Server
+
+```bash
+npm run dev
+# or
+npm start
+```
+
+Now you can use Tailwind CSS utility classes in your React components!
+
+For more details, see the [Tailwind CSS documentation](https://tailwindcss.com/docs/installation).

@@ -1,0 +1,61 @@
+import React from "react";
+import ProductList from "../../common/ProductList";
+import colorPattern from "../../../styles/colorPattern";
+import { bestSellerProducts } from '../../../mockDataBestSeller';
+
+const BestSellerSection = ({
+  products = bestSellerProducts,
+  onViewAll,
+}) => {
+  return (
+    <section 
+      className="rounded-xl shadow p-6 md:p-10 mb-8"
+      style={{ 
+        backgroundColor: colorPattern.background,
+        boxShadow: `0 4px 16px ${colorPattern.shadow}`,
+      }}
+    >
+      <div className="flex flex-row items-center justify-between mb-8">
+        <div className="flex flex-col items-start min-w-[120px]">
+          <div className="flex items-center mb-2">
+            <span 
+              className="rounded h-6 w-4 mr-2"
+              style={{ backgroundColor: colorPattern.secondary }}
+            ></span>
+            <span 
+              className="font-bold text-lg"
+              style={{ color: colorPattern.secondary }}
+            >
+              This Month
+            </span>
+          </div>
+          <h2 
+            className="font-bold text-3xl mt-2"
+            style={{ color: colorPattern.text }}
+          >
+            Best Selling Products
+          </h2>
+        </div>
+        <button
+          className="px-8 py-3 rounded font-bold shadow transition-all duration-200 text-lg"
+          style={{
+            backgroundColor: colorPattern.accent,
+            color: colorPattern.textWhite,
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = colorPattern.accentDark;
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = colorPattern.accent;
+          }}
+          onClick={onViewAll}
+        >
+          View All
+        </button>
+      </div>
+      <ProductList products={products} />
+    </section>
+  );
+};
+
+export default BestSellerSection;
