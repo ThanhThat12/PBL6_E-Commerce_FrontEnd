@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import colorPattern from "../../../styles/colorPattern";
 
 // SVG icons
 const icons = {
@@ -68,17 +69,38 @@ const CategoryCards = ({
           key={cat}
           type="button"
           onClick={() => onSelect(cat)}
-          className={`flex flex-col items-center justify-center px-8 py-8 rounded-lg border transition-all duration-300
-            ${isActive
-              ? "bg-red-500 border-red-500 shadow-lg"
-              : "bg-white border-gray-300 hover:scale-105 hover:border-red-400"
-            }`}
-          style={{ minWidth: "150px", minHeight: "150px" }}
+          className="flex flex-col items-center justify-center px-8 py-8 rounded-lg border transition-all duration-300"
+          style={{
+            minWidth: "150px",
+            minHeight: "150px",
+            backgroundColor: isActive ? colorPattern.primary : colorPattern.background,
+            borderColor: isActive ? colorPattern.primary : colorPattern.border,
+            boxShadow: isActive ? `0 4px 16px ${colorPattern.shadowDark}` : `0 2px 8px ${colorPattern.shadow}`,
+            transform: isActive ? 'scale(1.05)' : 'scale(1)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive) {
+              e.target.style.transform = 'scale(1.05)';
+              e.target.style.borderColor = colorPattern.primaryLight;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive) {
+              e.target.style.transform = 'scale(1)';
+              e.target.style.borderColor = colorPattern.border;
+            }
+          }}
         >
-          <span className={`mb-3 ${isActive ? "text-white" : "text-black"}`}>
+          <span 
+            className="mb-3"
+            style={{ color: isActive ? colorPattern.textWhite : colorPattern.text }}
+          >
             {icons[cat]}
           </span>
-          <span className={`font-semibold text-lg ${isActive ? "text-white" : "text-black"}`}>
+          <span 
+            className="font-semibold text-lg"
+            style={{ color: isActive ? colorPattern.textWhite : colorPattern.text }}
+          >
             {cat}
           </span>
         </button>
@@ -99,24 +121,67 @@ const CategoryBrowser = ({
   };
 
   return (
-    <section className="bg-white rounded-xl shadow p-6 md:p-10 mb-8">
+    <section 
+      className="rounded-xl shadow p-6 md:p-10 mb-8"
+      style={{ 
+        backgroundColor: colorPattern.background,
+        boxShadow: `0 4px 16px ${colorPattern.shadow}`,
+      }}
+    >
       {/* Top row: label + title (left) and arrows (right) */}
       <div className="flex flex-row items-center justify-between mb-8">
         <div className="flex flex-col items-start min-w-[120px]">
           <div className="flex items-center mb-2">
-            <span className="bg-red-500 rounded h-6 w-4 mr-2"></span>
-            <span className="text-red-500 font-bold text-lg">Categories</span>
+            <span 
+              className="rounded h-6 w-4 mr-2"
+              style={{ backgroundColor: colorPattern.secondary }}
+            ></span>
+            <span 
+              className="font-bold text-lg"
+              style={{ color: colorPattern.secondary }}
+            >
+              Categories
+            </span>
           </div>
-          <h2 className="font-bold text-black text-3xl mt-2">Browse By Category</h2>
+          <h2 
+            className="font-bold text-3xl mt-2"
+            style={{ color: colorPattern.text }}
+          >
+            Browse By Category
+          </h2>
         </div>
         <div className="flex flex-row gap-3 items-center">
-          <button className="bg-gray-100 border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition">
-            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <button 
+            className="border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition"
+            style={{
+              backgroundColor: colorPattern.backgroundGray,
+              color: colorPattern.text,
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = colorPattern.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = colorPattern.backgroundGray;
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button className="bg-gray-100 border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition">
-            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <button 
+            className="border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition"
+            style={{
+              backgroundColor: colorPattern.backgroundGray,
+              color: colorPattern.text,
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = colorPattern.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = colorPattern.backgroundGray;
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M9 5l7 7-7 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>

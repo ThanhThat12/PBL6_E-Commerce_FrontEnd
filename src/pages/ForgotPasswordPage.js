@@ -1,15 +1,10 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import colorPattern from "../styles/colorPattern";
 import Navbar from "../components/common/Navbar";
 import Message from "../components/common/Message";
 import VerifyOTP from "../components/form/VerifyOTP";
 import SendOtpForm from "../components/form/SendOtpForm";
-
-const COLOR_GRADIENT = "bg-gradient-to-r from-[#1E88E5] via-[#42A5F5] to-[#90CAF9]";
-const COLOR_BTN = "bg-[#1E88E5] hover:bg-[#42A5F5] text-white";
-const COLOR_BTN_SUCCESS = "bg-[#42A5F5] hover:bg-[#1E88E5] text-white";
-const COLOR_INPUT = "border-[#B3E5FC] focus:ring-[#42A5F5] focus:border-[#42A5F5]";
-const COLOR_CARD = "bg-white/90 backdrop-blur-md shadow-xl";
 
 function ForgotPasswordPage() {
   const [step, setStep] = useState(1);
@@ -137,83 +132,225 @@ function ForgotPasswordPage() {
     setIsLoading(false);
   };
 
+  const inputStyle = {
+    backgroundColor: colorPattern.inputBg,
+    borderColor: colorPattern.inputBorder,
+    color: colorPattern.text,
+  };
+
+  const handleInputFocus = (e) => {
+    e.target.style.borderColor = colorPattern.inputFocus;
+    e.target.style.boxShadow = `0 0 0 2px ${colorPattern.primaryLight}40`;
+  };
+
+  const handleInputBlur = (e) => {
+    e.target.style.borderColor = colorPattern.inputBorder;
+    e.target.style.boxShadow = 'none';
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: colorPattern.backgroundGray }}>
       <Navbar />
-      <div className={`flex-1 flex items-center justify-center relative`}>
-        {/* Background
+      <div className="flex-1 flex items-center justify-center relative py-12">
+        {/* Background Pattern */}
         <div className="absolute inset-0 z-0">
-          <div className={`${COLOR_GRADIENT} w-full h-full opacity-80`}></div>
-        </div> */}
-                {/* Background with gradient overlay */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={require("../assets/background1.jpg")}
-            alt="Background"
-            className="w-full h-full object-cover"
+          <div 
+            className="w-full h-full opacity-5"
+            style={{
+              background: `linear-gradient(135deg, ${colorPattern.primary} 0%, ${colorPattern.secondary} 100%)`,
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1E88E5]/70 via-[#42A5F5]/60 to-[#90CAF9]/50 backdrop-blur-sm"></div>
+          {/* Sport-themed background elements */}
+          <div className="absolute top-20 left-20 w-32 h-32 rounded-full opacity-10" style={{ backgroundColor: colorPattern.secondary }} />
+          <div className="absolute bottom-20 right-20 w-48 h-48 rounded-full opacity-5" style={{ backgroundColor: colorPattern.primary }} />
+          <div className="absolute top-1/2 left-1/4 w-24 h-24 rotate-45 opacity-5" style={{ backgroundColor: colorPattern.accent }} />
         </div>
-        {/* Card */}
-        <div className="relative z-10 w-full max-w-md mx-4 my-8">
-          <div className={`${COLOR_CARD} rounded-2xl p-8`}>
-            <h2 className="text-2xl font-bold text-[#1E88E5] mb-2 text-center">Quên mật khẩu</h2>
-            <p className="text-[#42A5F5] text-center mb-6">Nhập email hoặc số điện thoại để lấy lại mật khẩu</p>
-            {message && (
-              <Message type={messageType} message={message} />
-            )}
 
-            {step === 1 && (
-              <SendOtpForm
-                onSubmit={onSendOtp}
-                isLoading={isLoading}
-                register={register}
-                handleSubmit={handleSubmit}
-                COLOR_INPUT={COLOR_INPUT}
-                COLOR_BTN={COLOR_BTN}
-              />
-            )}
-
-            {step === 2 && (
-              <VerifyOTP
-                otp={otp}
-                setOtp={setOtp}
-                onSubmit={onVerifyOtp}
-                onResend={onResendOtp}
-                isLoading={isLoading}
-                message={messageType === "error" || messageType === "success" ? message : ""}
-              />
-            )}
-
-            {step === 3 && (
-              <form onSubmit={handleSubmit(onResetPassword)} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-[#1E88E5] mb-1">
-                    Mật khẩu mới
-                  </label>
-                  <input
-                    type="password"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${COLOR_INPUT}`}
-                    {...register("password", { required: true })}
-                    placeholder="Nhập mật khẩu mới"
-                  />
+        {/* Card Container */}
+        <div className="relative z-10 w-full max-w-lg mx-4">
+          <div 
+            className="rounded-3xl shadow-2xl overflow-hidden"
+            style={{ 
+              backgroundColor: colorPattern.background,
+              boxShadow: `0 20px 60px ${colorPattern.shadowDark}`,
+            }}
+          >
+            {/* Header */}
+            <div 
+              className="px-8 py-8 text-center"
+              style={{
+                background: `linear-gradient(135deg, ${colorPattern.primary} 0%, ${colorPattern.primaryLight} 100%)`,
+              }}
+            >
+              <div className="mb-4">
+                <div 
+                  className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: colorPattern.background + '20' }}
+                >
+                  <svg 
+                    className="w-10 h-10" 
+                    fill="none" 
+                    stroke={colorPattern.textWhite} 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#1E88E5] mb-1">
-                    Xác nhận mật khẩu
-                  </label>
-                  <input
-                    type="password"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none ${COLOR_INPUT}`}
-                    {...register("confirmNewPassword", { required: true })}
-                    placeholder="Nhập lại mật khẩu mới"
-                  />
+              </div>
+              <h1 
+                className="text-3xl font-bold mb-2"
+                style={{ color: colorPattern.textWhite }}
+              >
+                Reset Password
+              </h1>
+              <p 
+                className="text-lg opacity-90"
+                style={{ color: colorPattern.textWhite }}
+              >
+                {step === 1 && "Enter your contact to receive OTP"}
+                {step === 2 && "Verify your identity"}
+                {step === 3 && "Set your new password"}
+              </p>
+            </div>
+
+            {/* Progress Steps */}
+            <div className="px-8 py-6" style={{ backgroundColor: colorPattern.backgroundGray }}>
+              <div className="flex items-center justify-center space-x-4">
+                {[1, 2, 3].map((stepNum) => (
+                  <div key={stepNum} className="flex items-center">
+                    <div 
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                        step >= stepNum ? 'shadow-lg' : ''
+                      }`}
+                      style={{
+                        backgroundColor: step >= stepNum ? colorPattern.primary : colorPattern.disabled,
+                        color: colorPattern.textWhite,
+                      }}
+                    >
+                      {stepNum}
+                    </div>
+                    {stepNum < 3 && (
+                      <div 
+                        className="w-8 h-1 mx-2 rounded"
+                        style={{
+                          backgroundColor: step > stepNum ? colorPattern.primary : colorPattern.disabled,
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Form Content */}
+            <div className="p-8">
+              {message && (
+                <div className="mb-6">
+                  <Message type={messageType} message={message} />
                 </div>
-                <button type="submit" className={`w-full py-2 rounded-lg font-semibold ${COLOR_BTN} transition`} disabled={isLoading}>
-                  Đặt mật khẩu mới
-                </button>
-              </form>
-            )}
+              )}
+
+              {step === 1 && (
+                <SendOtpForm
+                  onSubmit={onSendOtp}
+                  isLoading={isLoading}
+                  register={register}
+                  handleSubmit={handleSubmit}
+                />
+              )}
+
+              {step === 2 && (
+                <VerifyOTP
+                  otp={otp}
+                  setOtp={setOtp}
+                  onSubmit={onVerifyOtp}
+                  onResend={onResendOtp}
+                  isLoading={isLoading}
+                  message={messageType === "error" || messageType === "success" ? message : ""}
+                />
+              )}
+
+              {step === 3 && (
+                <form onSubmit={handleSubmit(onResetPassword)} className="space-y-6">
+                  <div>
+                    <label 
+                      className="block text-sm font-semibold mb-2"
+                      style={{ color: colorPattern.primary }}
+                    >
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full px-4 py-3 border rounded-xl focus:outline-none transition-all"
+                      style={inputStyle}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      {...register("password", { required: true })}
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  <div>
+                    <label 
+                      className="block text-sm font-semibold mb-2"
+                      style={{ color: colorPattern.primary }}
+                    >
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full px-4 py-3 border rounded-xl focus:outline-none transition-all"
+                      style={inputStyle}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      {...register("confirmNewPassword", { required: true })}
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    className="w-full py-3 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1" 
+                    style={{
+                      backgroundColor: isLoading ? colorPattern.disabled : colorPattern.accent,
+                      color: colorPattern.textWhite,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLoading) {
+                        e.target.style.backgroundColor = colorPattern.accentDark;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLoading) {
+                        e.target.style.backgroundColor = colorPattern.accent;
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+
+          {/* Back to Login */}
+          <div className="text-center mt-6">
+            <a 
+              href="/login" 
+              className="inline-flex items-center text-lg font-medium transition-colors"
+              style={{ color: colorPattern.primary }}
+              onMouseEnter={(e) => {
+                e.target.style.color = colorPattern.secondary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.color = colorPattern.primary;
+              }}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Login
+            </a>
           </div>
         </div>
       </div>

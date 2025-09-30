@@ -21,12 +21,38 @@ const BillingDetailsForm = () => {
     }));
   };
 
+  const inputStyle = {
+    background: colorPattern.inputBg,
+    color: colorPattern.text,
+    borderRadius: 6,
+    padding: '12px 16px',
+    width: '100%',
+    outline: 'none',
+    border: `1px solid ${colorPattern.inputBorder}`,
+    transition: 'border-color 0.2s',
+  };
+
+  const handleInputFocus = (e) => {
+    e.target.style.borderColor = colorPattern.inputFocus;
+  };
+
+  const handleInputBlur = (e) => {
+    e.target.style.borderColor = colorPattern.inputBorder;
+  };
+
   return (
     <form className="w-full p-0">
-      <h2 style={{ color: colorPattern.text, fontSize: 24, fontWeight: 600, marginBottom: 24 }}>Billing Details</h2>
-      <div className="flex flex-col gap-4">
+      <h2 style={{ 
+        color: colorPattern.text, 
+        fontSize: 24, 
+        fontWeight: 600, 
+        marginBottom: 24 
+      }}>
+        Billing Details
+      </h2>
+      <div className="flex flex-col gap-6">
         <div>
-          <label className="block text-sm mb-1" htmlFor="firstName" style={{ color: colorPattern.textLight }}>
+          <label className="block text-sm mb-2" htmlFor="firstName" style={{ color: colorPattern.textLight }}>
             First Name<span style={{ color: colorPattern.error }}>*</span>
           </label>
           <input
@@ -34,26 +60,30 @@ const BillingDetailsForm = () => {
             name="firstName"
             type="text"
             required
-            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             value={form.firstName}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-sm mb-1" htmlFor="companyName" style={{ color: colorPattern.textLight }}>
+          <label className="block text-sm mb-2" htmlFor="companyName" style={{ color: colorPattern.textLight }}>
             Company Name
           </label>
           <input
             id="companyName"
             name="companyName"
             type="text"
-            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             value={form.companyName}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-sm mb-1" htmlFor="street" style={{ color: colorPattern.textLight }}>
+          <label className="block text-sm mb-2" htmlFor="street" style={{ color: colorPattern.textLight }}>
             Street Address<span style={{ color: colorPattern.error }}>*</span>
           </label>
           <input
@@ -61,62 +91,72 @@ const BillingDetailsForm = () => {
             name="street"
             type="text"
             required
-            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             value={form.street}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-sm mb-1" htmlFor="apartment" style={{ color: colorPattern.textLight }}>
+          <label className="block text-sm mb-2" htmlFor="apartment" style={{ color: colorPattern.textLight }}>
             Apartment, floor, etc. (optional)
           </label>
           <input
             id="apartment"
             name="apartment"
             type="text"
-            style={{ background: colorPattern.inputBg, color: colorPattern.text, borderRadius: 6, padding: '8px 16px', width: '100%', outline: 'none', border: `1px solid ${colorPattern.border}` }}
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             value={form.apartment}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-gray-500 text-sm mb-1" htmlFor="city">
-            Town/City<span className="text-red-500">*</span>
+          <label className="block text-sm mb-2" htmlFor="city" style={{ color: colorPattern.textLight }}>
+            Town/City<span style={{ color: colorPattern.error }}>*</span>
           </label>
           <input
             id="city"
             name="city"
             type="text"
             required
-            className="w-full bg-gray-100 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary"
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             value={form.city}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-gray-500 text-sm mb-1" htmlFor="phone">
-            Phone Number<span className="text-red-500">*</span>
+          <label className="block text-sm mb-2" htmlFor="phone" style={{ color: colorPattern.textLight }}>
+            Phone Number<span style={{ color: colorPattern.error }}>*</span>
           </label>
           <input
             id="phone"
             name="phone"
             type="tel"
             required
-            className="w-full bg-gray-100 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary"
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             value={form.phone}
             onChange={handleChange}
           />
         </div>
         <div>
-          <label className="block text-gray-500 text-sm mb-1" htmlFor="email">
-            Email Address<span className="text-red-500">*</span>
+          <label className="block text-sm mb-2" htmlFor="email" style={{ color: colorPattern.textLight }}>
+            Email Address<span style={{ color: colorPattern.error }}>*</span>
           </label>
           <input
             id="email"
             name="email"
             type="email"
             required
-            className="w-full bg-gray-100 rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary"
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             value={form.email}
             onChange={handleChange}
           />
@@ -128,10 +168,11 @@ const BillingDetailsForm = () => {
             type="checkbox"
             checked={form.saveInfo}
             onChange={handleChange}
-            className="accent-red-500 w-5 h-5 rounded mr-2"
+            className="w-5 h-5 rounded mr-3"
+            style={{ accentColor: colorPattern.primary }}
           />
-          <label htmlFor="saveInfo" className="text-gray-700 text-sm select-none">
-            <span className="text-black">Save this information for faster check-out next time</span>
+          <label htmlFor="saveInfo" className="text-sm select-none" style={{ color: colorPattern.text }}>
+            Save this information for faster check-out next time
           </label>
         </div>
       </div>
