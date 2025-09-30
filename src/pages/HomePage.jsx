@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import colorPattern from "../styles/colorPattern";
 import CategoryBrowser from "../components/feature/tab/CategoryBrowser";
 import FlashSaleSection from "../components/feature/tab/FlashSaleSection";
 import NewArrivalSection from "../components/feature/tab/NewArrivalSection";
@@ -24,8 +25,8 @@ const HomePage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 flex flex-col gap-8 pt-8">
-      <div className="container mx-auto px-4 flex flex-col gap-8">
+    <main style={{ minHeight: '100vh', background: colorPattern.background, color: colorPattern.text }}>
+      <div className="flex flex-col gap-8 pt-8" style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
         <Navbar />
         <div className="flex flex-col md:flex-row gap-6 items-stretch">
           <div className="md:w-1/4 w-full flex items-start">
