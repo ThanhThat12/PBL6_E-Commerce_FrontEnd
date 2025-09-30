@@ -23,11 +23,18 @@ const EyeIcon = () => (
   </svg>
 );
 
-const ProductList = ({ products }) => (
+
+const ProductList = ({
+  products = [],
+  onAddToCart,
+  onRemove,
+  showRemove = false,
+  showAddToCart = false,
+  wishlistMode = false,
+}) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
     {products.map((product) => (
       <div key={product.id} className="relative bg-gray-50 rounded-lg shadow p-4 flex flex-col items-center">
-
         {/* Image + overlay */}
         <div className="relative w-full h-48 mb-3 overflow-hidden rounded">
           <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
@@ -39,18 +46,39 @@ const ProductList = ({ products }) => (
             </span>
           )}
 
-          {/* Heart & Eye icons */}
-          <div className="absolute top-2 right-2 flex gap-2 z-20">
-            <button type="button" className="focus:outline-none">
-              <HeartIcon filled={product.isFavorite} />
+          {/* Wishlist mode: Remove icon */}
+          {wishlistMode && showRemove && (
+            <button
+              type="button"
+              className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100 z-20"
+              onClick={() => onRemove && onRemove(product)}
+              title="Remove from wishlist"
+            >
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M6 6l12 12M6 18L18 6" strokeLinecap="round"/>
+              </svg>
             </button>
-            <button type="button" className="focus:outline-none">
-              <EyeIcon />
-            </button>
-          </div>
+          )}
 
-          {/* Add To Cart button - luôn hiển thị */}
-          <button className="add-to-cart-btn">Add To Cart</button>
+          {/* Heart & Eye icons (not in wishlist mode) */}
+          {!wishlistMode && (
+            <div className="absolute top-2 right-2 flex gap-2 z-20">
+              <button type="button" className="focus:outline-none">
+                <HeartIcon filled={product.isFavorite} />
+              </button>
+              <button type="button" className="focus:outline-none">
+                <EyeIcon />
+              </button>
+            </div>
+          )}
+
+          {/* Add To Cart button: luôn hiển thị khi hover (CSS) */}
+          <button
+            className="add-to-cart-btn"
+            onClick={() => onAddToCart && onAddToCart(product)}
+          >
+            Add To Cart
+          </button>
         </div>
 
         {/* Name */}
@@ -70,7 +98,6 @@ const ProductList = ({ products }) => (
           <span className="text-black font-semibold text-sm">{product.rating}</span>
           <span className="text-gray-500 text-xs ml-1">({product.reviews})</span>
         </div>
-
       </div>
     ))}
   </div>
