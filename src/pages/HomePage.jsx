@@ -10,7 +10,7 @@ import CategoryList from "../components/feature/category/CategoryList";
 import ButtonUp from "../components/ui/buttonUp/ButtonUp";
 import Footer from "../components/layout/footer/Footer";
 import BestSellerSection from "../components/feature/tab/BestSellerSection";
-import Navbar from "../components/layout/header/navbar";
+import Navbar from "../components/common/Navbar";
 const HomePage = () => {
   const [showButton, setShowButton] = useState(false);
 
