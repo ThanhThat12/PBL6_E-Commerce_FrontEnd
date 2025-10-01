@@ -1,6 +1,6 @@
 import React from "react";
-import { categories, locations, conditions, ratings } from "./mockProductData";
-import colorPattern from "../styles/colorPattern";
+import { categories, locations, conditions, ratings } from "../../mockProductData";
+import colorPattern from "../../styles/colorPattern";
 
 export default function ProductSidebar({
   priceRange,

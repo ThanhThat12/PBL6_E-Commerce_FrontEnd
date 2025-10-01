@@ -10,6 +10,7 @@ import HomePage from "./pages/HomePage";
 import WishlistPage from "./pages/WishlistPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import ProductByCategoryPage from "./pages/ProductByCategoryPage"; // Import the new page component
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/products" element={<ProductByCategoryPage />} /> {/* Add this line */}
         </Routes>
       </Router>
     </GoogleOAuthProvider>

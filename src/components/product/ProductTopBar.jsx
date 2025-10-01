@@ -1,5 +1,5 @@
 import React from "react";
-import colorPattern, { withOpacity } from "../styles/colorPattern";
+import colorPattern, { withOpacity } from "../../styles/colorPattern";
 
 export default function ProductTopBar({
   filteredProducts,
