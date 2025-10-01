@@ -5,6 +5,7 @@ import Roadmap from '../components/common/Roadmap';
 import ProductsInCart from '../components/feature/cart/ProductsInCart';
 import ApplyCoupon from '../components/common/ApplyCoupon';
 import CartTotal from '../components/feature/cart/CartTotal';
+import useCart from "../hooks/useCart";
 
 const initialProducts = [
   {
@@ -24,6 +25,7 @@ const initialProducts = [
 ];
 
 const CartPage = () => {
+  const { cart, loading, error } = useCart(1); // 1 là userId test
   const [products, setProducts] = useState(initialProducts);
 
   const handleQuantityChange = (id, quantity) => {
@@ -34,12 +36,15 @@ const CartPage = () => {
   const shipping = "Free";
   const total = subtotal;
 
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error loading cart</div>;
+
   return (
     <main className="min-h-screen bg-gray-100 flex flex-col gap-8">
       <Navbar />
       <div className="container mx-auto px-4 flex flex-col gap-8">
         <Roadmap items={[{ label: "Home", href: "/" }, { label: "Cart", active: true }]} />
-        <ProductsInCart products={products} onQuantityChange={handleQuantityChange} />
+        <ProductsInCart products={cart?.items || []} onQuantityChange={handleQuantityChange} />
         <div className="flex flex-col md:flex-row gap-8 items-start">
           <div className="flex-1 flex flex-col gap-8">
             <div className="flex justify-between w-full gap-4">

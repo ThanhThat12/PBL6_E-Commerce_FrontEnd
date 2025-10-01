@@ -36,9 +36,22 @@ const PromoBanner = ({ onShopClick }) => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [fade, setFade] = useState(true);
 
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Auto slide banner
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFade(false);
+      setTimeout(() => {
+        setActiveIdx((prev) => (prev + 1) % banners.length);
+        setFade(true);
+      }, 350);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [activeIdx]);
 
   // Hiệu ứng fade khi chuyển banner
   const handleDotClick = (idx) => {
