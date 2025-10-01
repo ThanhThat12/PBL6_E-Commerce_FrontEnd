@@ -1,4 +1,5 @@
-
+import React from "react";
+import colorPattern from "../../../styles/colorPattern";
 import { explorerProducts } from '../../../mockDataExplorer';
 import ProductList from "../../common/ProductList";
 
@@ -7,24 +8,67 @@ const ProductExplorer = ({
   onViewAll,
 }) => {
   return (
-    <section className="bg-white rounded-xl shadow p-6 md:p-10 mb-8">
+    <section 
+      className="rounded-xl shadow p-6 md:p-10 mb-8"
+      style={{ 
+        backgroundColor: colorPattern.background,
+        boxShadow: `0 4px 16px ${colorPattern.shadow}`,
+      }}
+    >
       {/* Label + Title + Navigation arrows */}
       <div className="flex flex-row justify-between items-center gap-6 mb-6">
         <div className="flex flex-col items-start">
           <div className="flex items-center mb-2">
-            <span className="bg-red-500 rounded h-6 w-4 mr-2"></span>
-            <span className="text-red-500 font-bold text-lg">Our Products</span>
+            <span 
+              className="rounded h-6 w-4 mr-2"
+              style={{ backgroundColor: colorPattern.secondary }}
+            ></span>
+            <span 
+              className="font-bold text-lg"
+              style={{ color: colorPattern.secondary }}
+            >
+              Our Products
+            </span>
           </div>
-          <h2 className="font-bold text-black text-3xl mt-2">Explore Our Products</h2>
+          <h2 
+            className="font-bold text-3xl mt-2"
+            style={{ color: colorPattern.text }}
+          >
+            Explore Our Products
+          </h2>
         </div>
         <div className="flex justify-end gap-3 mb-8">
-          <button className="bg-gray-100 border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition">
-            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <button 
+            className="border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition"
+            style={{
+              backgroundColor: colorPattern.backgroundGray,
+              color: colorPattern.text,
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = colorPattern.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = colorPattern.backgroundGray;
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button className="bg-gray-100 border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition">
-            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <button 
+            className="border-none rounded-full w-10 h-10 flex items-center justify-center shadow transition"
+            style={{
+              backgroundColor: colorPattern.backgroundGray,
+              color: colorPattern.text,
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = colorPattern.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = colorPattern.backgroundGray;
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M9 5l7 7-7 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -35,7 +79,17 @@ const ProductExplorer = ({
       {/* View All Products button */}
       <div className="flex justify-center">
         <button
-          className="bg-red-500 text-white px-8 py-3 rounded font-bold shadow hover:brightness-110 transition-all duration-200 text-lg"
+          className="px-8 py-3 rounded font-bold shadow transition-all duration-200 text-lg"
+          style={{
+            backgroundColor: colorPattern.secondary,
+            color: colorPattern.textWhite,
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = colorPattern.secondaryDark;
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = colorPattern.secondary;
+          }}
           onClick={onViewAll}
         >
           View All Products

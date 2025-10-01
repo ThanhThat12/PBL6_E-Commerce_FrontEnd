@@ -1,21 +1,51 @@
 import React from "react";
+import colorPattern from "../../styles/colorPattern";
 
 const Roadmap = ({ items = [] }) => {
   if (!items.length) return null;
+  
   return (
     <nav className="roadmap-breadcrumb" aria-label="Breadcrumb">
       <ol className="flex items-center space-x-2 text-sm">
         {items.map((item, idx) => (
           <li key={item.label} className="flex items-center">
             {idx > 0 && (
-              <span className="mx-2 text-gray-400">/</span>
+              <span 
+                className="mx-2"
+                style={{ color: colorPattern.textMuted }}
+              >
+                /
+              </span>
             )}
             {item.active ? (
-              <span className="font-semibold text-black">{item.label}</span>
+              <span 
+                className="font-semibold"
+                style={{ color: colorPattern.primary }}
+              >
+                {item.label}
+              </span>
             ) : item.href ? (
-              <a href={item.href} className="text-gray-500 hover:underline">{item.label}</a>
+              <a 
+                href={item.href} 
+                className="hover:underline transition-colors"
+                style={{ 
+                  color: colorPattern.textLight,
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = colorPattern.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = colorPattern.textLight;
+                }}
+              >
+                {item.label}
+              </a>
             ) : (
-              <span className="text-gray-500">{item.label}</span>
+              <span 
+                style={{ color: colorPattern.textLight }}
+              >
+                {item.label}
+              </span>
             )}
           </li>
         ))}
