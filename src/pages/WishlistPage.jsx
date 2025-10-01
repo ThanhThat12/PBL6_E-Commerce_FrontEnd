@@ -1,5 +1,7 @@
 import React from 'react';
 
+
+import Navbar from '../components/common/Navbar';
 import JustForYou from '../components/feature/wishlist/JustForYou';
 import WishlistTab from '../components/feature/wishlist/WishlistTab';
 import Footer from '../components/layout/footer/Footer';
@@ -15,7 +17,8 @@ const WishlistPage = () => {
   const handleSeeAll = () => {};
 
   return (
-    <main className="min-h-screen bg-gray-100 flex flex-col gap-8 pt-8">
+    <main className="min-h-screen bg-gray-100 flex flex-col gap-8">
+      <Navbar />
       <div className="container mx-auto px-4 flex flex-col gap-8" style={{ flex: 1 }}>
         <WishlistTab
           products={wishlistProducts}

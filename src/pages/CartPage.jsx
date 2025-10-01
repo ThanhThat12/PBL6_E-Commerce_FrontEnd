@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+
+import Navbar from '../components/common/Navbar';
 import Roadmap from '../components/common/Roadmap';
 import ProductsInCart from '../components/feature/cart/ProductsInCart';
 import ApplyCoupon from '../components/common/ApplyCoupon';
@@ -33,7 +35,8 @@ const CartPage = () => {
   const total = subtotal;
 
   return (
-    <main className="min-h-screen bg-gray-100 flex flex-col gap-8 pt-8">
+    <main className="min-h-screen bg-gray-100 flex flex-col gap-8">
+      <Navbar />
       <div className="container mx-auto px-4 flex flex-col gap-8">
         <Roadmap items={[{ label: "Home", href: "/" }, { label: "Cart", active: true }]} />
         <ProductsInCart products={products} onQuantityChange={handleQuantityChange} />
