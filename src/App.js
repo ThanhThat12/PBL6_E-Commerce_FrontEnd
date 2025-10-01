@@ -3,9 +3,11 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "bootstrap/dist/css/bootstrap.min.css";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import RegisterPage from "./pages/RegisterPage";
-import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+import LoginPage from "./pages/auth/LoginPage";
+import SellerDashboardPage from "./pages/Seller/SellerDashboardPage";
+import { CustomersPage } from "./pages/Seller/CustomersPage";
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
+          <Route path="/seller/customers" element={<CustomersPage />} />
         </Routes>
       </Router>
     </GoogleOAuthProvider>

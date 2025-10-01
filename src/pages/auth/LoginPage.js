@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../services/userService";
+import { loginUser } from "../../services/userService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 
@@ -136,7 +136,7 @@ const LoginPage = () => {
         idToken: credentialResponse.credential,
       });
       localStorage.setItem("token", res.data.data.token);
-      navigate("/home");
+      navigate("/seller/dashboard");
     } catch (err) {
       console.error("Google login error:", err.response?.data || err.message);
     }
