@@ -1,15 +1,15 @@
 import React from "react";
 import colorPattern from '../../../styles/colorPattern';
 
-const ButtonUp = ({ onClick }) => (
+const ButtonUp = ({ onClick, show }) => (
   <button
     style={{
       position: 'fixed',
       bottom: 32,
       right: 32,
-      display: 'none',
+      display: show ? 'flex' : 'none',
       alignItems: 'center',
-      justifyContent: 'center', 
+      justifyContent: 'center',
       width: 40,
       height: 40,
       borderRadius: '50%',

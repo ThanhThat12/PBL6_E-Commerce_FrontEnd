@@ -26,8 +26,8 @@ const HomePage = () => {
 
   return (
     <main style={{ minHeight: '100vh', background: colorPattern.background, color: colorPattern.text }}>
+      <Navbar />
       <div className="flex flex-col gap-8 pt-8" style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
-        <Navbar />
         <div className="flex flex-col md:flex-row gap-6 items-stretch">
           <div className="md:w-1/4 w-full flex items-start">
             <CategoryList />
@@ -43,7 +43,7 @@ const HomePage = () => {
         <NewArrivalSection />
         <ServiceFeatures />
       </div>
-      {showButton && <ButtonUp onClick={handleScrollToTop} />}
+  <ButtonUp onClick={handleScrollToTop} show={showButton} />
       <Footer />
     </main>
   );

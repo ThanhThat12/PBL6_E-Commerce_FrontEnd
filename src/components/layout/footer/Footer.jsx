@@ -164,7 +164,7 @@ const Footer = () => {
         style={{ borderTop: `1px solid ${colorPattern.borderDark}` }}
       >
         <p 
-          className="text-center text-xs"
+          className="text-center text-xs pb-4"
           style={{ color: colorPattern.textMuted }}
         >
           © Copyright SportZone 2024. All right reserved.
