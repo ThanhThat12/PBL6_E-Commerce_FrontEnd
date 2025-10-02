@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import colorPattern from "../styles/colorPattern";
-import Navbar from "../components/common/Navbar";
 import Message from "../components/common/Message";
 import SendOtpForm from "../components/form/SendOtpForm";
 import VerifyOTP from "../components/form/VerifyOTP";
@@ -146,7 +145,6 @@ function Register() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colorPattern.backgroundGray }}>
-      <Navbar />
       <div className="flex-1 flex items-center justify-center relative py-12">
         {/* Animated Sports Background Elements */}
         <div className="absolute inset-0 overflow-hidden">

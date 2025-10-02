@@ -60,54 +60,46 @@ const CategoryCards = ({
   icons,
   selected,
   onSelect,
-}) => (
-  <div className="flex-1 flex flex-row flex-wrap gap-6 justify-center items-center">
-    {categories.map((cat) => {
-      const isActive = selected === cat;
-      return (
-        <button
-          key={cat}
-          type="button"
-          onClick={() => onSelect(cat)}
-          className="flex flex-col items-center justify-center px-8 py-8 rounded-lg border transition-all duration-300"
-          style={{
-            minWidth: "150px",
-            minHeight: "150px",
-            backgroundColor: isActive ? colorPattern.primary : colorPattern.background,
-            borderColor: isActive ? colorPattern.primary : colorPattern.border,
-            boxShadow: isActive ? `0 4px 16px ${colorPattern.shadowDark}` : `0 2px 8px ${colorPattern.shadow}`,
-            transform: isActive ? 'scale(1.05)' : 'scale(1)',
-          }}
-          onMouseEnter={(e) => {
-            if (!isActive) {
-              e.target.style.transform = 'scale(1.05)';
-              e.target.style.borderColor = colorPattern.primaryLight;
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isActive) {
-              e.target.style.transform = 'scale(1)';
-              e.target.style.borderColor = colorPattern.border;
-            }
-          }}
-        >
-          <span 
-            className="mb-3"
-            style={{ color: isActive ? colorPattern.textWhite : colorPattern.text }}
+}) => {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <div className="flex-1 flex flex-row flex-wrap gap-6 justify-center items-center">
+      {categories.map((cat) => {
+        const isActive = hovered === cat;
+        return (
+          <button
+            key={cat}
+            type="button"
+            onMouseEnter={() => setHovered(cat)}
+            onMouseLeave={() => setHovered(null)}
+            className="flex flex-col items-center justify-center px-8 py-8 rounded-lg border transition-all duration-300"
+            style={{
+              minWidth: "150px",
+              minHeight: "150px",
+              backgroundColor: isActive ? colorPattern.primary : colorPattern.background,
+              borderColor: isActive ? colorPattern.primary : colorPattern.border,
+              boxShadow: isActive ? `0 4px 16px ${colorPattern.shadowDark}` : `0 2px 8px ${colorPattern.shadow}`,
+              transform: isActive ? 'scale(1.05)' : 'scale(1)',
+            }}
           >
-            {icons[cat]}
-          </span>
-          <span 
-            className="font-semibold text-lg"
-            style={{ color: isActive ? colorPattern.textWhite : colorPattern.text }}
-          >
-            {cat}
-          </span>
-        </button>
-      );
-    })}
-  </div>
-);
+            <span 
+              className="mb-3"
+              style={{ color: isActive ? colorPattern.textWhite : colorPattern.text }}
+            >
+              {icons[cat]}
+            </span>
+            <span 
+              className="font-semibold text-lg"
+              style={{ color: isActive ? colorPattern.textWhite : colorPattern.text }}
+            >
+              {cat}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 const CategoryBrowser = ({
   activeCategory = "Camera",

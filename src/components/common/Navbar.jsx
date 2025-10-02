@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 const menuItems = [
   { label: "Hot Deals", href: "#" },
-  { label: "Home", href: "/home" },
+  { label: "Home", href: "/" },
   { label: "About", href: "#" },
   { label: "Shop", href: "#" },
   { label: "Mega Menu", href: "#" },
@@ -109,7 +109,7 @@ export default function NestMartNavbar() {
           </a>
           
           <a 
-            href="#" 
+            href="/wishlist" 
             className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
           >
             <span className="material-icons text-sm md:text-base">favorite_border</span>
@@ -117,7 +117,7 @@ export default function NestMartNavbar() {
           </a>
           
           <a 
-            href="#" 
+            href="/cart" 
             className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
             aria-label="Cart"
           >

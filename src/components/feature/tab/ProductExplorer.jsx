@@ -1,12 +1,10 @@
 import React from "react";
 import colorPattern from "../../../styles/colorPattern";
-import { explorerProducts } from '../../../mockDataExplorer';
+import useProducts from "../../../hooks/useProducts";
 import ProductList from "../../common/ProductList";
 
-const ProductExplorer = ({
-  products = explorerProducts,
-  onViewAll,
-}) => {
+const ProductExplorer = ({ onViewAll }) => {
+  const { products, loading, error } = useProducts();
   return (
     <section 
       className="rounded-xl shadow p-6 md:p-10 mb-8"
@@ -75,7 +73,13 @@ const ProductExplorer = ({
         </div>
       </div>
       {/* Product cards grid (reuse ProductList) */}
-      <ProductList products={products} />
+      {loading ? (
+        <div>Loading products...</div>
+      ) : error ? (
+        <div style={{ color: 'red' }}>Failed to load products.</div>
+      ) : (
+        <ProductList products={products} />
+      )}
       {/* View All Products button */}
       <div className="flex justify-center">
         <button
