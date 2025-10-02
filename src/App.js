@@ -6,8 +6,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import LoginPage from "./pages/auth/LoginPage";
-import SellerDashboardPage from "./pages/Seller/SellerDashboardPage";
-import { CustomersPage } from "./pages/Seller/CustomersPage";
+import SellerDashboardPage from "./pages/Seller/SellerDashboardPage.jsx";
+import { CustomersPage } from "./pages/Seller/CustomersPage.jsx";
+import CategoriesPage from "./pages/Seller/CategoriesPage.jsx";
+import ProfilePage from "./pages/Seller/ProfilePage.jsx";
+import CouponPage from "./pages/Seller/CouponPage.jsx";
 
 function App() {
   return (
@@ -20,6 +23,9 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
           <Route path="/seller/customers" element={<CustomersPage />} />
+          <Route path="/seller/categories" element={<CategoriesPage />} />
+          <Route path="/seller/coupons" element={<CouponPage />} />
+          <Route path="/seller/profile" element={<ProfilePage />} />
         </Routes>
       </Router>
     </GoogleOAuthProvider>

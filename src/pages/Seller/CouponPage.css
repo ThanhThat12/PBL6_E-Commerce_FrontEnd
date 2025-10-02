@@ -1,0 +1,194 @@
+.coupon-layout {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.coupon-content {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+}
+
+.page-description {
+  color: #666;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Statistics Cards */
+.stats-row {
+  margin-bottom: 24px;
+}
+
+.stats-row .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+
+.stats-row .ant-card-body {
+  padding: 20px;
+}
+
+.stat-subtitle {
+  margin-top: 8px;
+  color: #888;
+  font-size: 12px;
+}
+
+/* Table Card */
+.table-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table-card .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Coupon Code Tag */
+.coupon-code-tag {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 4px 12px;
+}
+
+/* Modal */
+.form-actions {
+  margin-bottom: 0;
+  margin-top: 24px;
+  text-align: right;
+}
+
+.form-actions .ant-space {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+/* Tags and Status */
+.ant-tag {
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+/* Table cell styles */
+.ant-table-cell small {
+  display: block;
+  color: #666;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .coupon-content {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-header button {
+    width: 100%;
+  }
+
+
+  .table-card {
+    overflow-x: auto;
+  }
+}
+
+/* Animation */
+.ant-table-row {
+  transition: background-color 0.3s;
+}
+
+.ant-table-row:hover {
+  background-color: #f9f9f9;
+}
+
+/* Button styles */
+.ant-btn-primary {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  border-radius: 6px;
+  font-weight: 1000;
+}
+
+.ant-btn-primary:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* Dropdown menu */
+.ant-dropdown-menu-item {
+  padding: 8px 12px;
+}
+
+.ant-dropdown-menu-item-danger {
+  color: #ff4d4f;
+}
+
+.ant-dropdown-menu-item-danger:hover {
+  background-color: #fff1f0;
+}
+
+/* Form inputs */
+.ant-input,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector {
+  border-radius: 6px;
+}
+
+.ant-input-number {
+  width: 100%;
+}
+
+/* Modal */
+.ant-modal-header {
+  border-radius: 12px 12px 0 0;
+}
+
+.ant-modal-content {
+  border-radius: 12px;
+}
+
+/* Statistics icons */
+.ant-statistic-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.ant-statistic-content {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* Empty state */
+.ant-empty {
+  padding: 60px 0;
+}
+
+.ant-empty-description {
+  color: #999;
+}

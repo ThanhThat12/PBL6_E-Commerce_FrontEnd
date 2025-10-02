@@ -123,8 +123,10 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
     try {
-      await loginUser({ username, password });
-      navigate("/home");
+      const response = await loginUser({ username, password });
+      
+      // userService đã tự động lưu token và user info vào localStorage
+      navigate("/seller/dashboard");
     } catch (err) {
       setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
     }
@@ -135,10 +137,20 @@ const LoginPage = () => {
       const res = await axios.post("http://localhost:8081/api/authenticate/google", {
         idToken: credentialResponse.credential,
       });
-      localStorage.setItem("token", res.data.data.token);
+      
+      // Lưu token và user info
+      if (res.data && res.data.data) {
+        localStorage.setItem("token", res.data.data.token);
+        
+        if (res.data.data.user) {
+          localStorage.setItem("user", JSON.stringify(res.data.data.user));
+        }
+      }
+      
       navigate("/seller/dashboard");
     } catch (err) {
       console.error("Google login error:", err.response?.data || err.message);
+      setError("Đăng nhập Google thất bại!");
     }
   };
 
@@ -159,8 +171,16 @@ const LoginPage = () => {
           const { accessToken } = response.authResponse;
           axios.post("http://localhost:8081/api/authenticate/facebook", { accessToken }, { headers: { 'Content-Type': 'application/json' } })
             .then((res) => {
-              localStorage.setItem("token", res.data.data.token);
-              navigate("/home");
+              // Lưu token và user info
+              if (res.data && res.data.data) {
+                localStorage.setItem("token", res.data.data.token);
+                
+                if (res.data.data.user) {
+                  localStorage.setItem("user", JSON.stringify(res.data.data.user));
+                }
+              }
+              
+              navigate("/seller/dashboard");
             })
             .catch((err) => {
               setError(err.response?.data?.message || "Đăng nhập Facebook thất bại!");

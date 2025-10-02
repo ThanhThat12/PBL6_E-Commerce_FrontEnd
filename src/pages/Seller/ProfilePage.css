@@ -1,0 +1,231 @@
+.profile-layout {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.profile-content {
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 16px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.section-title {
+  margin-bottom: 24px;
+}
+
+.section-title h2 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+/* Profile Card */
+.profile-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar-section {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.profile-name {
+  margin-top: 16px;
+  margin-bottom: 4px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.profile-email {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.social-links p {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+.social-icons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.social-icons button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+}
+
+.social-media-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.social-media-item .ant-avatar {
+  flex-shrink: 0;
+}
+
+/* Password Card */
+.password-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.password-form .form-group {
+  margin-bottom: 20px;
+}
+
+.password-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.forgot-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #1890ff;
+}
+
+.save-password-btn {
+  margin-top: 10px;
+  height: 44px;
+  border-radius: 8px;
+  font-weight: 500;
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.save-password-btn:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+/* Profile Update Card */
+.profile-update-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.profile-update-content {
+  padding: 8px 0;
+}
+
+.avatar-upload-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.avatar-upload-section .ant-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-upload-section .ant-btn-primary {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.avatar-upload-section .ant-btn-primary:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+.profile-update-content .form-group {
+  margin-bottom: 20px;
+}
+
+.profile-update-content label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.profile-update-content .ant-input,
+.profile-update-content .ant-input-password {
+  height: 40px;
+  border-radius: 6px;
+}
+
+.profile-update-content .ant-input-textarea textarea {
+  border-radius: 6px;
+}
+
+.profile-update-content .ant-input:disabled,
+.profile-update-content .ant-input-password:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.form-actions .ant-btn-primary {
+  min-width: 140px;
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.form-actions .ant-btn-primary:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .profile-content {
+    padding: 16px;
+  }
+
+  .avatar-upload-section {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-title {
+    font-size: 20px;
+  }
+
+  .social-icons {
+    flex-wrap: wrap;
+  }
+}

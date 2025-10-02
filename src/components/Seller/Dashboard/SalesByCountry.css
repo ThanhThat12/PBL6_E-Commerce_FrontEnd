@@ -1,0 +1,80 @@
+.sales-country-card {
+  height: 100%;
+  border-radius: 8px;
+}
+
+.sales-country-card .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sales-country-card .ant-card-head-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.country-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.country-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.country-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 120px;
+}
+
+.country-flag {
+  font-size: 28px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  border-radius: 50%;
+}
+
+.country-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.country-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.country-sales {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.country-progress {
+  flex: 1;
+}
+
+.country-change {
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: right;
+}
+
+.country-change.positive {
+  color: #10b981;
+}
+
+.country-change.negative {
+  color: #ef4444;
+}

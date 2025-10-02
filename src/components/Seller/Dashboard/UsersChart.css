@@ -1,0 +1,36 @@
+.users-chart-card {
+  height: 100%;
+  border-radius: 8px;
+}
+
+.users-chart-card .ant-card-body {
+  padding: 20px;
+}
+
+.users-header {
+  margin-bottom: 16px;
+}
+
+.users-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.users-count {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.chart-container {
+  height: 80px;
+  margin: 16px 0;
+}
+
+.users-footer {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 12px;
+}

@@ -36,6 +36,29 @@
   font-size: 1.25rem;
   color: #64748b;
   cursor: pointer;
+  transition: color 0.3s;
+}
+
+.icon:hover {
+  color: #1976d2;
+}
+
+.notification-icon {
+  position: relative;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.user-info:hover {
+  background-color: #f1f5f9;
 }
 
 .avatar {
@@ -43,8 +66,15 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid #e2e8f0;
 }
 
 .user-name {
   color: #334155;
+  font-weight: 500;
+}
+
+.dropdown-icon {
+  color: #64748b;
+  font-size: 12px;
 }
