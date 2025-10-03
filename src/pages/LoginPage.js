@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { UserContext } from "../context/UserContext";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../services/userService";
 import { GoogleLogin } from "@react-oauth/google";
@@ -8,6 +9,7 @@ import "../styles/global.css";
 import Message from "../components/common/Message";
 
 const LoginPage = () => {
+  const { login } = useContext(UserContext);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -57,12 +59,16 @@ const LoginPage = () => {
     e.preventDefault();
     setMessage(""); setMessageType(""); setIsLoading(true);
     try {
-      await loginUser({ username: formData.username, password: formData.password });
+      const res = await loginUser({ username: formData.username, password: formData.password });
+      if (res.data && res.data.data && res.data.data.user) {
+        login(res.data.data.user); // cập nhật context
+        console.log("Đăng nhập với username:", res.data.data.user.username);
+      }
       if (formData.rememberMe) localStorage.setItem("rememberedUser", formData.username);
       else localStorage.removeItem("rememberedUser");
       setMessage("Login successful! Redirecting...");
       setMessageType("success");
-      setTimeout(() => navigate("/home"), 1000);
+      setTimeout(() => navigate("/"), 1000);
     } catch (err) {
       setMessage("Sign in failed. Please check your credentials!");
       setMessageType("error");
@@ -76,9 +82,9 @@ const LoginPage = () => {
         idToken: credentialResponse.credential,
       });
       localStorage.setItem("token", res.data.data.token);
-      setMessage("Google sign in successful! Redirecting...");
-      setMessageType("success");
-      setTimeout(() => navigate("/home"), 1000);
+  setMessage("Google sign in successful! Redirecting...");
+  setMessageType("success");
+  setTimeout(() => navigate("/"), 1000);
     } catch (err) {
       setMessage("Google sign in failed!");
       setMessageType("error");

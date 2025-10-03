@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { UserContext } from "../context/UserContext";
 // import useProducts from "../hooks/useProducts";
 import colorPattern from "../styles/colorPattern";
 import CategoryBrowser from "../components/feature/tab/CategoryBrowser";
@@ -15,7 +16,7 @@ import Navbar from "../components/common/Navbar";
 
 const HomePage = () => {
   const [showButton, setShowButton] = useState(false);
-
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     const handleScroll = () => setShowButton(window.scrollY > 200);
@@ -23,7 +24,9 @@ const HomePage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Removed the API fetching logic as it is now handled by useProducts
+  useEffect(() => {
+    console.log("UserContext ở HomePage:", user);
+  }, [user]);
 
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -33,6 +36,12 @@ const HomePage = () => {
     <main style={{ minHeight: '100vh', background: colorPattern.background, color: colorPattern.text }}>
       <Navbar />
       <div className="flex flex-col gap-8 pt-8" style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+        {/* Hiển thị tên user nếu đã đăng nhập */}
+        {user && user.username && (
+          <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>
+            Xin chào, {user.username}!
+          </div>
+        )}
         <div className="flex flex-col md:flex-row gap-6 items-stretch">
           <div className="w-full flex items-center">
             <PromoBanner />

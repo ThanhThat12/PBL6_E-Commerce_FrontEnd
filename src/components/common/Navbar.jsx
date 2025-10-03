@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { UserContext } from "../../context/UserContext";
 
 const menuItems = [
   { label: "Hot Deals", href: "#" },
@@ -26,6 +27,7 @@ export default function NestMartNavbar() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user } = useContext(UserContext);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -48,7 +50,6 @@ export default function NestMartNavbar() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -136,7 +137,7 @@ export default function NestMartNavbar() {
               className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors focus:outline-none px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
             >
               <span className="material-icons text-sm md:text-base">person</span>
-              <span className="hidden lg:inline text-sm">Account</span>
+              <span className="hidden lg:inline text-sm">{user && user.username ? user.username : 'Account'}</span>
               <span className="material-icons text-xs">{accountOpen ? 'expand_less' : 'expand_more'}</span>
             </button>
             
