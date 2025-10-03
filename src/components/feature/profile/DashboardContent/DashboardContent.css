@@ -1,0 +1,111 @@
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.dashboard-top {
+  display: flex;
+  gap: 1.5rem;
+  
+}
+.profile-card, .billing-card {
+  background: #e6ffff;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  flex: 1;
+  min-width: 260px;
+  box-sizing: border-box;
+}
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #d9d9d9;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.profile-name {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.2rem;
+}
+.profile-role {
+  color: #7a8a99;
+  font-size: 0.95rem;
+  margin-bottom: 0.7rem;
+}
+.profile-edit {
+  color: #1db954;
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 1rem;
+}
+.billing-title {
+  color: #7a8a99;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
+}
+.billing-name {
+  font-weight: bold;
+  margin-bottom: 0.2rem;
+}
+.billing-address, .billing-email, .billing-phone {
+  font-size: 0.98rem;
+  margin-bottom: 0.2rem;
+}
+.billing-edit {
+  color: #1db954;
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 1rem;
+}
+.order-history-card {
+  background: #e6ffff;
+  border-radius: 8px;
+  padding: 1.2rem 1.5rem;
+}
+.order-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+.view-all {
+  color: #1db954;
+  font-size: 1rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+.order-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+.order-history-table th, .order-history-table td {
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+}
+.order-history-table thead {
+  background: #e6f5f5;
+}
+.order-history-table tbody tr {
+  border-bottom: 1px solid #d9f5ee;
+}
+.order-history-table td b {
+  font-weight: 600;
+}
+.view-details {
+  color: #1db954;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+}

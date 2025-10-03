@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -10,7 +9,8 @@ import HomePage from "./pages/HomePage";
 import WishlistPage from "./pages/WishlistPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
-import ProductByCategoryPage from "./pages/ProductByCategoryPage"; // Import the new page component
+import ProductByCategoryPage from "./pages/ProductByCategoryPage";
+import AccountPage from "./pages/AccountPage";
 
 function App() {
   return (
@@ -26,6 +26,7 @@ function App() {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/products" element={<ProductByCategoryPage />} /> {/* Add this line */}
+          <Route path="/profile" element={<AccountPage />} /> {/* Add this line */}
         </Routes>
       </Router>
     </GoogleOAuthProvider>

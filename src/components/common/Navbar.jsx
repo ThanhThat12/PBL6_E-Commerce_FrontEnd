@@ -156,7 +156,7 @@ export default function NestMartNavbar() {
                   <span className="material-icons text-sm">person_add</span>
                   <span>Register</span>
                 </a>
-                <a href="#" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                <a href="/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
                   <span className="material-icons text-sm">account_circle</span>
                   <span>My Account</span>
                 </a>
