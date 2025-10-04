@@ -36,8 +36,8 @@ const CartPage = () => {
   const shipping = "Free";
   const total = subtotal;
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error loading cart</div>;
+  // if (loading) return <div>Loading...</div>;
+  // if (error) return <div>Error loading cart</div>;
 
   return (
     <main className="min-h-screen bg-gray-100 flex flex-col gap-8">
