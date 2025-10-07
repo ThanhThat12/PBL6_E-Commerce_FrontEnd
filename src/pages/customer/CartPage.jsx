@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 
-import Navbar from '../components/common/Navbar';
-import Roadmap from '../components/common/Roadmap';
-import ProductsInCart from '../components/feature/cart/ProductsInCart';
-import ApplyCoupon from '../components/common/ApplyCoupon';
-import CartTotal from '../components/feature/cart/CartTotal';
-import useCart from "../hooks/useCart";
+import Navbar from '../../components/common/Navbar';
+import Roadmap from '../../components/common/Roadmap';
+import ProductsInCart from '../../components/feature/cart/ProductsInCart';
+import ApplyCoupon from '../../components/common/ApplyCoupon';
+import CartTotal from '../../components/feature/cart/CartTotal';
+import useCart from "../../hooks/useCart";
 
 const initialProducts = [
   {
@@ -44,7 +44,7 @@ const CartPage = () => {
       <Navbar />
       <div className="container mx-auto px-4 flex flex-col gap-8">
         <Roadmap items={[{ label: "Home", href: "/" }, { label: "Cart", active: true }]} />
-        <ProductsInCart products={cart?.items || []} onQuantityChange={handleQuantityChange} />
+  <ProductsInCart products={cart || []} onQuantityChange={handleQuantityChange} />
         <div className="flex flex-col md:flex-row gap-8 items-start">
           <div className="flex-1 flex flex-col gap-8">
             <div className="flex justify-between w-full gap-4">

@@ -1,7 +1,7 @@
 import React from "react";
-import BillingDetailsForm from "../components/feature/checkout/BillingDetailsForm";
-import CheckoutSummary from "../components/feature/checkout/CheckoutSummary";
-import Roadmap from "../components/common/Roadmap";
+import BillingDetailsForm from "../../components/feature/checkout/BillingDetailsForm";
+import CheckoutSummary from "../../components/feature/checkout/CheckoutSummary";
+import Roadmap from "../../components/common/Roadmap";
 
 const steps = [
   { label: "Account", href: "/account" },

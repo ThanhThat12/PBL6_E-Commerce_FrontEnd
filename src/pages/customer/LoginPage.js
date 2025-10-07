@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../../context/UserContext";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../services/userService";
+import { loginUser } from "../../services/userService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import colorPattern from "../styles/colorPattern";
-import "../styles/global.css";
-import Message from "../components/common/Message";
+import colorPattern from "../../styles/colorPattern";
+import Message from "../../components/common/Message";
+import '../../styles/global.css';
 
 const LoginPage = () => {
   const { login } = useContext(UserContext);
@@ -63,6 +63,10 @@ const LoginPage = () => {
       if (res.data && res.data.data && res.data.data.user) {
         login(res.data.data.user); // cập nhật context
         console.log("Đăng nhập với username:", res.data.data.user.username);
+      }
+      // Lưu token vào localStorage nếu có
+      if (res.data && res.data.data && res.data.data.token) {
+        localStorage.setItem("token", res.data.data.token);
       }
       if (formData.rememberMe) localStorage.setItem("rememberedUser", formData.username);
       else localStorage.removeItem("rememberedUser");

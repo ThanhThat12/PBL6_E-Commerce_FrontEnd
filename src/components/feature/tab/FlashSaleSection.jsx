@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import colorPattern from "../../../styles/colorPattern";
 import ProductList from "../../common/ProductList";
+import { addToCart } from '../../../services/cartService';
 import { flashSaleProducts } from '../../../mockDataFlashSale';
 
 const PRODUCTS_PER_PAGE = 4;
@@ -41,6 +42,18 @@ const FlashSaleSection = ({ products = flashSaleProducts }) => {
   const handlePrev = () => setPage((p) => (p > 0 ? p - 1 : totalPages - 1));
   const handleNext = () => setPage((p) => (p < totalPages - 1 ? p + 1 : 0));
 
+  const handleAddToCart = async (product) => {
+    console.log("handleAddToCart called", product);
+    try {
+      console.log("Calling addToCart from handleAddToCart", product.id, 1);
+      const result = await addToCart(product.id, 1);
+      console.log("addToCart resolved", result);
+      alert("Đã thêm vào giỏ hàng!");
+    } catch (error) {
+      console.error("addToCart error", error);
+      alert("Thêm vào giỏ hàng thất bại!");
+    }
+  };
   return (
     <section 
       className="rounded-xl shadow p-6 md:p-10 mb-8"
@@ -196,7 +209,7 @@ const FlashSaleSection = ({ products = flashSaleProducts }) => {
         </div>
       </div>
       {/* Product List */}
-      <ProductList products={pagedProducts} />
+  <ProductList products={pagedProducts} onAddToCart={handleAddToCart} showAddToCart />
       {/* View All Products */}
       <div className="flex justify-center">
         <button 

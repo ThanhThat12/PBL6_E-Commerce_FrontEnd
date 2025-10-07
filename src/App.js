@@ -2,15 +2,15 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "bootstrap/dist/css/bootstrap.min.css";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import RegisterPage from "./pages/RegisterPage";
-import LoginPage from "./pages/LoginPage";
-import HomePage from "./pages/HomePage";
-import WishlistPage from "./pages/WishlistPage";
-import CartPage from "./pages/CartPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import ProductByCategoryPage from "./pages/ProductByCategoryPage";
-import AccountPage from "./pages/AccountPage";
+import ForgotPasswordPage from "./pages/customer/ForgotPasswordPage";
+import RegisterPage from "./pages/customer/RegisterPage";
+import LoginPage from "./pages/customer/LoginPage";
+import HomePage from "./pages/customer/HomePage";
+import WishlistPage from "./pages/customer/WishlistPage";
+import CartPage from "./pages/customer/CartPage";
+import CheckoutPage from "./pages/customer/CheckoutPage";
+import ProductByCategoryPage from "./pages/customer/ProductByCategoryPage";
+import AccountPage from "./pages/customer/AccountPage";
 import { UserProvider } from "./context/UserContext";
 
 function App() {
