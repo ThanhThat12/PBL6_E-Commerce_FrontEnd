@@ -149,22 +149,35 @@ export default function NestMartNavbar() {
                 <div className="py-2 px-3 border-b border-[#B3E5FC] bg-[#E1F5FE]/50">
                   <p className="text-sm font-medium text-[#1E88E5]">Welcome to Nest Mart</p>
                 </div>
-                <a href="/login" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
-                  <span className="material-icons text-sm">login</span>
-                  <span>Sign In</span>
-                </a>
-                <a href="/register" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
-                  <span className="material-icons text-sm">person_add</span>
-                  <span>Register</span>
-                </a>
-                <a href="/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
-                  <span className="material-icons text-sm">account_circle</span>
-                  <span>My Account</span>
-                </a>
-                <a href="#" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
-                  <span className="material-icons text-sm">shopping_bag</span>
-                  <span>Orders</span>
-                </a>
+                {/* Nếu chưa đăng nhập chỉ hiện Sign In */}
+                {!user || !user.username ? (
+                  <a href="/login" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                    <span className="material-icons text-sm">login</span>
+                    <span>Sign In</span>
+                  </a>
+                ) : (
+                  <>
+                    <a href="/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                      <span className="material-icons text-sm">account_circle</span>
+                      <span>My Account</span>
+                    </a>
+                    <a href="#" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                      <span className="material-icons text-sm">shopping_bag</span>
+                      <span>Orders</span>
+                    </a>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login';
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5] w-full text-left"
+                    >
+                      <span className="material-icons text-sm">logout</span>
+                      <span>Sign Out</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 
-import Navbar from '../components/common/Navbar';
-import Roadmap from '../components/common/Roadmap';
-import ProductsInCart from '../components/feature/cart/ProductsInCart';
-import ApplyCoupon from '../components/common/ApplyCoupon';
-import CartTotal from '../components/feature/cart/CartTotal';
-import useCart from "../hooks/useCart";
+import Navbar from '../../components/common/Navbar';
+import Roadmap from '../../components/common/Roadmap';
+import ProductsInCart from '../../components/feature/cart/ProductsInCart';
+import ApplyCoupon from '../../components/common/ApplyCoupon';
+import CartTotal from '../../components/feature/cart/CartTotal';
+import useCart from "../../hooks/useCart";
 
 const initialProducts = [
   {

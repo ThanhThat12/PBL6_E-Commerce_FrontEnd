@@ -1,11 +1,11 @@
 import React from 'react';
 
 
-import Navbar from '../components/common/Navbar';
-import JustForYou from '../components/feature/wishlist/JustForYou';
-import WishlistTab from '../components/feature/wishlist/WishlistTab';
-import Footer from '../components/layout/footer/Footer';
-import { wishlistProducts, justForYouProducts } from '../mockData';
+import Navbar from '../../components/common/Navbar';
+import JustForYou from '../../components/feature/wishlist/JustForYou';
+import WishlistTab from '../../components/feature/wishlist/WishlistTab';
+import Footer from '../../components/layout/footer/Footer';
+import { wishlistProducts, justForYouProducts } from '../../mockData';
 
 
 

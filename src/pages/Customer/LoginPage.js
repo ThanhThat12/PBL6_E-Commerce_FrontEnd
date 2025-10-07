@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../../context/UserContext";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../services/userService";
+import { loginUser } from "../../services/userService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import colorPattern from "../styles/colorPattern";
-import "../styles/global.css";
-import Message from "../components/common/Message";
+import colorPattern from "../../styles/colorPattern";
+import "../../styles/global.css";
+import Message from "../../components/common/Message";
 
 const LoginPage = () => {
   const { login } = useContext(UserContext);

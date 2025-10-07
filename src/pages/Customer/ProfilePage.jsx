@@ -1,17 +1,17 @@
 
 import React, { useState } from "react";
-import Navbar from "../components/common/Navbar";
-import Roadmap from "../components/common/Roadmap";
-import Footer from "../components/layout/footer/Footer";
-import Navigation from "../components/common/Navigation";
-import DashboardContent from "../components/feature/profile/DashboardContent/DashboardContent";
-import OrderHistoryContent from "../components/feature/profile/OrderHistoryContent/OrderHistoryContent";
-import WishlistContent from "../components/feature/profile/WishlistContent/WishlistContent";
-import ShoppingCartContent from "../components/feature/profile/ShoppingCartContent/ShoppingCartContent";
-import SettingsContent from "../components/feature/profile/SettingsContent/SettingsContent";
-import LogoutContent from "../components/feature/profile/LogoutContent/LogoutContent";
-import OrderDetails from "../components/feature/profile/OrderDetails/OrderDetails";
-import "./AccountPage.css";
+import Navbar from "../../components/common/Navbar";
+import Roadmap from "../../components/common/Roadmap";
+import Footer from "../../components/layout/footer/Footer";
+import Navigation from "../../components/common/Navigation";
+import DashboardContent from "../../components/feature/profile/DashboardContent/DashboardContent";
+import OrderHistoryContent from "../../components/feature/profile/OrderHistoryContent/OrderHistoryContent";
+import WishlistContent from "../../components/feature/profile/WishlistContent/WishlistContent";
+import ShoppingCartContent from "../../components/feature/profile/ShoppingCartContent/ShoppingCartContent";
+import SettingsContent from "../../components/feature/profile/SettingsContent/SettingsContent";
+import LogoutContent from "../../components/feature/profile/LogoutContent/LogoutContent";
+import OrderDetails from "../../components/feature/profile/OrderDetails/OrderDetails";
+import "../../styles/AccountPage.css";
 
 export default function ProfilePage() {
   const [activeIndex, setActiveIndex] = useState(0);
