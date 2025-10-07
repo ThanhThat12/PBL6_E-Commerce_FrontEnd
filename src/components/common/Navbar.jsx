@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { Link } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
 
 const menuItems = [
@@ -27,7 +28,11 @@ export default function NestMartNavbar() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useContext(UserContext);
+  const { user, logout } = useContext(UserContext);
+  // Debug: log user context
+  useEffect(() => {
+    console.log('[Navbar] user from context:', user);
+  }, [user]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -66,15 +71,26 @@ export default function NestMartNavbar() {
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 lg:px-8 py-3 border-b border-[#B3E5FC] bg-gradient-to-r from-[#1E88E5] via-[#42A5F5] to-[#90CAF9]">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 text-white font-bold text-xl">
+  <Link to="/" className="flex items-center gap-2 text-white font-bold text-xl">
           <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="12" fill="#B3E5FC" />
             <path fill="#1E88E5" d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM7.16 16l.94-2h7.45a2 2 0 0 0 1.9-1.37l3.24-8.1A1 1 0 0 0 19.6 3H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44A2 2 0 0 0 5 15a2 2 0 0 0 2.16 1ZM6.16 5h12.31l-2.76 6.9a1 1 0 0 1-.95.67H8.53l-2.37-4.27Z"/>
           </svg>
           <span className="drop-shadow hidden sm:inline">Nest Mart & Grocery</span>
           <span className="drop-shadow sm:hidden">Nest Mart</span>
-        </a>
+  </Link>
         
+        {/* User Info / Login Button */}
+        <div className="flex items-center gap-4">
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white">{user.userName}</span>
+              <button onClick={logout} className="ml-2 px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition">Logout</button>
+            </div>
+          ) : (
+            <Link to="/login" className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 transition">Đăng nhập</Link>
+          )}
+        </div>
         {/* Search Bar (hidden on mobile) */}
         <form className="hidden md:flex flex-1 mx-6 max-w-xl relative">
           <input
@@ -93,39 +109,37 @@ export default function NestMartNavbar() {
         
         {/* Right Links */}
         <div className="flex items-center gap-2 md:gap-4">
-          <a 
-            href="#" 
-            className="hidden md:flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
+          <span 
+            className="hidden md:flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20 cursor-pointer"
           >
             <span className="material-icons text-sm md:text-base">storefront</span>
             <span className="hidden lg:inline text-sm whitespace-nowrap">Become Vendor</span>
-          </a>
+          </span>
           
-          <a 
-            href="#" 
-            className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
+          <span 
+            className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20 cursor-pointer"
           >
             <span className="material-icons text-sm md:text-base">compare_arrows</span>
             <span className="hidden lg:inline text-sm">Compare</span>
-          </a>
+          </span>
           
-          <a 
-            href="/wishlist" 
+          <Link 
+            to="/wishlist" 
             className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
           >
             <span className="material-icons text-sm md:text-base">favorite_border</span>
             <span className="hidden lg:inline text-sm">Wishlist</span>
-          </a>
+          </Link>
           
-          <a 
-            href="/cart" 
+          <Link 
+            to="/cart" 
             className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
             aria-label="Cart"
           >
             <span className="material-icons text-sm md:text-base">shopping_cart</span>
             <span className="hidden lg:inline text-sm">Cart</span>
             <span className="inline-flex items-center justify-center w-5 h-5 text-xs bg-[#E1F5FE] text-[#1E88E5] rounded-full">3</span>
-          </a>
+          </Link>
           
           {/* Account Dropdown */}
           <div className="relative">
@@ -137,7 +151,7 @@ export default function NestMartNavbar() {
               className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors focus:outline-none px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
             >
               <span className="material-icons text-sm md:text-base">person</span>
-              <span className="hidden lg:inline text-sm">{user && user.username ? user.username : 'Account'}</span>
+              <span className="hidden lg:inline text-sm">{user && user.userName ? user.userName : 'Account'}</span>
               <span className="material-icons text-xs">{accountOpen ? 'expand_less' : 'expand_more'}</span>
             </button>
             
@@ -149,26 +163,26 @@ export default function NestMartNavbar() {
                 <div className="py-2 px-3 border-b border-[#B3E5FC] bg-[#E1F5FE]/50">
                   <p className="text-sm font-medium text-[#1E88E5]">Welcome to Nest Mart</p>
                 </div>
-                {!user || !user.username ? (
+                {(!user || !user.userName) ? (
                   <>
-                    <a href="/login" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                    <Link to="/login" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
                       <span className="material-icons text-sm">login</span>
                       <span>Sign In</span>
-                    </a>
-                    <a href="/register" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                    </Link>
+                    <Link to="/register" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
                       <span className="material-icons text-sm">person_add</span>
                       <span>Register</span>
-                    </a>
+                    </Link>
                   </>
                 ) : null}
-                <a href="/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                <Link to="/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
                   <span className="material-icons text-sm">account_circle</span>
-                  <span>My Account</span>
-                </a>
-                <a href="#" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                  <span>{user && user.userName ? user.userName : 'My Account'}</span>
+                </Link>
+                <span className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5] cursor-pointer">
                   <span className="material-icons text-sm">shopping_bag</span>
                   <span>Orders</span>
-                </a>
+                </span>
               </div>
             )}
           </div>
@@ -281,13 +295,13 @@ export default function NestMartNavbar() {
             style={{animationDuration: '0.3s'}}
           >
             <div className="sticky top-0 z-10 bg-[#1E88E5] text-white p-4 flex items-center justify-between">
-              <a href="/" className="flex items-center gap-2 font-bold">
+              <Link to="/" className="flex items-center gap-2 font-bold">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="12" fill="#B3E5FC" />
                   <path fill="#1E88E5" d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM7.16 16l.94-2h7.45a2 2 0 0 0 1.9-1.37l3.24-8.1A1 1 0 0 0 19.6 3H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44A2 2 0 0 0 5 15a2 2 0 0 0 2.16 1ZM6.16 5h12.31l-2.76 6.9a1 1 0 0 1-.95.67H8.53l-2.37-4.27Z"/>
                 </svg>
                 Nest Mart
-              </a>
+              </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Close menu"
@@ -306,14 +320,13 @@ export default function NestMartNavbar() {
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {categories.map((category) => (
-                    <a 
+                    <span 
                       key={category.label}
-                      href={category.href} 
-                      className="flex items-center gap-2 p-2 rounded bg-white hover:bg-[#B3E5FC]/50 text-[#1E88E5] text-sm transition-colors"
+                      className="flex items-center gap-2 p-2 rounded bg-white hover:bg-[#B3E5FC]/50 text-[#1E88E5] text-sm transition-colors cursor-pointer"
                     >
                       <span className="material-icons text-[#42A5F5] text-sm">{category.icon}</span>
                       <span>{category.label}</span>
-                    </a>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -326,14 +339,14 @@ export default function NestMartNavbar() {
                 </h3>
                 <div className="flex flex-col gap-1">
                   {menuItems.map((item) => (
-                    <a 
+                    <Link 
                       key={item.label}
-                      href={item.href} 
+                      to={item.href} 
                       className="flex items-center justify-between p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors"
                     >
                       <span>{item.label}</span>
                       <span className="material-icons text-xs">chevron_right</span>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -345,22 +358,22 @@ export default function NestMartNavbar() {
                   Quick Links
                 </h3>
                 <div className="flex flex-col gap-1">
-                  <a href="#" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
+                  <span className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors cursor-pointer">
                     <span className="material-icons">storefront</span>
                     Become Vendor
-                  </a>
-                  <a href="#" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
+                  </span>
+                  <span className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors cursor-pointer">
                     <span className="material-icons">compare_arrows</span>
                     Compare Products
-                  </a>
-                  <a href="#" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
+                  </span>
+                  <Link to="/wishlist" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
                     <span className="material-icons">favorite_border</span>
                     My Wishlist
-                  </a>
-                  <a href="#" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
+                  </Link>
+                  <Link to="/cart" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
                     <span className="material-icons">shopping_cart</span>
                     My Cart <span className="ml-auto bg-[#42A5F5] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">3</span>
-                  </a>
+                  </Link>
                 </div>
               </div>
               
@@ -371,18 +384,18 @@ export default function NestMartNavbar() {
                   My Account
                 </h3>
                 <div className="flex flex-col gap-1">
-                  <a href="/login" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
+                  <Link to="/login" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
                     <span className="material-icons">login</span>
                     Sign In
-                  </a>
-                  <a href="/register" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
+                  </Link>
+                  <Link to="/register" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
                     <span className="material-icons">person_add</span>
                     Register
-                  </a>
-                  <a href="#" className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors">
+                  </Link>
+                  <span className="flex items-center gap-2 p-2 rounded hover:bg-[#B3E5FC] text-[#1E88E5] transition-colors cursor-pointer">
                     <span className="material-icons">shopping_bag</span>
                     Orders
-                  </a>
+                  </span>
                 </div>
               </div>
               

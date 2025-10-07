@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { categories, locations, conditions, ratings, products } from "../../mockProductData";
 import ProductSidebar from "../../components/product/ProductSidebar";
 import ProductTopBar from "../../components/product/ProductTopBar";
@@ -10,6 +10,9 @@ import Footer from "../../components/layout/footer/Footer";
 const PRODUCTS_PER_PAGE = 9;
 
 export default function ProductByCategoryPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [selectedConditions, setSelectedConditions] = useState([]);

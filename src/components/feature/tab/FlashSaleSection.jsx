@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import colorPattern from "../../../styles/colorPattern";
 import ProductList from "../../common/ProductList";
 import { addToCart } from '../../../services/cartService';
@@ -212,21 +214,21 @@ const FlashSaleSection = ({ products = flashSaleProducts }) => {
   <ProductList products={pagedProducts} onAddToCart={handleAddToCart} showAddToCart />
       {/* View All Products */}
       <div className="flex justify-center">
-        <button 
+        <Link
+          to="/products"
           className="px-8 py-3 rounded font-bold shadow transition-all duration-200 text-lg"
           style={{
             backgroundColor: colorPattern.secondary,
             color: colorPattern.textWhite,
+            display: 'inline-block',
+            textAlign: 'center',
+            textDecoration: 'none',
           }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = colorPattern.secondaryDark;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = colorPattern.secondary;
-          }}
+          onMouseEnter={e => e.target.style.backgroundColor = colorPattern.secondaryDark}
+          onMouseLeave={e => e.target.style.backgroundColor = colorPattern.secondary}
         >
           View All Products
-        </button>
+        </Link>
       </div>
     </section>
   );

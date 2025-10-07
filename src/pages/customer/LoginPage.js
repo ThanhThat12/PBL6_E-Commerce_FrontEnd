@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../../context/UserContext";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../../services/userService";
+import { login as loginApi } from "../../services/authService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import colorPattern from "../../styles/colorPattern";
@@ -59,14 +59,10 @@ const LoginPage = () => {
     e.preventDefault();
     setMessage(""); setMessageType(""); setIsLoading(true);
     try {
-      const res = await loginUser({ username: formData.username, password: formData.password });
-      if (res.data && res.data.data && res.data.data.user) {
-        login(res.data.data.user); // cập nhật context
-        console.log("Đăng nhập với username:", res.data.data.user.username);
-      }
-      // Lưu token vào localStorage nếu có
-      if (res.data && res.data.data && res.data.data.token) {
-        localStorage.setItem("token", res.data.data.token);
+      const res = await loginApi(formData.username, formData.password);
+      if (res.user) {
+        login(res.user); // cập nhật context
+        console.log("Đăng nhập với username:", res.user.username);
       }
       if (formData.rememberMe) localStorage.setItem("rememberedUser", formData.username);
       else localStorage.removeItem("rememberedUser");

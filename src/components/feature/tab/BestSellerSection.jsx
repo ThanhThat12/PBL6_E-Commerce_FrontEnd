@@ -1,13 +1,11 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import ProductList from "../../common/ProductList";
 import { addToCart } from '../../../services/cartService';
 import colorPattern from "../../../styles/colorPattern";
 import { bestSellerProducts } from '../../../mockDataBestSeller';
 
-const BestSellerSection = ({
-  products = bestSellerProducts,
-  onViewAll,
-}) => {
+const BestSellerSection = ({ products = bestSellerProducts }) => {
   const handleAddToCart = async (product) => {
     try {
       await addToCart(product.id, 1);
@@ -45,22 +43,21 @@ const BestSellerSection = ({
             Best Selling Products
           </h2>
         </div>
-        <button
+        <Link
+          to="/products"
           className="px-8 py-3 rounded font-bold shadow transition-all duration-200 text-lg"
           style={{
             backgroundColor: colorPattern.accent,
             color: colorPattern.textWhite,
+            display: 'inline-block',
+            textAlign: 'center',
+            textDecoration: 'none',
           }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = colorPattern.accentDark;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = colorPattern.accent;
-          }}
-          onClick={onViewAll}
+          onMouseEnter={e => e.target.style.backgroundColor = colorPattern.accentDark}
+          onMouseLeave={e => e.target.style.backgroundColor = colorPattern.accent}
         >
           View All
-        </button>
+        </Link>
       </div>
   <ProductList products={products} onAddToCart={handleAddToCart} showAddToCart />
     </section>
