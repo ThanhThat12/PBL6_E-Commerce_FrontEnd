@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { UserContext } from "../context/UserContext";
+// import useProducts from "../hooks/useProducts";
+import colorPattern from "../styles/colorPattern";
 import CategoryBrowser from "../components/feature/tab/CategoryBrowser";
 import FlashSaleSection from "../components/feature/tab/FlashSaleSection";
 import NewArrivalSection from "../components/feature/tab/NewArrivalSection";
@@ -9,9 +12,11 @@ import CategoryList from "../components/feature/category/CategoryList";
 import ButtonUp from "../components/ui/buttonUp/ButtonUp";
 import Footer from "../components/layout/footer/Footer";
 import BestSellerSection from "../components/feature/tab/BestSellerSection";
-import Navbar from "../components/layout/header/navbar";
+import Navbar from "../components/common/Navbar";
+
 const HomePage = () => {
   const [showButton, setShowButton] = useState(false);
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     const handleScroll = () => setShowButton(window.scrollY > 200);
@@ -19,30 +24,37 @@ const HomePage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    console.log("UserContext ở HomePage:", user);
+  }, [user]);
+
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 flex flex-col gap-8 pt-8">
-      <div className="container mx-auto px-4 flex flex-col gap-8">
-        <Navbar />
-        <div className="flex flex-col md:flex-row gap-6 items-stretch">
-          <div className="md:w-1/4 w-full flex items-start">
-            <CategoryList />
+    <main style={{ minHeight: '100vh', background: colorPattern.background, color: colorPattern.text }}>
+      <Navbar />
+      <div className="flex flex-col gap-8 pt-8" style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+        {/* Hiển thị tên user nếu đã đăng nhập */}
+        {user && user.username && (
+          <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>
+            Xin chào, {user.username}!
           </div>
-          <div className="md:w-3/4 w-full flex items-center">
+        )}
+        <div className="flex flex-col md:flex-row gap-6 items-stretch">
+          <div className="w-full flex items-center">
             <PromoBanner />
           </div>
         </div>
         <FlashSaleSection />
-        <CategoryBrowser />
+        {/* <CategoryBrowser /> */}
         <BestSellerSection />
         <ProductExplorer />
         <NewArrivalSection />
         <ServiceFeatures />
       </div>
-      {showButton && <ButtonUp onClick={handleScrollToTop} />}
+      <ButtonUp onClick={handleScrollToTop} show={showButton} />
       <Footer />
     </main>
   );

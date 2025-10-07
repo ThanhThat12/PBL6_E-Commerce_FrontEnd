@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { UserContext } from "../../context/UserContext";
 
 const menuItems = [
   { label: "Hot Deals", href: "#" },
-  { label: "Home", href: "/home" },
+  { label: "Home", href: "/" },
   { label: "About", href: "#" },
   { label: "Shop", href: "#" },
   { label: "Mega Menu", href: "#" },
@@ -26,6 +27,7 @@ export default function NestMartNavbar() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user } = useContext(UserContext);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -48,7 +50,6 @@ export default function NestMartNavbar() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -109,7 +110,7 @@ export default function NestMartNavbar() {
           </a>
           
           <a 
-            href="#" 
+            href="/wishlist" 
             className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
           >
             <span className="material-icons text-sm md:text-base">favorite_border</span>
@@ -117,7 +118,7 @@ export default function NestMartNavbar() {
           </a>
           
           <a 
-            href="#" 
+            href="/cart" 
             className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
             aria-label="Cart"
           >
@@ -136,7 +137,7 @@ export default function NestMartNavbar() {
               className="flex items-center gap-1 text-[#E1F5FE] hover:text-[#B3E5FC] transition-colors focus:outline-none px-2 py-1 rounded-full hover:bg-[#1E88E5]/20"
             >
               <span className="material-icons text-sm md:text-base">person</span>
-              <span className="hidden lg:inline text-sm">Account</span>
+              <span className="hidden lg:inline text-sm">{user && user.username ? user.username : 'Account'}</span>
               <span className="material-icons text-xs">{accountOpen ? 'expand_less' : 'expand_more'}</span>
             </button>
             
@@ -148,15 +149,19 @@ export default function NestMartNavbar() {
                 <div className="py-2 px-3 border-b border-[#B3E5FC] bg-[#E1F5FE]/50">
                   <p className="text-sm font-medium text-[#1E88E5]">Welcome to Nest Mart</p>
                 </div>
-                <a href="/login" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
-                  <span className="material-icons text-sm">login</span>
-                  <span>Sign In</span>
-                </a>
-                <a href="/register" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
-                  <span className="material-icons text-sm">person_add</span>
-                  <span>Register</span>
-                </a>
-                <a href="#" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                {!user || !user.username ? (
+                  <>
+                    <a href="/login" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                      <span className="material-icons text-sm">login</span>
+                      <span>Sign In</span>
+                    </a>
+                    <a href="/register" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
+                      <span className="material-icons text-sm">person_add</span>
+                      <span>Register</span>
+                    </a>
+                  </>
+                ) : null}
+                <a href="/profile" className="flex items-center gap-2 px-4 py-2 hover:bg-[#E1F5FE] text-[#1E88E5]">
                   <span className="material-icons text-sm">account_circle</span>
                   <span>My Account</span>
                 </a>

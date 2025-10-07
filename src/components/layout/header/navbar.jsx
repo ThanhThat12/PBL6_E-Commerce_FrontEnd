@@ -76,7 +76,7 @@ export default function SportZoneNavbar() {
         background: `linear-gradient(135deg, ${colorPattern.primary} 0%, ${colorPattern.primaryLight} 50%, ${colorPattern.secondary} 100%)`,
         borderColor: colorPattern.borderLight
       }}>
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+  <div className="flex items-center justify-between w-full">
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
