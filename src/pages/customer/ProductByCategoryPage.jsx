@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { categories, locations, conditions, ratings, products } from "../mockProductData";
-import ProductSidebar from "../components/product/ProductSidebar";
-import ProductTopBar from "../components/product/ProductTopBar";
-import ProductGrid from "../components/product/ProductGrid";
-import colorPattern, { withOpacity } from "../styles/colorPattern";
-import Navbar from "../components/common/Navbar";
-import Footer from "../components/layout/footer/Footer";
+import { categories, locations, conditions, ratings, products } from "../../mockProductData";
+import ProductSidebar from "../../components/product/ProductSidebar";
+import ProductTopBar from "../../components/product/ProductTopBar";
+import ProductGrid from "../../components/product/ProductGrid";
+import colorPattern, { withOpacity } from "../../styles/colorPattern";
+import Navbar from "../../components/common/Navbar";
+import Footer from "../../components/layout/footer/Footer";
 
 const PRODUCTS_PER_PAGE = 9;
 

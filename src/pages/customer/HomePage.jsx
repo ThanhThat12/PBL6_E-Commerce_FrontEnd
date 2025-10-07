@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../../context/UserContext";
 // import useProducts from "../hooks/useProducts";
-import colorPattern from "../styles/colorPattern";
-import CategoryBrowser from "../components/feature/tab/CategoryBrowser";
-import FlashSaleSection from "../components/feature/tab/FlashSaleSection";
-import NewArrivalSection from "../components/feature/tab/NewArrivalSection";
-import ProductExplorer from "../components/feature/tab/ProductExplorer";
-import ServiceFeatures from "../components/feature/tab/ServiceFeatures";
-import PromoBanner from "../components/feature/banner/PromoBanner";
-import CategoryList from "../components/feature/category/CategoryList";
-import ButtonUp from "../components/ui/buttonUp/ButtonUp";
-import Footer from "../components/layout/footer/Footer";
-import BestSellerSection from "../components/feature/tab/BestSellerSection";
-import Navbar from "../components/common/Navbar";
+import colorPattern from "../../styles/colorPattern";
+import CategoryBrowser from "../../components/feature/tab/CategoryBrowser";
+import FlashSaleSection from "../../components/feature/tab/FlashSaleSection";
+import NewArrivalSection from "../../components/feature/tab/NewArrivalSection";
+import ProductExplorer from "../../components/feature/tab/ProductExplorer";
+import ServiceFeatures from "../../components/feature/tab/ServiceFeatures";
+import PromoBanner from "../../components/feature/banner/PromoBanner";
+import CategoryList from "../../components/feature/category/CategoryList";
+import ButtonUp from "../../components/ui/buttonUp/ButtonUp";
+import Footer from "../../components/layout/footer/Footer";
+import BestSellerSection from "../../components/feature/tab/BestSellerSection";
+import Navbar from "../../components/common/Navbar";
 
 const HomePage = () => {
   const [showButton, setShowButton] = useState(false);

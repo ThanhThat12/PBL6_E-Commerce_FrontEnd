@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import colorPattern from "../styles/colorPattern";
-import Navbar from "../components/common/Navbar";
-import Message from "../components/common/Message";
-import VerifyOTP from "../components/form/VerifyOTP";
-import SendOtpForm from "../components/form/SendOtpForm";
+import colorPattern from "../../styles/colorPattern";
+import Navbar from "../../components/common/Navbar";
+import Message from "../../components/common/Message";
+import VerifyOTP from "../../components/form/VerifyOTP";
+import SendOtpForm from "../../components/form/SendOtpForm";
 
 function ForgotPasswordPage() {
   const [step, setStep] = useState(1);

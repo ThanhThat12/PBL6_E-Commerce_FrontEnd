@@ -137,7 +137,10 @@ const ProductList = ({
             onMouseLeave={(e) => {
               e.target.style.backgroundColor = colorPattern.accent;
             }}
-            onClick={() => onAddToCart && onAddToCart(product)}
+            onClick={() => {
+              console.log('Add To Cart button clicked', product);
+              onAddToCart && onAddToCart(product);
+            }}
           >
             Add To Cart
           </button>
