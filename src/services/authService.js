@@ -10,10 +10,10 @@ export async function login(username, password) {
   let userInfo = null;
   if (data.data && data.data.token) {
     localStorage.setItem('token', data.data.token);
-    // Gọi API lấy user info từ token
+    // Gọi API lấy user info từ token (getCurrentUser() returns the user object)
     try {
-      const userRes = await getCurrentUser();
-      userInfo = userRes.data;
+      const userObj = await getCurrentUser();
+      userInfo = userObj;
     } catch (e) {
       userInfo = null;
     }

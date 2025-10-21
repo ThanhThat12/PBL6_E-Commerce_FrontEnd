@@ -11,7 +11,8 @@ export const getCurrentUser = async () => {
       Authorization: `Bearer ${token}`,
     },
   });
-  return response.data;
+  // backend wraps payload in { data: <user> }, so return the inner user object
+  return response.data?.data;
 };
 
 export const registerUser = async (userData) => {

@@ -4,7 +4,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { login as loginApi } from "../../services/authService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import { getCurrentUser } from "../../services/userService";
 import colorPattern from "../../styles/colorPattern";
 import Message from "../../components/common/Message";
 import '../../styles/global.css';
@@ -82,23 +81,10 @@ const LoginPage = () => {
       const res = await axios.post("http://localhost:8081/api/authenticate/google", {
         idToken: credentialResponse.credential,
       });
-      const token = res?.data?.data?.token;
-      if (token) {
-        localStorage.setItem("token", token);
-        // fetch current user and update context; getCurrentUser() returns user object
-        try {
-          const userObj = await getCurrentUser();
-          if (userObj) login(userObj);
-        } catch (e) {
-          console.warn("Failed to fetch user after Google login", e);
-        }
-        setMessage("Google sign in successful! Redirecting...");
-        setMessageType("success");
-        setTimeout(() => navigate("/"), 1000);
-      } else {
-        setMessage("Google sign in failed: no token returned");
-        setMessageType("error");
-      }
+      localStorage.setItem("token", res.data.data.token);
+  setMessage("Google sign in successful! Redirecting...");
+  setMessageType("success");
+  setTimeout(() => navigate("/"), 1000);
     } catch (err) {
       setMessage("Google sign in failed!");
       setMessageType("error");
@@ -113,25 +99,10 @@ const LoginPage = () => {
         const { accessToken } = response.authResponse;
         axios.post("http://localhost:8081/api/authenticate/facebook", { accessToken }, { headers: { 'Content-Type': 'application/json' } })
           .then(res => {
-            const token = res?.data?.data?.token;
-            if (token) {
-              localStorage.setItem("token", token);
-              // fetch current user and update context
-              getCurrentUser().then(userObj => {
-                if (userObj) login(userObj);
-                setMessage("Facebook sign in successful! Redirecting...");
-                setMessageType("success");
-                setTimeout(() => navigate("/home"), 1000);
-              }).catch(e => {
-                console.warn('Failed to fetch user after Facebook login', e);
-                setMessage("Facebook sign in successful! Redirecting...");
-                setMessageType("success");
-                setTimeout(() => navigate("/home"), 1000);
-              });
-            } else {
-              setMessage("Facebook sign in failed: no token returned");
-              setMessageType("error");
-            }
+            localStorage.setItem("token", res.data.data.token);
+            setMessage("Facebook sign in successful! Redirecting...");
+            setMessageType("success");
+            setTimeout(() => navigate("/home"), 1000);
           })
           .catch(err => { setMessage(err.response?.data?.message || "Facebook sign in failed!"); setMessageType("error"); })
           .finally(() => setIsLoading(false));
