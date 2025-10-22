@@ -1,37 +1,90 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import React from "react";
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import "bootstrap/dist/css/bootstrap.min.css";
-import ForgotPasswordPage from "./pages/Customer/ForgotPasswordPage";
-import RegisterPage from "./pages/Customer/RegisterPage";
-import LoginPage from "./pages/Customer/LoginPage";
-import HomePage from "./pages/Customer/HomePage";
-import WishlistPage from "./pages/Customer/WishlistPage";
-import CartPage from "./pages/Customer/CartPage";
-import CheckoutPage from "./pages/Customer/CheckoutPage";
-import ProductByCategoryPage from "./pages/Customer/ProductByCategoryPage";
-import AccountPage from "./pages/Customer/AccountPage";
-import { UserProvider } from "./context/UserContext";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { ROUTES, GOOGLE_CLIENT_ID } from './utils/constants';
+
+// Pages
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import Homepage from './pages/public/Homepage';
+import InputDemo from './pages/InputDemo';
+
+// Product Pages
+import ProductListPage from './pages/products/ProductListPage';
+import ProductDetailPage from './pages/products/ProductDetailPage';
+
+// Cart Page
+import CartPage from './pages/cart/CartPage';
+
+// User Pages
+import ProfilePage from './pages/user/ProfilePage';
+
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   return (
-    <UserProvider>
-      <GoogleOAuthProvider clientId="675831796221-gv53a00leksrq5f08lbds5kej9jjlm4q.apps.googleusercontent.com">
-        <Router>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/products" element={<ProductByCategoryPage />} />
-            <Route path="/profile" element={<AccountPage />} />
-          </Routes>
-        </Router>
-      </GoogleOAuthProvider>
-    </UserProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <Routes>
+              {/* Public Routes */}
+              <Route path={ROUTES.HOME} element={<Homepage />} />
+              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+              <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+              
+              {/* Product Routes (Public) */}
+              <Route path="/products" element={<ProductListPage />} />
+              <Route path="/products/:id" element={<ProductDetailPage />} />
+              
+              {/* Demo/Test Pages */}
+              <Route path="/demo/input" element={<InputDemo />} />
+              
+              {/* Protected Routes */}
+              <Route 
+                path="/cart" 
+                element={
+                  <ProtectedRoute>
+                    <CartPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Catch-all redirect to home */}
+              <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+            </Routes>
+            
+            {/* Toast Notifications */}
+            <ToastContainer 
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
 

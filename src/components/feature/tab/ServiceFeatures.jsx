@@ -1,77 +1,79 @@
 import React from "react";
-import colorPattern from "../../../styles/colorPattern";
 
+/**
+ * ServiceFeatures - Hiển thị các tính năng dịch vụ của sàn thương mại
+ * Sử dụng Tailwind colors từ config
+ */
 const features = [
   {
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path d="M3 3h18v18H3V3z" stroke="currentColor" />
-        <path d="M8 21V8h8v13" stroke="currentColor" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12M8 12h12m-12 5h12M4 7h.01M4 12h.01M4 17h.01" />
       </svg>
     ),
-    title: "Free Shipping",
-    desc: "Order above $200",
+    title: "Miễn Phí Vận Chuyển",
+    desc: "Đơn hàng trên 500.000₫",
+    color: "text-accent-green-500",
+    bgColor: "bg-accent-green-50",
   },
   {
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" />
-        <path d="M12 6v6l4 2" stroke="currentColor" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
     ),
-    title: "24/7 Support",
-    desc: "Dedicated support",
+    title: "Hỗ Trợ 24/7",
+    desc: "Tư vấn tận tâm mọi lúc",
+    color: "text-primary-500",
+    bgColor: "bg-primary-50",
   },
   {
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
-        <path d="M16 3v4a2 2 0 01-2 2H6" stroke="currentColor" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    title: "Money Back",
-    desc: "Within 30 days",
+    title: "Đổi Trả Dễ Dàng",
+    desc: "Trong vòng 30 ngày",
+    color: "text-secondary-500",
+    bgColor: "bg-secondary-50",
   },
   {
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" />
-        <path d="M8 12l2 2 4-4" stroke="currentColor" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
     ),
-    title: "Secure Payment",
-    desc: "100% secure payment",
+    title: "Thanh Toán An Toàn",
+    desc: "Bảo mật 100%",
+    color: "text-accent-purple-500",
+    bgColor: "bg-accent-purple-50",
   },
 ];
 
 const ServiceFeatures = () => (
-  <section 
-    className="rounded-xl shadow p-6 md:p-10 mb-8"
-    style={{ 
-      backgroundColor: colorPattern.background,
-      boxShadow: `0 4px 16px ${colorPattern.shadow}`,
-    }}
-  >
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-      {features.map((f, idx) => (
-        <div key={idx} className="flex flex-col items-center text-center p-4">
-          <div 
-            className="mb-3"
-            style={{ color: colorPattern.primary }}
-          >
-            {f.icon}
-          </div>
-          <div 
-            className="font-bold text-lg mb-1"
-            style={{ color: colorPattern.text }}
-          >
-            {f.title}
-          </div>
-          <div 
-            className="text-sm"
-            style={{ color: colorPattern.textLight }}
-          >
-            {f.desc}
+  <section className="py-8 md:py-12">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {features.map((feature, idx) => (
+        <div 
+          key={idx} 
+          className="bg-white border border-border-light rounded-xl p-6 hover:shadow-medium hover:-translate-y-1 transition-all duration-200"
+        >
+          <div className="flex flex-col items-center text-center">
+            {/* Icon with colored background */}
+            <div className={`${feature.bgColor} ${feature.color} w-16 h-16 rounded-full flex items-center justify-center mb-4`}>
+              {feature.icon}
+            </div>
+            
+            {/* Title */}
+            <h3 className="font-bold text-lg text-text-primary mb-2">
+              {feature.title}
+            </h3>
+            
+            {/* Description */}
+            <p className="text-sm text-text-secondary">
+              {feature.desc}
+            </p>
           </div>
         </div>
       ))}
