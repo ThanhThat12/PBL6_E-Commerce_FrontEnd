@@ -1,120 +1,24 @@
+const API_BASE_URL = 'http://localhost:8081/api';
+
 const customerService = {
   async getCustomers() {
-    // sau này sẽ gọi API backend
-    return [
-      {
-        id: 1,
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@gmail.com',
-        phone: '0912345678',
-        avatar: '👤',
-        totalOrders: 45,
-        totalSpent: '$2,450.00',
-        status: 'active',
-        registered: '15 Jan 2024',
-        lastOrder: '28 Sep 2024',
-        location: 'Hà Nội',
-        loyaltyPoints: 1250,
-      },
-      {
-        id: 2,
-        name: 'Trần Thị Huy',
-        email: 'tranthib@gmail.com',
-        phone: '0987654321',
-        avatar: '👤',
-        totalOrders: 32,
-        totalSpent: '$1,890.00',
-        status: 'active',
-        registered: '20 Feb 2024',
-        lastOrder: '30 Sep 2024',
-        location: 'TP.HCM',
-        loyaltyPoints: 890,
-      },
-      {
-        id: 3,
-        name: 'Lê Văn C',
-        email: 'levanc@gmail.com',
-        phone: '0901234567',
-        avatar: '👤',
-        totalOrders: 28,
-        totalSpent: '$1,640.00',
-        status: 'inactive',
-        registered: '10 Mar 2024',
-        lastOrder: '15 Aug 2024',
-        location: 'Đà Nẵng',
-        loyaltyPoints: 640,
-      },
-      {
-        id: 4,
-        name: 'Phạm Thị D',
-        email: 'phamthid@gmail.com',
-        phone: '0976543210',
-        avatar: '👤',
-        totalOrders: 52,
-        totalSpent: '$3,120.00',
-        status: 'active',
-        registered: '05 Jan 2024',
-        lastOrder: '01 Oct 2024',
-        location: 'Hà Nội',
-        loyaltyPoints: 1520,
-      },
-      {
-        id: 5,
-        name: 'Hoàng Văn E',
-        email: 'hoangvane@gmail.com',
-        phone: '0965432109',
-        avatar: '👤',
-        totalOrders: 18,
-        totalSpent: '$980.00',
-        status: 'blocked',
-        registered: '12 Apr 2024',
-        lastOrder: '20 Sep 2024',
-        location: 'Cần Thơ',
-        loyaltyPoints: 0,
-      },
-      {
-        id: 6,
-        name: 'Vũ Thị F',
-        email: 'vuthif@gmail.com',
-        phone: '0954321098',
-        avatar: '👤',
-        totalOrders: 38,
-        totalSpent: '$2,100.00',
-        status: 'active',
-        registered: '08 Feb 2024',
-        lastOrder: '29 Sep 2024',
-        location: 'Hải Phòng',
-        loyaltyPoints: 1050,
-      },
-      {
-        id: 7,
-        name: 'Đỗ Văn G',
-        email: 'dovang@gmail.com',
-        phone: '0943210987',
-        avatar: '👤',
-        totalOrders: 15,
-        totalSpent: '$750.00',
-        status: 'active',
-        registered: '25 May 2024',
-        lastOrder: '27 Sep 2024',
-        location: 'Đà Nẵng',
-        loyaltyPoints: 380,
-      },
-      {
-        id: 8,
-        name: 'Bùi Thị H',
-        email: 'buithih@gmail.com',
-        phone: '0932109876',
-        avatar: '👤',
-        totalOrders: 42,
-        totalSpent: '$2,580.00',
-        status: 'active',
-        registered: '18 Jan 2024',
-        lastOrder: '30 Sep 2024',
-        location: 'TP.HCM',
-        loyaltyPoints: 1290,
-      },
-    ];
+    try {
+      const response = await fetch(`${API_BASE_URL}/users`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const result = await response.json();
+      // API trả về { status, error, message, data }
+      // Danh sách users nằm trong result.data
+      if (result.status === 200 && Array.isArray(result.data)) {
+        return result.data;
+      }
+      console.warn('Unexpected API response format:', result);
+      return [];
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      return [];
+    }
   },
 
   async getCustomerStats() {

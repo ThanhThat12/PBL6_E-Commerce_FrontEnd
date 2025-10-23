@@ -38,98 +38,58 @@ export const CustomerTable = ({ customers, loading }) => {
 
   const columns = [
     {
-      title: 'Customer',
-      dataIndex: 'name',
-      key: 'name',
-      fixed: 'left',
-      width: 250,
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 80,
+      align: 'center',
+      render: (id) => <span style={{ fontWeight: 600, color: '#6b7280' }}>#{id}</span>,
+    },
+    {
+      title: 'Username',
+      dataIndex: 'username',
+      key: 'username',
+      width: 200,
       render: (text, record) => (
         <div className="customer-info">
           <Avatar size={40} className="customer-avatar">
-            {record.avatar}
+            {text ? text.charAt(0).toUpperCase() : 'U'}
           </Avatar>
           <div className="customer-details">
             <div className="customer-name">{text}</div>
-            <div className="customer-email">{record.email}</div>
           </div>
         </div>
       ),
     },
     {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-      width: 130,
-      render: (phone) => (
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+      width: 250,
+      render: (email) => (
         <Space>
-          <PhoneOutlined style={{ color: '#10b981' }} />
-          <span>{phone}</span>
+          <MailOutlined style={{ color: '#10b981' }} />
+          <span className="customer-email">{email}</span>
         </Space>
       ),
     },
     {
-      title: 'Location',
-      dataIndex: 'location',
-      key: 'location',
-      width: 120,
-    },
-    {
-      title: 'Total Orders',
-      dataIndex: 'totalOrders',
-      key: 'totalOrders',
-      width: 120,
-      align: 'center',
-      render: (orders) => <span className="orders-count">{orders}</span>,
-    },
-    {
-      title: 'Total Spent',
-      dataIndex: 'totalSpent',
-      key: 'totalSpent',
-      width: 130,
-      align: 'right',
-      render: (spent) => <span className="amount-spent">{spent}</span>,
-    },
-    {
-      title: 'Loyalty Points',
-      dataIndex: 'loyaltyPoints',
-      key: 'loyaltyPoints',
-      width: 130,
-      align: 'center',
-      render: (points) => (
-        <span className="loyalty-points">
-          ⭐ {points.toLocaleString()}
-        </span>
-      ),
-    },
-    {
       title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
+      dataIndex: 'activated',
+      key: 'activated',
+      width: 120,
       align: 'center',
-      render: (status) => (
-        <Tag color={getStatusColor(status)}>
-          {getStatusText(status)}
+      render: (activated) => (
+        <Tag color={activated ? 'green' : 'red'}>
+          {activated ? 'Active' : 'Inactive'}
         </Tag>
       ),
-    },
-    {
-      title: 'Registered',
-      dataIndex: 'registered',
-      key: 'registered',
-      width: 120,
-    },
-    {
-      title: 'Last Order',
-      dataIndex: 'lastOrder',
-      key: 'lastOrder',
-      width: 120,
     },
     {
       title: 'Action',
       key: 'action',
       fixed: 'right',
-      width: 80,
+      width: 100,
       align: 'center',
       render: (_, record) => (
         <Dropdown menu={{ items: actionItems }} trigger={['click']}>
@@ -146,7 +106,7 @@ export const CustomerTable = ({ customers, loading }) => {
         dataSource={customers}
         loading={loading}
         rowKey="id"
-        scroll={{ x: 1400 }}
+        scroll={{ x: 800 }}
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,

@@ -1,0 +1,21 @@
+.add-product-page-layout {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.add-product-page-content {
+  background: #f5f5f5;
+  min-height: calc(100vh - 64px);
+  padding: 0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .add-product-page-layout {
+    position: relative;
+  }
+
+  .add-product-page-content {
+    min-height: calc(100vh - 60px);
+  }
+}

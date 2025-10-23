@@ -8,7 +8,7 @@ import {
   FilterOutlined,
   EllipsisOutlined 
 } from '@ant-design/icons';
-import { Sidebar, Header, CategoryCard, ProductTable } from '../../components/Seller';
+import { Sidebar, Header, CategoryCard, CategoryTable } from '../../components/Seller';
 import categoryService from '../../services/categoryService';
 import './CategoriesPage.css';
 
@@ -76,16 +76,8 @@ const CategoriesPage = () => {
           <div className="page-header">
             <h1 className="page-title">Categories</h1>
             <div className="header-actions">
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                className="add-product-btn"
-              >
-                Add Product
-              </Button>
-              <Dropdown menu={moreActionsMenu} trigger={['click']}>
-                <Button icon={<MoreOutlined />}>More Action</Button>
-              </Dropdown>
+              
+              
             </div>
           </div>
 
@@ -136,7 +128,7 @@ const CategoriesPage = () => {
             </div>
 
             {/* Products Table */}
-            <ProductTable products={products} loading={loading} />
+            <CategoryTable categories={products} loading={loading} />
           </div>
         </Content>
       </Layout>

@@ -1,0 +1,68 @@
+.revenue-chart-container {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.custom-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #262626;
+  margin: 0 0 8px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tooltip-revenue,
+.tooltip-orders {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.tooltip-label {
+  color: #8c8c8c;
+  font-weight: 500;
+}
+
+.tooltip-value {
+  color: #262626;
+  font-weight: 700;
+}
+
+.tooltip-revenue .tooltip-value {
+  color: #1890ff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .revenue-chart-container {
+    padding: 16px;
+  }
+
+  .custom-tooltip {
+    padding: 10px 12px;
+  }
+
+  .tooltip-title {
+    font-size: 13px;
+  }
+
+  .tooltip-revenue,
+  .tooltip-orders {
+    font-size: 12px;
+    gap: 12px;
+  }
+}

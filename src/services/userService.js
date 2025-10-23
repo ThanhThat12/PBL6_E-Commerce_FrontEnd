@@ -28,16 +28,8 @@ export const registerUser = async (userData) => {
 export const loginUser = async (loginData) => {
   const response = await axios.post(`${API_URL}/authenticate`, loginData);
   
-  // Lưu token và thông tin user vào localStorage
-  if (response.data && response.data.data) {
-    localStorage.setItem("token", response.data.data.token);
-    
-    // Lưu thông tin user nếu có
-    if (response.data.data.user) {
-      localStorage.setItem("user", JSON.stringify(response.data.data.user));
-    }
-  }
-  
+  // Chỉ return response, không tự động lưu vào localStorage
+  // AuthContext sẽ handle việc lưu trữ
   return response;
 };
 

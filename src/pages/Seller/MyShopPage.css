@@ -1,0 +1,40 @@
+.my-shop-page-layout {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.my-shop-page-content {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: calc(100vh - 64px);
+}
+
+
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #262626;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .my-shop-page-content {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 576px) {
+  .my-shop-page-content {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+}

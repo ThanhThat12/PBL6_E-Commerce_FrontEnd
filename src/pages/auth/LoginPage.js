@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../../services/userService";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { useAuth } from "../../contexts/AuthContext";
+import { extractUserFromToken } from "../../utils/jwtUtils";
 
 const styles = {
   container: {
@@ -89,6 +91,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     if (document.getElementById('facebook-jssdk')) return;
@@ -123,12 +126,69 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
     try {
+      console.log("🔐 Attempting login with:", { username, password: "***" });
       const response = await loginUser({ username, password });
       
-      // userService đã tự động lưu token và user info vào localStorage
-      navigate("/seller/dashboard");
+      console.log("✅ Login response:", response);
+      console.log("📦 Response data:", response.data);
+      
+      // Backend trả về format: {status, message, data: {token}}
+      if (response.data && response.data.data && response.data.data.token) {
+        const token = response.data.data.token;
+        console.log("🔑 Token received:", token.substring(0, 50) + "...");
+        
+        // Extract user info từ JWT token
+        const user = extractUserFromToken(token);
+        
+        if (user && user.role !== null) {
+          console.log("👤 Extracted user:", user);
+          console.log("🎭 User role:", user.role, `(${user.authorities})`);
+          
+          // Lưu vào AuthContext
+          login(user, token);
+          
+          // Phân quyền và điều hướng
+          if (user.role === 1) { // SELLER
+            console.log("→ Redirecting to seller dashboard");
+            navigate("/seller/dashboard");
+          } else if (user.role === 2) { // BUYER/CUSTOMER
+            console.log("→ Redirecting to customer home");
+            navigate("/customer/home");
+          } else if (user.role === 0) { // ADMIN
+            console.log("→ Redirecting to admin dashboard");
+            navigate("/admin/dashboard");
+          } else {
+            console.log("→ Unknown role, redirecting to home");
+            navigate("/");
+          }
+        } else {
+          console.error("❌ Cannot extract user info from token");
+          setError("Không thể xử lý thông tin đăng nhập. Token không hợp lệ!");
+        }
+      } else {
+        console.error("❌ Invalid response format:", response.data);
+        setError("Backend trả về dữ liệu không hợp lệ!");
+      }
     } catch (err) {
-      setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
+      console.error("❌ Login error:", err);
+      console.error("❌ Error response:", err.response?.data);
+      
+      // Xử lý các loại lỗi khác nhau
+      let errorMessage = "Đăng nhập thất bại!";
+      
+      if (err.response?.status === 401) {
+        errorMessage = "Tên đăng nhập hoặc mật khẩu không đúng!";
+      } else if (err.response?.status === 403) {
+        errorMessage = "Tài khoản của bạn không có quyền truy cập!";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Lỗi máy chủ! Vui lòng thử lại sau.";
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -138,19 +198,39 @@ const LoginPage = () => {
         idToken: credentialResponse.credential,
       });
       
-      // Lưu token và user info
-      if (res.data && res.data.data) {
-        localStorage.setItem("token", res.data.data.token);
+      // Backend trả về format: {status, message, data: {token}}
+      if (res.data && res.data.data && res.data.data.token) {
+        const token = res.data.data.token;
+        console.log("🔑 Google token received:", token.substring(0, 50) + "...");
         
-        if (res.data.data.user) {
-          localStorage.setItem("user", JSON.stringify(res.data.data.user));
+        // Extract user info từ JWT token
+        const user = extractUserFromToken(token);
+        
+        if (user && user.role !== null) {
+          console.log("👤 Google user:", user);
+          
+          // Lưu vào AuthContext
+          login(user, token);
+          
+          // Phân quyền và điều hướng
+          if (user.role === 1) { // SELLER
+            navigate("/seller/dashboard");
+          } else if (user.role === 2) { // BUYER/CUSTOMER
+            navigate("/customer/home");
+          } else if (user.role === 0) { // ADMIN
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/");
+          }
+        } else {
+          setError("Không thể xử lý thông tin đăng nhập Google!");
         }
+      } else {
+        setError("Google trả về dữ liệu không hợp lệ!");
       }
-      
-      navigate("/seller/dashboard");
     } catch (err) {
       console.error("Google login error:", err.response?.data || err.message);
-      setError("Đăng nhập Google thất bại!");
+      setError(err.response?.data?.message || "Đăng nhập Google thất bại!");
     }
   };
 
@@ -171,16 +251,36 @@ const LoginPage = () => {
           const { accessToken } = response.authResponse;
           axios.post("http://localhost:8081/api/authenticate/facebook", { accessToken }, { headers: { 'Content-Type': 'application/json' } })
             .then((res) => {
-              // Lưu token và user info
-              if (res.data && res.data.data) {
-                localStorage.setItem("token", res.data.data.token);
+              // Backend trả về format: {status, message, data: {token}}
+              if (res.data && res.data.data && res.data.data.token) {
+                const token = res.data.data.token;
+                console.log("🔑 Facebook token received:", token.substring(0, 50) + "...");
                 
-                if (res.data.data.user) {
-                  localStorage.setItem("user", JSON.stringify(res.data.data.user));
+                // Extract user info từ JWT token
+                const user = extractUserFromToken(token);
+                
+                if (user && user.role !== null) {
+                  console.log("👤 Facebook user:", user);
+                  
+                  // Lưu vào AuthContext
+                  login(user, token);
+                  
+                  // Phân quyền và điều hướng
+                  if (user.role === 1) { // SELLER
+                    navigate("/seller/dashboard");
+                  } else if (user.role === 2) { // BUYER/CUSTOMER
+                    navigate("/customer/home");
+                  } else if (user.role === 0) { // ADMIN
+                    navigate("/admin/dashboard");
+                  } else {
+                    navigate("/");
+                  }
+                } else {
+                  setError("Không thể xử lý thông tin đăng nhập Facebook!");
                 }
+              } else {
+                setError("Facebook trả về dữ liệu không hợp lệ!");
               }
-              
-              navigate("/seller/dashboard");
             })
             .catch((err) => {
               setError(err.response?.data?.message || "Đăng nhập Facebook thất bại!");

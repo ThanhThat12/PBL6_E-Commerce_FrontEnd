@@ -1,8 +1,10 @@
 // src/App.js
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -11,22 +13,99 @@ import { CustomersPage } from "./pages/Seller/CustomersPage.jsx";
 import CategoriesPage from "./pages/Seller/CategoriesPage.jsx";
 import ProfilePage from "./pages/Seller/ProfilePage.jsx";
 import CouponPage from "./pages/Seller/CouponPage.jsx";
+import OrdersPage from "./pages/Seller/OrdersPage.jsx";
+import AddProductPage from "./pages/Seller/AddProductPage.jsx";
+import MyShopPage from "./pages/Seller/MyShopPage.jsx";
+import StatisticalPage from "./pages/Seller/StatisticalPage.jsx";
 
 function App() {
   return (
-    // Bọc toàn bộ app trong GoogleOAuthProvider
+    // Bọc toàn bộ app trong GoogleOAuthProvider và AuthProvider
     <GoogleOAuthProvider clientId="675831796221-gv53a00leksrq5f08lbds5kej9jjlm4q.apps.googleusercontent.com">
       <Router>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
-          <Route path="/seller/customers" element={<CustomersPage />} />
-          <Route path="/seller/categories" element={<CategoriesPage />} />
-          <Route path="/seller/coupons" element={<CouponPage />} />
-          <Route path="/seller/profile" element={<ProfilePage />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          
+            {/* Protected Seller routes - Yêu cầu role = 1 (SELLER) */}
+            <Route 
+              path="/seller/dashboard" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <SellerDashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/customers" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <CustomersPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/categories" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <CategoriesPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/coupons" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <CouponPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/orders" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <OrdersPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/add-products" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <AddProductPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/my-shop" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <MyShopPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/statisticals" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <StatisticalPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/profile" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </AuthProvider>
       </Router>
     </GoogleOAuthProvider>
   );

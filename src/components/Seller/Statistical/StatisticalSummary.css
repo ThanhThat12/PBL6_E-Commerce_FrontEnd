@@ -1,0 +1,197 @@
+.statistical-summary {
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.summary-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.summary-card .ant-statistic-title {
+  font-size: 14px;
+  color: #8c8c8c;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.summary-card .ant-statistic-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-card .anticon {
+  font-size: 24px;
+}
+
+.total-revenue .anticon {
+  color: #1890ff;
+}
+
+.total-orders .anticon {
+  color: #52c41a;
+}
+
+.average-revenue .anticon {
+  color: #faad14;
+}
+
+.highest-month {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.highest-month .ant-card-body {
+  padding: 20px;
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon {
+  font-size: 40px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.stat-details {
+  flex: 1;
+}
+
+.stat-title {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 4px;
+}
+
+.stat-month {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Info cards */
+.info-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  height: 100%;
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.info-icon {
+  font-size: 20px;
+}
+
+.info-icon.up {
+  color: #52c41a;
+}
+
+.info-icon.down {
+  color: #f5222d;
+}
+
+.info-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-month {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1890ff;
+}
+
+.info-revenue {
+  font-size: 22px;
+  font-weight: 700;
+  color: #262626;
+}
+
+.info-orders {
+  font-size: 14px;
+  color: #8c8c8c;
+}
+
+.highest-info {
+  border-left: 4px solid #52c41a;
+}
+
+.lowest-info {
+  border-left: 4px solid #f5222d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .summary-card .ant-statistic-content {
+    font-size: 20px;
+  }
+
+  .stat-content {
+    gap: 12px;
+  }
+
+  .stat-icon {
+    font-size: 32px;
+  }
+
+  .stat-month {
+    font-size: 16px;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
+
+  .info-revenue {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-card .ant-card-body {
+    padding: 16px;
+  }
+
+  .info-card .ant-card-body {
+    padding: 16px;
+  }
+
+  .stat-icon {
+    font-size: 28px;
+  }
+
+  .stat-month {
+    font-size: 15px;
+  }
+}

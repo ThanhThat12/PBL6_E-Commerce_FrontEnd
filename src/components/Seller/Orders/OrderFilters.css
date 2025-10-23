@@ -1,0 +1,39 @@
+.order-filters-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-label {
+  font-weight: 500;
+  color: #262626;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.filter-actions .ant-btn {
+  border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filter-actions {
+    justify-content: center;
+  }
+  
+  .filter-item {
+    margin-bottom: 8px;
+  }
+}

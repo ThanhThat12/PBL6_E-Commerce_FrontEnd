@@ -1,9 +1,9 @@
 import React from 'react';
 import { Table, Button, Space, Tag } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import './ProductTable.css';
+import './CategoryTable.css';
 
-export const ProductTable = ({ products, loading }) => {
+export const CategoryTable = ({ categories, loading }) => {
   const columns = [
     {
       title: 'No.',
@@ -59,7 +59,7 @@ export const ProductTable = ({ products, loading }) => {
   return (
     <Table
       columns={columns}
-      dataSource={products}
+      dataSource={categories}
       loading={loading}
       rowKey="id"
       pagination={{

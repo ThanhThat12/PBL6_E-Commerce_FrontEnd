@@ -1,0 +1,57 @@
+.orders-page-layout {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.orders-page-content {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: calc(100vh - 64px);
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #262626;
+  margin: 0;
+}
+
+.orders-table-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.status-update-modal p {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #595959;
+}
+
+.status-update-modal strong {
+  color: #262626;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .orders-page-content {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 576px) {
+  .orders-page-content {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+}

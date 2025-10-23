@@ -8,8 +8,7 @@ import {
   SalesLineChart, 
   TopProductsList, 
   TransactionTable, 
-  BestSellingProducts, 
-  AddNewProduct 
+  BestSellingProducts
 } from '../../components/Seller';
 import dashboardService from '../../services/dashboardService';
 import './SellerDashboardPage.css';
@@ -108,20 +107,13 @@ const SellerDashboardPage = () => {
               </Card>
             </Col>
 
-            {/* Row 3: Transaction + Top Products + Add New Product */}
-            <Col span={9}>
+            {/* Row 3: Transaction + Top Products */}
+            <Col span={12}>
               <TransactionTable transactions={dashboardData?.transactions} />
             </Col>
 
-            <Col span={9}>
+            <Col span={12}>
               <TopProductsList products={dashboardData?.topProducts} />
-            </Col>
-
-            <Col span={6}>
-              <AddNewProduct 
-                categories={dashboardData?.addProductCategories}
-                products={dashboardData?.addProductItems}
-              />
             </Col>
 
             {/* Row 4: Best Selling Products */}

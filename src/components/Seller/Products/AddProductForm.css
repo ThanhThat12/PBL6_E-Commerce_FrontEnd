@@ -1,0 +1,165 @@
+.add-product-form {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.form-card {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-card .ant-card-head-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.attribute-field {
+  margin-bottom: 16px;
+}
+
+.attribute-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #262626;
+  font-size: 14px;
+}
+
+.variant-card {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.variant-card .ant-card-head {
+  background: #fafafa;
+  border-bottom: 1px solid #d9d9d9;
+}
+
+.variant-card .ant-card-head-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Upload styles */
+.add-product-form .ant-upload-list-picture-card .ant-upload-list-item {
+  width: 104px;
+  height: 104px;
+}
+
+.add-product-form .ant-upload-select-picture-card {
+  width: 104px;
+  height: 104px;
+}
+
+/* Form item styles */
+.add-product-form .ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+.add-product-form .ant-form-item-required::before {
+  color: #ff4d4f;
+}
+
+/* Card styles */
+.add-product-form .ant-card {
+  border-radius: 6px;
+}
+
+.add-product-form .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.add-product-form .ant-card-head-title {
+  font-weight: 600;
+  color: #262626;
+}
+
+/* Input styles */
+.add-product-form .ant-input,
+.add-product-form .ant-input-number,
+.add-product-form .ant-select-selector {
+  border-radius: 6px;
+}
+
+.add-product-form .ant-input:focus,
+.add-product-form .ant-input-number:focus,
+.add-product-form .ant-select-focused .ant-select-selector {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+/* Button styles */
+.add-product-form .ant-btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.add-product-form .ant-btn-primary {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.add-product-form .ant-btn-primary:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .add-product-form {
+    padding: 16px;
+  }
+  
+  .form-card {
+    margin: 0;
+  }
+  
+  .add-product-form .ant-upload-list-picture-card .ant-upload-list-item,
+  .add-product-form .ant-upload-select-picture-card {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 576px) {
+  .add-product-form {
+    padding: 12px;
+  }
+  
+  .form-card .ant-card-head-title {
+    font-size: 18px;
+  }
+  
+  .attribute-label {
+    font-size: 13px;
+  }
+}
+
+/* Switch styles */
+.add-product-form .ant-switch-checked {
+  background-color: #52c41a;
+}
+
+/* Loading styles */
+.add-product-form .ant-btn-loading {
+  pointer-events: none;
+}
+
+/* Empty state */
+.empty-variants {
+  text-align: center;
+  padding: 40px 0;
+  color: #8c8c8c;
+  font-style: italic;
+}
+
+/* Price input formatting */
+.add-product-form .ant-input-number {
+  width: 100%;
+}

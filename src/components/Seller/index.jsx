@@ -13,19 +13,29 @@ export { BestSellingProducts } from './Dashboard/BestSellingProducts.jsx';
 export { TopProductsList } from './Dashboard/TopProductsList.jsx';
 export { SalesByCountry } from './Dashboard/SalesByCountry.jsx';
 export { UsersChart } from './Dashboard/UsersChart.jsx';
-export { AddNewProduct } from './Dashboard/AddNewProduct.jsx';
 
 // Products Components
-export { ProductTable } from './Products/ProductTable.jsx';
+export { default as AddProductForm } from './Products/AddProductForm.jsx';
 
 // Categories Components
 export { CategoryCard } from './Categories/CategoryCard.jsx';
+export { CategoryTable } from './Categories/CategoryTable.jsx';
 
 // Customers Components
 export { CustomerStatsCard } from './Customers/CustomerStatsCard.jsx';
 export { CustomerTable } from './Customers/CustomerTable.jsx';
 export { TopSpendersCard } from './Customers/TopSpendersCard.jsx';
 export { CustomerSegmentCard } from './Customers/CustomerSegmentCard.jsx';
+
+// Orders Components
+export { default as OrderTable } from './Orders/OrderTable.jsx';
+export { default as OrderFilters } from './Orders/OrderFilters.jsx';
+export { default as OrderStats } from './Orders/OrderStats.jsx';
+
+// Shop Components
+export { default as ShopHeader } from './Shop/ShopHeader.jsx';
+export { default as ShopFilters } from './Shop/ShopFilters.jsx';
+export { default as ProductGrid } from './Shop/ProductGrid.jsx';
 
 // Common Components
 export { LineChartMini } from './Common/LineChartMini.jsx';

@@ -35,22 +35,32 @@ const CustomersPage = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [customersData, statsData] = await Promise.all([
-      customerService.getCustomers(),
-      customerService.getCustomerStats(),
-    ]);
-    setCustomers(customersData);
-    setStats(statsData);
-    setLoading(false);
+    try {
+      const [customersData, statsData] = await Promise.all([
+        customerService.getCustomers(),
+        customerService.getCustomerStats(),
+      ]);
+      setCustomers(Array.isArray(customersData) ? customersData : []);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchSearch = customer.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                       customer.email.toLowerCase().includes(searchText.toLowerCase()) ||
-                       customer.phone.includes(searchText);
-    const matchStatus = filterStatus === 'all' || customer.status === filterStatus;
+  const filteredCustomers = Array.isArray(customers) ? customers.filter(customer => {
+    const matchSearch = (customer.username && customer.username.toLowerCase().includes(searchText.toLowerCase())) ||
+                       (customer.email && customer.email.toLowerCase().includes(searchText.toLowerCase()));
+    let matchStatus = true;
+    if (filterStatus === 'active') {
+      matchStatus = customer.activated === true;
+    } else if (filterStatus === 'inactive') {
+      matchStatus = customer.activated === false;
+    }
     return matchSearch && matchStatus;
-  });
+  }) : [];
 
   const moreActionsMenu = {
     items: [
@@ -74,13 +84,7 @@ const CustomersPage = () => {
           <div className="page-header">
             <h1 className="page-title">Customers Management</h1>
             <Space>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                className="add-customer-btn"
-              >
-                Add Customer
-              </Button>
+              
               <Dropdown menu={moreActionsMenu} trigger={['click']}>
                 <Button icon={<MoreOutlined />}>More Actions</Button>
               </Dropdown>
@@ -159,7 +163,6 @@ const CustomersPage = () => {
                   <Option value="all">All Status</Option>
                   <Option value="active">Active</Option>
                   <Option value="inactive">Inactive</Option>
-                  <Option value="blocked">Blocked</Option>
                 </Select>
                 <Button icon={<FilterOutlined />}>Filters</Button>
                 <Button icon={<DownloadOutlined />}>Export</Button>
