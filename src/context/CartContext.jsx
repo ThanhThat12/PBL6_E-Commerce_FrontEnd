@@ -1,6 +1,7 @@
 // src/context/CartContext.jsx
-import React, { createContext, useEffect } from 'react';
+import React, { createContext, useEffect, useContext } from 'react';
 import useCartStore from '../store/cartStore';
+import AuthContext from './AuthContext';
 
 export const CartContext = createContext();
 
@@ -20,10 +21,18 @@ export const CartProvider = ({ children }) => {
     resetCart
   } = useCartStore();
 
-  // Fetch cart on mount
+  // Fetch cart when authenticated; reset when not authenticated
+  const { isAuthenticated } = useContext(AuthContext) || {};
+
   useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+    if (isAuthenticated) {
+      fetchCart();
+    } else {
+      // Ensure cart is cleared when user is not authenticated to avoid
+      // unauthenticated API calls that may trigger redirects/full reloads
+      resetCart();
+    }
+  }, [fetchCart, isAuthenticated, resetCart]);
 
   const value = {
     // State
