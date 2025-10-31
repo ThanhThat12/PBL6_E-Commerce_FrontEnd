@@ -11,6 +11,9 @@ import CartPage from "./pages/customer/CartPage";
 import CheckoutPage from "./pages/customer/CheckoutPage";
 import ProductByCategoryPage from "./pages/customer/ProductByCategoryPage";
 import AccountPage from "./pages/customer/AccountPage";
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import PaymentFailed from "./pages/payment/PaymentFailed";
+import PaymentError from "./pages/payment/PaymentError";
 import { UserProvider } from "./context/UserContext";
 
 function App() {
@@ -28,6 +31,11 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/products" element={<ProductByCategoryPage />} />
             <Route path="/profile" element={<AccountPage />} />
+            
+            {/* Payment Status Pages */}
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/failed" element={<PaymentFailed />} />
+            <Route path="/payment/error" element={<PaymentError />} />
           </Routes>
         </Router>
       </GoogleOAuthProvider>
