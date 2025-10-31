@@ -1,6 +1,13 @@
 import api from './api';
 import { API_ENDPOINTS } from '../utils/constants';
-import { saveAuthData, clearAuthData, getRefreshToken } from '../utils/storage';
+import { 
+  saveAuthData, 
+  clearAuthData, 
+  getRefreshToken,
+  saveAccessToken,
+  saveRefreshToken,
+  saveUserInfo
+} from '../utils/storage';
 
 /**
  * Authentication Service
@@ -12,7 +19,7 @@ import { saveAuthData, clearAuthData, getRefreshToken } from '../utils/storage';
 /**
  * Login with username/email and password
  * @param {object} credentials - { username, password, rememberMe }
- * @returns {Promise<object>} { status, message, data: { accessToken, refreshToken, user } }
+ * @returns {Promise<object>} { status, message, data: { token, refreshToken, user } }
  */
 export const login = async ({ username, password, rememberMe = false }) => {
   try {
@@ -21,17 +28,17 @@ export const login = async ({ username, password, rememberMe = false }) => {
       password,
     });
     
-    // Backend trả về: { status: 200, data: { accessToken, refreshToken, user, ... } }
+    // Backend returns: { status: 200, data: { token, refreshToken, user } }
     if (response.data) {
-      const { accessToken, refreshToken, user } = response.data;
+      const { token, refreshToken, user } = response.data;
       
-      // Lưu toàn bộ auth data
-      saveAuthData({ accessToken, refreshToken, user }, rememberMe);
+      // Save auth data with new token field name
+      saveAuthData({ token, refreshToken, user }, rememberMe);
       
       return { 
         status: 'success', 
         message: response.message || 'Đăng nhập thành công',
-        data: { accessToken, refreshToken, user } 
+        data: { token, refreshToken, user } 
       };
     }
     
@@ -57,19 +64,40 @@ export const loginWithGoogle = async (idToken) => {
     
     console.log('[loginWithGoogle] Response:', response);
     
-    // Backend returns: { status: 200, data: { accessToken, refreshToken, expiresIn, userInfo }, message }
-    // Check for status 200 or status 'success'
-    if ((response.status === 200 || response.status === 'success') && response.data) {
-      const { accessToken, refreshToken, userInfo, user } = response.data;
-      const userData = user || userInfo;
+    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
+    // Note: Backend does NOT return user object, need to fetch separately
+    if (response.statusCode === 200 && response.data) {
+      const { token, refreshToken } = response.data;
       
-      // Save auth data - Google login always remembers
-      saveAuthData({ accessToken, refreshToken, user: userData }, true);
+      // Save tokens first (without user info)
+      if (token) saveAccessToken(token, true);
+      if (refreshToken) saveRefreshToken(refreshToken, true);
+      
+      // Fetch user info using the new token
+      try {
+        const userResponse = await api.get(API_ENDPOINTS.PROFILE.ME);
+        console.log('[loginWithGoogle] User info:', userResponse);
+        
+        // userResponse is ResponseDTO<UserInfoDTO>
+        if (userResponse.statusCode === 200 && userResponse.data) {
+          const user = userResponse.data;
+          saveUserInfo(user);
+          
+          return {
+            status: 'success',
+            message: response.message || 'Đăng nhập Google thành công',
+            data: { token, refreshToken, user },
+          };
+        }
+      } catch (userError) {
+        console.error('[loginWithGoogle] Failed to fetch user info:', userError);
+        // Continue without user info - will be fetched in AuthContext
+      }
       
       return {
         status: 'success',
         message: response.message || 'Đăng nhập Google thành công',
-        data: { accessToken, refreshToken, user: userData },
+        data: { token, refreshToken, user: null },
       };
     }
     
@@ -96,19 +124,40 @@ export const loginWithFacebook = async (accessToken) => {
     
     console.log('[loginWithFacebook] Response:', response);
     
-    // Backend returns: { status: 200, data: { accessToken, refreshToken, expiresIn, userInfo }, message }
-    // Check for status 200 or status 'success'
-    if ((response.status === 200 || response.status === 'success') && response.data) {
-      const { accessToken: jwtToken, refreshToken, userInfo, user } = response.data;
-      const userData = user || userInfo;
+    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
+    // Note: Backend does NOT return user object, need to fetch separately
+    if (response.statusCode === 200 && response.data) {
+      const { token, refreshToken } = response.data;
       
-      // Save auth data - Facebook login always remembers
-      saveAuthData({ accessToken: jwtToken, refreshToken, user: userData }, true);
+      // Save tokens first (without user info)
+      if (token) saveAccessToken(token, true);
+      if (refreshToken) saveRefreshToken(refreshToken, true);
+      
+      // Fetch user info using the new token
+      try {
+        const userResponse = await api.get(API_ENDPOINTS.PROFILE.ME);
+        console.log('[loginWithFacebook] User info:', userResponse);
+        
+        // userResponse is ResponseDTO<UserInfoDTO>
+        if (userResponse.statusCode === 200 && userResponse.data) {
+          const user = userResponse.data;
+          saveUserInfo(user);
+          
+          return {
+            status: 'success',
+            message: response.message || 'Đăng nhập Facebook thành công',
+            data: { token, refreshToken, user },
+          };
+        }
+      } catch (userError) {
+        console.error('[loginWithFacebook] Failed to fetch user info:', userError);
+        // Continue without user info - will be fetched in AuthContext
+      }
       
       return {
         status: 'success',
         message: response.message || 'Đăng nhập Facebook thành công',
-        data: { accessToken: jwtToken, refreshToken, user: userData },
+        data: { token, refreshToken, user: null },
       };
     }
     
@@ -146,7 +195,7 @@ export const logout = async () => {
  */
 export const logoutAll = async () => {
   try {
-    await api.post(API_ENDPOINTS.AUTH.LOGOUT_ALL);
+    await api.post(API_ENDPOINTS.AUTH.LOGOUT);
     clearAuthData();
     return { status: 'success', message: 'Đã đăng xuất tất cả thiết bị' };
   } catch (error) {
@@ -180,7 +229,7 @@ export const checkContact = async (contact) => {
  */
 export const resendOTP = async (contact) => {
   try {
-    const response = await api.post(API_ENDPOINTS.AUTH.REGISTER.RESEND_OTP, {
+    const response = await api.post(API_ENDPOINTS.AUTH.REGISTER.CHECK_CONTACT, {
       contact,
     });
     return response;
@@ -214,12 +263,14 @@ export const verifyOTP = async (contact, otp) => {
  */
 export const completeRegistration = async (data) => {
   try {
-    const response = await api.post(API_ENDPOINTS.AUTH.REGISTER.COMPLETE, data);
+    const response = await api.post(API_ENDPOINTS.AUTH.REGISTER.REGISTER, data);
     
-    if (response.status === 'success' && response.data) {
-      saveAuthData(response.data, true); // Auto login after registration
-    }
+    console.log('🔍 [authService] completeRegistration RAW response:', response);
+    console.log('🔍 [authService] response.status:', response.status, typeof response.status);
+    console.log('🔍 [authService] response.data:', response.data);
     
+    // Backend returns: { status: 200, message: 'Success', data: 'Đăng ký thành công' }
+    // No JWT token is returned, need to login separately
     return response;
   } catch (error) {
     throw error;
@@ -296,6 +347,32 @@ export const refreshAccessToken = async () => {
     
     return response;
   } catch (error) {
+    throw error;
+  }
+};
+
+// ==================== USER INFO ====================
+
+/**
+ * Get current user info
+ * @returns {Promise<object>}
+ */
+export const getCurrentUser = async () => {
+  try {
+    const response = await api.get(API_ENDPOINTS.PROFILE.ME);
+    console.log('[getCurrentUser] Response:', response);
+    
+    // Response is ResponseDTO<UserInfoDTO> structure:
+    // { statusCode, message, data: UserInfoDTO }
+    if (response.statusCode === 200 && response.data) {
+      console.log('[getCurrentUser] User data:', response.data);
+      return response.data;  // Returns UserInfoDTO with id, email, username, role
+    }
+    
+    console.warn('[getCurrentUser] Invalid response structure:', response);
+    return null;
+  } catch (error) {
+    console.error('[getCurrentUser] Error:', error);
     throw error;
   }
 };

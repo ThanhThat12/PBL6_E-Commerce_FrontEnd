@@ -13,7 +13,7 @@ import { ROUTES } from '../../utils/constants';
  * @param {string[]} roles - Required roles (optional)
  */
 const ProtectedRoute = ({ children, roles }) => {
-  const { isAuthenticated, loading, user, hasAnyRole } = useAuth();
+  const { isAuthenticated, loading, hasAnyRole } = useAuth();
   const location = useLocation();
 
   // Show loading while checking auth state

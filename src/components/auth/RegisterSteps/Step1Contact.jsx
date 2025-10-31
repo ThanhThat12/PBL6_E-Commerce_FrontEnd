@@ -5,6 +5,7 @@ import Button from '../../common/Button';
 import Alert from '../../common/Alert';
 import { validateContact, detectContactType } from '../../../utils/validation';
 import { checkContact } from '../../../services/authService';
+import { handleAuthError, AUTH_ERROR_CODES } from '../../../utils/authErrorHandler';
 
 /**
  * Step 1: Check Contact (Email or Phone)
@@ -48,7 +49,6 @@ const Step1Contact = ({ onNext, initialContact = '' }) => {
 
     try {
       const response = await checkContact(contact);
-      console.log('📦 checkContact response:', response);
 
       if (response.status === 200 || response.status === 'success') {
         setAlert({
@@ -69,11 +69,20 @@ const Step1Contact = ({ onNext, initialContact = '' }) => {
         });
       }
     } catch (err) {
-      console.error('❌ checkContact error:', err);
+      const errorInfo = handleAuthError(err);
+      
+      // Provide specific error messages
+      let errorDescription = errorInfo.message;
+      if (errorInfo.errorCode === AUTH_ERROR_CODES.DUPLICATE_EMAIL) {
+        errorDescription = errorInfo.message + '. Vui lòng đăng nhập hoặc sử dụng email khác.';
+      } else if (errorInfo.errorCode === AUTH_ERROR_CODES.DUPLICATE_PHONE) {
+        errorDescription = errorInfo.message + '. Vui lòng đăng nhập hoặc sử dụng số điện thoại khác.';
+      }
+      
       setAlert({
         type: 'error',
         message: 'Đã xảy ra lỗi',
-        description: err.message || 'Không thể kết nối đến máy chủ',
+        description: errorDescription,
       });
     } finally {
       setLoading(false);

@@ -1,7 +1,6 @@
 import React from 'react';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
-import Badge from '../Badge/Badge';
 
 /**
  * CartButton Component - Nút giỏ hàng với badge số lượng

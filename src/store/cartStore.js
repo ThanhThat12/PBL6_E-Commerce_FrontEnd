@@ -20,18 +20,32 @@ const useCartStore = create(
       fetchCart: async () => {
         set({ loading: true, error: null });
         try {
-          const response = await cartService.getCart();
-          const cartData = response.data || response;
+          const cartData = await cartService.getCart();
+          
+          // Calculate cart count from items
+          const totalItems = cartData?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+          
           set({
             cart: cartData,
-            cartCount: cartData?.totalItems || 0,
+            cartCount: totalItems,
             loading: false,
             error: null
           });
           return { success: true, data: cartData };
         } catch (error) {
+          // Don't show error for 401 (user not logged in)
+          if (error.response?.status === 401) {
+            set({
+              cart: null,
+              cartCount: 0,
+              loading: false,
+              error: null
+            });
+            return { success: false, error: null };
+          }
+          
           const errorMsg =
-            error.response?.data?.error ||
+            error.response?.data?.message ||
             error.message ||
             'Lỗi tải giỏ hàng';
           set({
@@ -43,27 +57,32 @@ const useCartStore = create(
       },
 
       /**
-       * Add product to cart
-       * @param {number} productVariantId - Product variant ID
-       * @param {number} quantity - Quantity to add
+       * Add product variant to cart
+       * @param {number} variantId - Product variant ID
+       * @param {number} quantity - Quantity to add (1-100)
        */
-      addToCart: async (productVariantId, quantity = 1) => {
+      addToCart: async (variantId, quantity = 1) => {
+        // Validate quantity
+        if (quantity < 1 || quantity > 100) {
+          const errorMsg = 'Số lượng phải từ 1 đến 100';
+          set({ error: errorMsg });
+          return { success: false, error: errorMsg };
+        }
+
         set({ loading: true, error: null });
         try {
-          const response = await cartService.addToCart(
-            productVariantId,
-            quantity
-          );
+          await cartService.addToCart(variantId, quantity);
+          
           // Refresh cart after adding
           await get().fetchCart();
           set({ loading: false, error: null });
           return {
             success: true,
-            message: response.message || 'Thêm vào giỏ hàng thành công'
+            message: 'Đã thêm sản phẩm vào giỏ hàng'
           };
         } catch (error) {
           const errorMsg =
-            error.response?.data?.error ||
+            error.response?.data?.message ||
             error.message ||
             'Không thể thêm vào giỏ hàng';
           set({
@@ -75,34 +94,34 @@ const useCartStore = create(
       },
 
       /**
-       * Update item quantity in cart
-       * @param {number} productVariantId - Product variant ID
-       * @param {number} quantity - New quantity
+       * Update cart item quantity
+       * @param {number} itemId - Cart item ID
+       * @param {number} quantity - New quantity (1-100)
        */
-      updateQuantity: async (productVariantId, quantity) => {
-        if (quantity <= 0) {
-          set({ error: 'Số lượng phải lớn hơn 0' });
-          return { success: false, error: 'Số lượng phải lớn hơn 0' };
+      updateQuantity: async (itemId, quantity) => {
+        // Validate quantity
+        if (quantity < 1 || quantity > 100) {
+          const errorMsg = 'Số lượng phải từ 1 đến 100';
+          set({ error: errorMsg });
+          return { success: false, error: errorMsg };
         }
 
         set({ loading: true, error: null });
         try {
-          const response = await cartService.updateCartQuantity(
-            productVariantId,
-            quantity
-          );
+          await cartService.updateCartItemQuantity(itemId, quantity);
+          
           // Refresh cart after updating
           await get().fetchCart();
           set({ loading: false, error: null });
           return {
             success: true,
-            message: response.message || 'Cập nhật thành công'
+            message: 'Đã cập nhật số lượng'
           };
         } catch (error) {
           const errorMsg =
-            error.response?.data?.error ||
+            error.response?.data?.message ||
             error.message ||
-            'Không thể cập nhật giỏ hàng';
+            'Không thể cập nhật số lượng';
           set({
             error: errorMsg,
             loading: false
@@ -113,22 +132,23 @@ const useCartStore = create(
 
       /**
        * Remove item from cart
-       * @param {number} productVariantId - Product variant ID
+       * @param {number} itemId - Cart item ID
        */
-      removeFromCart: async (productVariantId) => {
+      removeFromCart: async (itemId) => {
         set({ loading: true, error: null });
         try {
-          const response = await cartService.removeFromCart(productVariantId);
+          await cartService.removeCartItem(itemId);
+          
           // Refresh cart after removing
           await get().fetchCart();
           set({ loading: false, error: null });
           return {
             success: true,
-            message: response.message || 'Xóa khỏi giỏ hàng thành công'
+            message: 'Đã xóa sản phẩm khỏi giỏ hàng'
           };
         } catch (error) {
           const errorMsg =
-            error.response?.data?.error ||
+            error.response?.data?.message ||
             error.message ||
             'Không thể xóa sản phẩm';
           set({
@@ -145,22 +165,22 @@ const useCartStore = create(
       clearCart: async () => {
         set({ loading: true, error: null });
         try {
-          const response = await cartService.clearCart();
+          await cartService.clearCart();
           set({
-            cart: { items: [], totalItems: 0, totalAmount: 0 },
+            cart: { items: [], totalAmount: 0 },
             cartCount: 0,
             loading: false,
             error: null
           });
           return {
             success: true,
-            message: response.message || 'Giỏ hàng đã được làm trống'
+            message: 'Đã xóa toàn bộ giỏ hàng'
           };
         } catch (error) {
           const errorMsg =
-            error.response?.data?.error ||
+            error.response?.data?.message ||
             error.message ||
-            'Không thể làm trống giỏ hàng';
+            'Không thể xóa giỏ hàng';
           set({
             error: errorMsg,
             loading: false
@@ -174,10 +194,9 @@ const useCartStore = create(
        */
       getCartCount: async () => {
         try {
-          const response = await cartService.getCartCount();
-          const count = response.data || response;
-          set({ cartCount: count || 0 });
-          return count || 0;
+          const count = await cartService.getCartCount();
+          set({ cartCount: count });
+          return count;
         } catch (error) {
           console.error('Error getting cart count:', error);
           return 0;

@@ -132,7 +132,7 @@ const OTPInput = ({
     if (window.clearOtpInput) {
       window.clearOtpInput = clearOtp;
     }
-  }, []);
+  }, [clearOtp]);
 
   return (
     <div className="w-full">

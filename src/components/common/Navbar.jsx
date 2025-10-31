@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import useCart from "../../hooks/useCart";
 import { getCategories } from "../../services/homeService";
 import { 
   Bars3Icon,
@@ -36,9 +37,9 @@ export default function NavbarNew() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [cartItemCount, setCartItemCount] = useState(0);
   
-  const { user, login } = useAuth(); // Sử dụng AuthContext
+  const { user, logout } = useAuth(); // Sử dụng AuthContext
+  const { cartCount } = useCart(); // Sử dụng CartContext
 
   // Scroll effect
   useEffect(() => {
@@ -69,27 +70,6 @@ export default function NavbarNew() {
     fetchCategories();
   }, []);
 
-  // Fetch cart count từ backend hoặc context
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      try {
-        // TODO: Replace với actual API call hoặc lấy từ cart context
-        // const response = await fetch('/api/cart/count');
-        // const data = await response.json();
-        // setCartItemCount(data.count);
-        
-        // Mock data tạm thời
-        setCartItemCount(3);
-      } catch (error) {
-        console.error('Error fetching cart count:', error);
-      }
-    };
-
-    if (user) {
-      fetchCartCount();
-    }
-  }, [user]);
-
   // Handlers
   const handleSearch = (searchTerm) => {
     // TODO: Implement search logic hoặc navigate to search page
@@ -97,10 +77,14 @@ export default function NavbarNew() {
     // Example: navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
   };
 
-  const handleLogout = () => {
-    // Clear user data và redirect
-    login(null);
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/login';
+    }
   };
 
   return (
@@ -184,11 +168,12 @@ export default function NavbarNew() {
               </Link>
               
               {/* Cart Button */}
-              <CartButton itemCount={cartItemCount} />
+              <CartButton itemCount={cartCount} />
               
               {/* User Menu */}
               <UserMenu user={user} onLogout={handleLogout} />
-                            {/* Become Vendor - Nút nổi bật */}
+                            
+              {/* Become Vendor - Nút nổi bật */}
               <Link
                 to="/become-vendor"
                 className="
@@ -315,7 +300,7 @@ export default function NavbarNew() {
         user={user}
         categories={categories}
         menuItems={menuItems}
-        cartItemCount={cartItemCount}
+        cartItemCount={cartCount}
       />
     </header>
   );

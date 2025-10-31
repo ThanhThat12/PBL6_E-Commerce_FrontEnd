@@ -24,6 +24,13 @@ const Alert = ({
 }) => {
   const [visible, setVisible] = useState(true);
 
+  const handleClose = () => {
+    setVisible(false);
+    if (onClose) {
+      setTimeout(onClose, 300); // Wait for animation
+    }
+  };
+
   // Auto close
   useEffect(() => {
     if (autoClose > 0) {
@@ -33,14 +40,7 @@ const Alert = ({
 
       return () => clearTimeout(timer);
     }
-  }, [autoClose]);
-
-  const handleClose = () => {
-    setVisible(false);
-    if (onClose) {
-      setTimeout(onClose, 300); // Wait for animation
-    }
-  };
+  }, [autoClose, handleClose]);
 
   if (!visible) return null;
 

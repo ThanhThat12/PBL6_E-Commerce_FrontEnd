@@ -7,6 +7,7 @@ import {
   clearAuthData,
   isAuthenticated 
 } from '../utils/storage';
+import { broadcastTokenRefresh } from '../utils/storageSync';
 import { 
   API_BASE_URL, 
   API_ENDPOINTS, 
@@ -109,7 +110,8 @@ api.interceptors.response.use(
         { timeout: REQUEST_TIMEOUT }
       );
       
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
+      // Backend returns: { status: 200, data: { token, refreshToken } }
+      const { token: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
       
       // Save new tokens
       const rememberMe = !!localStorage.getItem('remember_me');
@@ -117,6 +119,12 @@ api.interceptors.response.use(
       if (newRefreshToken) {
         saveRefreshToken(newRefreshToken, rememberMe);
       }
+      
+      // Broadcast token refresh to other tabs
+      broadcastTokenRefresh({ 
+        token: newAccessToken, 
+        refreshToken: newRefreshToken 
+      });
       
       // Process queued requests
       processQueue(null, newAccessToken);

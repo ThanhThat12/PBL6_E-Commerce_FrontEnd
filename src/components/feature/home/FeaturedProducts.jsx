@@ -12,7 +12,6 @@ const ProductCard = ({ product, showDiscount = false }) => {
   const {
     id,
     name,
-    slug,
     image,
     price,
     originalPrice,

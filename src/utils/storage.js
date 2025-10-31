@@ -1,8 +1,14 @@
 import { STORAGE_KEYS } from './constants';
+import { broadcastLogin, broadcastLogout, broadcastTokenRefresh, broadcastUserUpdate } from './storageSync';
 
 /**
- * Storage wrapper for localStorage and sessionStorage
- * Provides encryption and JSON serialization
+ * Storage wrapper for localStorage
+ * Provides encryption, JSON serialization, and cross-tab synchronization
+ * 
+ * IMPORTANT: Always use localStorage (not sessionStorage) to enable:
+ * 1. Cross-tab synchronization
+ * 2. Persistent sessions across browser restarts (when "Remember Me" is checked)
+ * 3. Better user experience
  */
 
 // Simple encryption (for demo - use a proper library in production)
@@ -24,111 +30,85 @@ const decode = (data) => {
   }
 };
 
-/**
- * Get storage type based on remember me
- * @returns {Storage} localStorage or sessionStorage
- */
-const getStorage = () => {
-  const rememberMe = localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true';
-  return rememberMe ? localStorage : sessionStorage;
-};
-
 // ==================== TOKEN MANAGEMENT ====================
 
 /**
- * Save access token
+ * Save access token to localStorage
  * @param {string} token
- * @param {boolean} remember - If true, save to localStorage; otherwise sessionStorage
+ * @param {boolean} remember - If false, token expires when browser closes (via session management)
  */
 export const saveAccessToken = (token, remember = false) => {
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
   
   if (remember) {
     localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
+  } else {
+    localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'false');
   }
 };
 
 /**
- * Get access token
+ * Get access token from localStorage
  * @returns {string|null}
  */
 export const getAccessToken = () => {
-  return (
-    localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) ||
-    sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-  );
+  return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 };
 
 /**
- * Save refresh token
+ * Save refresh token to localStorage
  * @param {string} token
  * @param {boolean} remember
  */
 export const saveRefreshToken = (token, remember = false) => {
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
+  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
 };
 
 /**
- * Get refresh token
+ * Get refresh token from localStorage
  * @returns {string|null}
  */
 export const getRefreshToken = () => {
-  return (
-    localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) ||
-    sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-  );
+  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 };
 
 /**
- * Remove tokens
+ * Remove tokens from localStorage and broadcast logout event
  */
 export const removeTokens = () => {
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  broadcastLogout();
 };
 
 // ==================== USER INFO MANAGEMENT ====================
 
 /**
- * Save user info
+ * Save user info to localStorage
  * @param {object} userInfo
  */
 export const saveUserInfo = (userInfo) => {
-  const storage = getStorage();
   const encoded = encode(userInfo);
   if (encoded) {
-    storage.setItem(STORAGE_KEYS.USER_INFO, encoded);
+    localStorage.setItem(STORAGE_KEYS.USER_INFO, encoded);
+    broadcastUserUpdate(userInfo);
   }
 };
 
 /**
- * Get user info
+ * Get user info from localStorage
  * @returns {object|null}
  */
 export const getUserInfo = () => {
-  const storage = getStorage();
-  const encoded = storage.getItem(STORAGE_KEYS.USER_INFO);
-  
-  if (!encoded) {
-    // Try the other storage
-    const otherStorage = storage === localStorage ? sessionStorage : localStorage;
-    const otherEncoded = otherStorage.getItem(STORAGE_KEYS.USER_INFO);
-    return otherEncoded ? decode(otherEncoded) : null;
-  }
-  
-  return decode(encoded);
+  const encoded = localStorage.getItem(STORAGE_KEYS.USER_INFO);
+  return encoded ? decode(encoded) : null;
 };
 
 /**
- * Remove user info
+ * Remove user info from localStorage
  */
 export const removeUserInfo = () => {
   localStorage.removeItem(STORAGE_KEYS.USER_INFO);
-  sessionStorage.removeItem(STORAGE_KEYS.USER_INFO);
 };
 
 // ==================== SESSION MANAGEMENT ====================
@@ -142,24 +122,28 @@ export const isAuthenticated = () => {
 };
 
 /**
- * Clear all auth data
+ * Clear all auth data from localStorage and broadcast logout
  */
 export const clearAuthData = () => {
   removeTokens();
   removeUserInfo();
   localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
+  broadcastLogout();
 };
 
 /**
- * Save complete auth data
- * @param {object} data - { accessToken, refreshToken, user }
+ * Save complete auth data and broadcast login event
+ * @param {object} data - { token, refreshToken, user }
  * @param {boolean} remember
  */
 export const saveAuthData = (data, remember = false) => {
   console.log('[saveAuthData] Saving auth data:', { data, remember });
-  const { accessToken, refreshToken, user } = data;
+  const { token, accessToken, refreshToken, user } = data;
   
-  if (accessToken) saveAccessToken(accessToken, remember);
+  // Support both 'token' (new) and 'accessToken' (legacy) field names
+  const authToken = token || accessToken;
+  
+  if (authToken) saveAccessToken(authToken, remember);
   if (refreshToken) saveRefreshToken(refreshToken, remember);
   if (user) {
     console.log('[saveAuthData] Saving user:', user);
@@ -167,6 +151,9 @@ export const saveAuthData = (data, remember = false) => {
   } else {
     console.warn('[saveAuthData] No user data to save');
   }
+  
+  // Broadcast login event to all tabs
+  broadcastLogin({ token: authToken, refreshToken, user });
 };
 
 // ==================== THEME MANAGEMENT ====================

@@ -2,6 +2,8 @@
 // Service for product-related API calls
 
 import api from './api';
+import { API_ENDPOINTS } from '../utils/constants';
+import toast from 'react-hot-toast';
 
 /**
  * Transform backend product data to component format
@@ -58,86 +60,74 @@ const transformCategory = (category) => {
 /**
  * Get paginated products list (public)
  * @param {number} page - Page number (0-indexed)
- * @param {number} size - Items per page
+ * @param {number} size - Items per page (1-100, default 12)
  * @returns {Promise} Product list with pagination
  */
-export const getProducts = async (page = 0, size = 1) => {
+export const getProducts = async (page = 0, size = 12) => {
+  // Validate pagination parameters
+  if (page < 0) page = 0;
+  if (size < 1 || size > 100) size = 12;
+
   try {
-    const response = await api.get('/api/products', {
+    const response = await api.get(API_ENDPOINTS.PRODUCT.GET_ALL, {
       params: { page, size }
     });
-    console.log('📦 getProducts response:', response);
     
-    // Response structure: {code: 200, data: {content: [...], totalPages, ...}, message: ""}
-    const products = response?.data?.content || [];
-    const transformed = products.map(transformProduct).filter(p => p !== null);
+    console.log('🔍 getProducts raw response:', response);
     
-    return {
-      code: response?.code || 200,
-      data: {
-        content: transformed,
-        totalPages: response?.data?.totalPages || 1
-      },
-      message: response?.message || ''
-    };
+    // api interceptor returns response.data, which is ResponseDTO
+    // ResponseDTO structure: { status, error, message, data: Page<ProductDTO> }
+    return response; // Return full ResponseDTO
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return { code: 500, data: { content: [], totalPages: 0 }, message: error.message };
+    if (error.response?.status === 400 && error.response.data?.message?.includes('Page')) {
+      toast.error('Trang không hợp lệ');
+      return getProducts(0, 12); // Fallback to first page
+    }
+    throw error;
   }
 };
 
 /**
  * Get product by ID
  * @param {number} id - Product ID
- * @returns {Promise} Product details
+ * @returns {Promise} Product details with variants
  */
 export const getProductById = async (id) => {
   try {
-    const response = await api.get(`/api/products/${id}`);
-    console.log('📦 getProductById response:', response);
-    
-    const product = response?.data;
-    const transformed = transformProduct(product);
-    
-    return {
-      code: response?.code || 200,
-      data: transformed,
-      message: response?.message || ''
-    };
+    const response = await api.get(API_ENDPOINTS.PRODUCT.GET_BY_ID(id));
+    console.log('🔍 getProductById raw response:', response);
+    return response; // Return full ResponseDTO
   } catch (error) {
-    console.error('Error fetching product:', error);
-    return { code: 500, data: null, message: error.message };
+    if (error.response?.status === 404) {
+      throw new Error('PRODUCT_NOT_FOUND');
+    }
+    throw error;
   }
 };
 
 /**
- * Search products by keyword
- * @param {string} keyword - Search keyword
- * @param {number} page - Page number
- * @param {number} size - Items per page
+ * Search products with filters
+ * @param {Object} filters - Search filters
  * @returns {Promise} Search results
  */
-export const searchProducts = async (keyword, page = 0, size = 20) => {
+export const searchProducts = async (filters = {}) => {
   try {
-    const response = await api.get('/api/products/search', {
-      params: { keyword, page, size }
+    const response = await api.get(API_ENDPOINTS.PRODUCT.SEARCH, {
+      params: {
+        name: filters.keyword,
+        categoryId: filters.categoryId,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        minRating: filters.minRating,
+        page: filters.page || 0,
+        size: filters.size || 12,
+      }
     });
-    console.log('📦 searchProducts response:', response);
     
-    const products = response?.data?.content || [];
-    const transformed = products.map(transformProduct).filter(p => p !== null);
-    
-    return {
-      code: response?.code || 200,
-      data: {
-        content: transformed,
-        totalPages: response?.data?.totalPages || 1
-      },
-      message: response?.message || ''
-    };
+    console.log('🔍 searchProducts raw response:', response);
+    return response; // Return full ResponseDTO
   } catch (error) {
-    console.error('Error searching products:', error);
-    return { code: 500, data: { content: [], totalPages: 0 }, message: error.message };
+    throw error;
   }
 };
 
@@ -148,27 +138,16 @@ export const searchProducts = async (keyword, page = 0, size = 20) => {
  * @param {number} size - Items per page
  * @returns {Promise} Products in category
  */
-export const getProductsByCategory = async (categoryId, page = 0, size = 20) => {
+export const getProductsByCategory = async (categoryId, page = 0, size = 12) => {
   try {
-    const response = await api.get(`/api/categories/${categoryId}/products`, {
+    const response = await api.get(API_ENDPOINTS.PRODUCT.BY_CATEGORY(categoryId), {
       params: { page, size }
     });
-    console.log('📦 getProductsByCategory response:', response);
     
-    const products = response?.data?.content || [];
-    const transformed = products.map(transformProduct).filter(p => p !== null);
-    
-    return {
-      code: response?.code || 200,
-      data: {
-        content: transformed,
-        totalPages: response?.data?.totalPages || 1
-      },
-      message: response?.message || ''
-    };
+    console.log('🔍 getProductsByCategory raw response:', response);
+    return response; // Return full ResponseDTO
   } catch (error) {
-    console.error('Error fetching products by category:', error);
-    return { code: 500, data: { content: [], totalPages: 0 }, message: error.message };
+    throw error;
   }
 };
 

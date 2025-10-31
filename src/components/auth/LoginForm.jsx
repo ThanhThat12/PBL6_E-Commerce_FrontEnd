@@ -6,8 +6,8 @@ import { GoogleLogin } from '@react-oauth/google';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Alert from '../common/Alert';
-import { validateEmail, validatePassword } from '../../utils/validation';
 import { ROUTES, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from '../../utils/constants';
+import { AUTH_ERROR_CODES } from '../../utils/authErrorHandler';
 import { loadFacebookSdk, facebookLogin } from '../../utils/facebook';
 import useAuth from '../../hooks/useAuth';
 
@@ -84,10 +84,20 @@ const LoginForm = () => {
           window.location.href = ROUTES.HOME;
         }, 1000);
       } else {
+        // Handle specific error codes
+        let errorMessage = result.message || 'Vui lòng kiểm tra lại thông tin đăng nhập';
+        
+        // Provide helpful hints based on error code
+        if (result.errorCode === AUTH_ERROR_CODES.INVALID_CREDENTIALS) {
+          errorMessage = result.message;
+        } else if (result.errorCode === AUTH_ERROR_CODES.USER_NOT_ACTIVATED) {
+          errorMessage = result.message;
+        }
+        
         setAlert({
           type: 'error',
           message: 'Đăng nhập thất bại',
-          description: result.message || 'Vui lòng kiểm tra lại thông tin đăng nhập',
+          description: errorMessage,
         });
       }
     } catch (error) {

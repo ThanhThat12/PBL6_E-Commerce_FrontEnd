@@ -11,12 +11,25 @@ import React, { useState, useEffect } from 'react';
 const VariantSelector = ({ variants = [], selectedVariant, onVariantChange }) => {
   const [selectedAttributes, setSelectedAttributes] = useState({});
 
+  // Initialize selectedAttributes from selectedVariant on mount or when selectedVariant changes
+  useEffect(() => {
+    if (selectedVariant && selectedVariant.variantValues) {
+      const attrs = {};
+      selectedVariant.variantValues.forEach(vv => {
+        const attrName = vv.productAttribute?.name || 'Option';
+        attrs[attrName] = vv.value;
+      });
+      setSelectedAttributes(attrs);
+      console.log('🔍 [VariantSelector] Initialized selectedAttributes:', attrs);
+    }
+  }, [selectedVariant]);
+
   // Group variants by attributes
   const attributeOptions = {};
   
   variants.forEach(variant => {
     variant.variantValues?.forEach(vv => {
-      const attrName = vv.attribute?.name || 'Option';
+      const attrName = vv.productAttribute?.name || 'Option';
       if (!attributeOptions[attrName]) {
         attributeOptions[attrName] = new Set();
       }
@@ -34,7 +47,7 @@ const VariantSelector = ({ variants = [], selectedVariant, onVariantChange }) =>
     const matchingVariant = variants.find(variant => {
       return Object.entries(selectedAttributes).every(([attrName, attrValue]) => {
         return variant.variantValues?.some(
-          vv => vv.attribute?.name === attrName && vv.value === attrValue
+          vv => vv.productAttribute?.name === attrName && vv.value === attrValue
         );
       });
     });
@@ -59,12 +72,12 @@ const VariantSelector = ({ variants = [], selectedVariant, onVariantChange }) =>
 
     return variants.some(variant => {
       const hasThisValue = variant.variantValues?.some(
-        vv => vv.attribute?.name === attrName && vv.value === value
+        vv => vv.productAttribute?.name === attrName && vv.value === value
       );
 
       const matchesOthers = otherSelectedAttrs.every(([name, val]) => 
         variant.variantValues?.some(
-          vv => vv.attribute?.name === name && vv.value === val
+          vv => vv.productAttribute?.name === name && vv.value === val
         )
       );
 

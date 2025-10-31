@@ -9,7 +9,7 @@ import {
   validateConfirmPassword,
   getPasswordStrength 
 } from '../../../utils/validation';
-import { completeRegistration } from '../../../services/authService';
+import { handleAuthError, AUTH_ERROR_CODES } from '../../../utils/authErrorHandler';
 import useAuth from '../../../hooks/useAuth';
 
 /**
@@ -141,7 +141,8 @@ const Step3Complete = ({ contact, contactType, otp, onBack }) => {
 
       console.log('📦 register response:', result);
 
-      if (result.success || result.status === 200) {
+      // Check for success (AuthContext returns { success: true/false })
+      if (result.success) {
         setAlert({
           type: 'success',
           message: 'Đăng ký thành công!',
@@ -161,10 +162,19 @@ const Step3Complete = ({ contact, contactType, otp, onBack }) => {
       }
     } catch (err) {
       console.error('❌ register error:', err);
+      const errorInfo = handleAuthError(err);
+      
+      let errorDescription = errorInfo.message;
+      if (errorInfo.errorCode === AUTH_ERROR_CODES.OTP_NOT_VERIFIED) {
+        errorDescription = 'Phiên xác thực đã hết hạn. Vui lòng bắt đầu lại quy trình đăng ký.';
+      } else if (errorInfo.errorCode === AUTH_ERROR_CODES.PASSWORD_MISMATCH) {
+        errorDescription = 'Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.';
+      }
+      
       setAlert({
         type: 'error',
-        message: 'Đã xảy ra lỗi',
-        description: err.message || 'Không thể hoàn tất đăng ký',
+        message: 'Đăng ký thất bại',
+        description: errorDescription,
       });
     } finally {
       setLoading(false);

@@ -8,16 +8,14 @@ export const API_ENDPOINTS = {
     LOGIN: '/api/authenticate',
     LOGIN_GOOGLE: '/api/authenticate/google',
     LOGIN_FACEBOOK: '/api/authenticate/facebook',
-    LOGOUT: '/api/auth/logout',
-    LOGOUT_ALL: '/api/auth/logout-all',
-    REFRESH_TOKEN: '/api/auth/refresh',
+    REFRESH_TOKEN: '/api/refresh-token',
+    LOGOUT: '/api/logout',
     
     // Register
     REGISTER: {
       CHECK_CONTACT: '/api/register/check-contact',
-      RESEND_OTP: '/api/register/check-contact',
       VERIFY_OTP: '/api/register/verify-otp',
-      COMPLETE: '/api/register/complete',
+      REGISTER: '/api/register/register',
     },
     
     // Forgot Password
@@ -30,11 +28,35 @@ export const API_ENDPOINTS = {
   
   // User Profile
   PROFILE: {
+    ME: '/api/user/me',
     GET: '/api/user/profile',
     UPDATE: '/api/user/profile',
     CHANGE_PASSWORD: '/api/user/change-password',
     CHANGE_EMAIL: '/api/user/change-email',
     VERIFY_EMAIL_CHANGE: '/api/user/verify-email-change',
+  },
+  
+  // Cart
+  CART: {
+    GET: '/api/cart',
+    ADD_ITEM: '/api/cart/items',
+    UPDATE_ITEM: (itemId) => `/api/cart/items/${itemId}`,
+    REMOVE_ITEM: (itemId) => `/api/cart/items/${itemId}`,
+    CLEAR: '/api/cart',
+  },
+  
+  // Product
+  PRODUCT: {
+    GET_ALL: '/api/products',
+    GET_BY_ID: (id) => `/api/products/${id}`,
+    SEARCH: '/api/products/search',
+    BY_CATEGORY: (categoryId) => `/api/products/category/${categoryId}`,
+  },
+  
+  // Category
+  CATEGORY: {
+    GET_ALL: '/api/categories',
+    GET_BY_ID: (id) => `/api/categories/${id}`,
   },
   
   // Security

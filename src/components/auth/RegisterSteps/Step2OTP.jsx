@@ -6,6 +6,7 @@ import Alert from '../../common/Alert';
 import { validateOTP } from '../../../utils/validation';
 import { formatCountdown, maskEmail, maskPhoneNumber } from '../../../utils/formatters';
 import { verifyOTP, resendOTP } from '../../../services/authService';
+import { handleAuthError, AUTH_ERROR_CODES } from '../../../utils/authErrorHandler';
 import { OTP_CONFIG } from '../../../utils/constants';
 
 /**
@@ -69,7 +70,6 @@ const Step2OTP = ({ contact, contactType, onNext, onBack }) => {
 
     try {
       const response = await verifyOTP(contact, otpValue);
-      console.log('📦 verifyOTP response:', response);
 
       if (response.status === 200 || response.status === 'success') {
         setAlert({
@@ -92,11 +92,22 @@ const Step2OTP = ({ contact, contactType, onNext, onBack }) => {
       }
     } catch (err) {
       console.error('❌ verifyOTP error:', err);
-      setError('Đã xảy ra lỗi khi xác thực');
+      const errorInfo = handleAuthError(err);
+      
+      let errorDescription = errorInfo.message;
+      if (errorInfo.errorCode === AUTH_ERROR_CODES.INVALID_OTP) {
+        errorDescription = 'Mã OTP không chính xác. Vui lòng kiểm tra và thử lại.';
+      } else if (errorInfo.errorCode === AUTH_ERROR_CODES.EXPIRED_OTP) {
+        errorDescription = 'Mã OTP đã hết hạn. Vui lòng gửi lại mã mới.';
+        setCanResend(true);
+        setResendCooldown(0);
+      }
+      
+      setError(errorDescription);
       setAlert({
         type: 'error',
-        message: 'Đã xảy ra lỗi',
-        description: err.message || 'Không thể xác thực mã OTP',
+        message: 'Xác thực thất bại',
+        description: errorDescription,
       });
     } finally {
       setLoading(false);
@@ -115,7 +126,6 @@ const Step2OTP = ({ contact, contactType, onNext, onBack }) => {
 
     try {
       const response = await resendOTP(contact);
-      console.log('📦 resendOTP response:', response);
 
       if (response.status === 200 || response.status === 'success') {
         setAlert({

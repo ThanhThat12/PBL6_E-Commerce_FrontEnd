@@ -43,14 +43,9 @@ const UserMenu = ({
   }, [isOpen]);
 
   const handleLogout = () => {
-    // Clear storage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
-    
     setIsOpen(false);
     
+    // Call parent logout handler (AuthContext will handle clearing storage)
     if (onLogout) {
       onLogout();
     }
@@ -86,7 +81,7 @@ const UserMenu = ({
           <UserCircleIcon className="w-6 h-6 group-hover:text-primary-100 transition-colors" />
         )}
         <span className="hidden lg:inline text-sm font-medium group-hover:text-primary-100 transition-colors">
-          {user?.username || 'Tài khoản'}
+          {user?.username || user?.email?.split('@')[0] || 'Tài khoản'}
         </span>
         <ChevronDownIcon 
           className={`w-4 h-4 transition-transform group-hover:text-primary-100 ${isOpen ? 'rotate-180' : ''}`}
@@ -112,7 +107,7 @@ const UserMenu = ({
           {user ? (
             <div className="px-4 py-3 bg-gradient-primary border-b border-border">
               <p className="text-sm font-semibold text-white">
-                Xin chào, {user.username}!
+                Xin chào, {user.username || user.email?.split('@')[0] || 'Bạn'}!
               </p>
               {user.email && (
                 <p className="text-xs text-primary-100 truncate">

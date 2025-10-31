@@ -1,6 +1,7 @@
 // src/context/CartContext.jsx
 import React, { createContext, useEffect } from 'react';
 import useCartStore from '../store/cartStore';
+import { isAuthenticated } from '../utils/storage';
 
 export const CartContext = createContext();
 
@@ -20,9 +21,11 @@ export const CartProvider = ({ children }) => {
     resetCart
   } = useCartStore();
 
-  // Fetch cart on mount
+  // Fetch cart on mount only if user is authenticated
   useEffect(() => {
-    fetchCart();
+    if (isAuthenticated()) {
+      fetchCart();
+    }
   }, [fetchCart]);
 
   const value = {
@@ -52,6 +55,15 @@ export const CartProvider = ({ children }) => {
   return (
     <CartContext.Provider value={value}>{children}</CartContext.Provider>
   );
+};
+
+// Custom hook to use Cart Context
+export const useCart = () => {
+  const context = React.useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart must be used within CartProvider');
+  }
+  return context;
 };
 
 export default CartContext;

@@ -18,13 +18,11 @@ import { getCategories, getFeaturedProducts, getBestSellingProducts, getNewArriv
  */
 const HomePage = () => {
   const [showButton, setShowButton] = useState(false);
-  const { user } = useAuth();
 
   // State cho data từ API
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [flashDeals, setFlashDeals] = useState([]);
-  const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Scroll to top button
@@ -41,23 +39,20 @@ const HomePage = () => {
         setLoading(true);
         
         // Fetch tất cả data song song
-        const [categoriesData, featuredData, flashDealsData, newArrivalsData] = await Promise.all([
+        const [categoriesData, featuredData, flashDealsData] = await Promise.all([
           getCategories(),
           getFeaturedProducts(8),
           getBestSellingProducts(8), // Flash deals = best sellers
-          getNewArrivals(8)
         ]);
 
         console.log('📦 Homepage Data Loaded:');
         console.log('Categories:', categoriesData);
         console.log('Featured Products:', featuredData);
         console.log('Flash Deals:', flashDealsData);
-        console.log('New Arrivals:', newArrivalsData);
 
         setCategories(categoriesData);
         setFeaturedProducts(featuredData);
         setFlashDeals(flashDealsData);
-        setNewArrivals(newArrivalsData);
       } catch (error) {
         console.error('Error fetching homepage data:', error);
       } finally {

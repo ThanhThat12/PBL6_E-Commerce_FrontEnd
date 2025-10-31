@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { FiSearch, FiGrid, FiList } from 'react-icons/fi';
 
+import Navbar from '../../components/common/Navbar';
+import Footer from '../../components/layout/footer/Footer';
 import ProductCard from '../../components/product/ProductCard';
 import ProductFilter from '../../components/product/ProductFilter';
 import Loading from '../../components/common/Loading';
 import Button from '../../components/common/Button';
-import { getProducts, searchProducts, getProductsByCategory, getCategories } from '../../services/productService';
-import { addToCart } from '../../services/cartService';
+import { getProducts, searchProducts, getProductsByCategory } from '../../services/productService';
+import { getCategories } from '../../services/homeService';
+import useCart from '../../hooks/useCart';
 
 /**
  * ProductListPage
@@ -16,38 +19,37 @@ import { addToCart } from '../../services/cartService';
  */
 const ProductListPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { addToCart: addItemToCart } = useCart();
+  
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    categories: [],
-    priceMin: undefined,
-    priceMax: undefined
+    categoryId: searchParams.get('category') ? parseInt(searchParams.get('category')) : null,
+    priceMin: searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')) : undefined,
+    priceMax: searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')) : undefined,
+    minRating: searchParams.get('minRating') ? parseFloat(searchParams.get('minRating')) : undefined,
   });
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
-  const [sortBy, setSortBy] = useState('name'); // name, price-asc, price-desc, newest
+  const [sortBy, setSortBy] = useState('newest'); // name, price-asc, price-desc, newest
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(20);
+  const [totalElements, setTotalElements] = useState(0);
+  const [pageSize] = useState(12);
 
   // Load categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const response = await getCategories();
-        console.log('📦 ProductListPage - Categories response:', response);
-        
-        if (response.code === 200) {
-          setCategories(response.data);
-          console.log('✅ Categories loaded:', response.data.length, 'items');
-        } else {
-          console.warn('❌ Categories load failed:', response.message);
-        }
+        const data = await getCategories();
+        setCategories(data || []);
       } catch (error) {
         console.error('Failed to load categories:', error);
+        toast.error('Không thể tải danh mục');
       }
     };
     loadCategories();
@@ -60,44 +62,48 @@ const ProductListPage = () => {
       try {
         let response;
         
-        if (searchQuery) {
-          // Search products
-          response = await searchProducts(searchQuery, currentPage, pageSize);
-        } else if (filters.categories.length > 0) {
-          // Filter by category (only first category for now)
-          response = await getProductsByCategory(filters.categories[0], currentPage, pageSize);
+        if (searchQuery || filters.categoryId || filters.priceMin || filters.priceMax || filters.minRating) {
+          // Use search API with filters
+          response = await searchProducts({
+            keyword: searchQuery,
+            categoryId: filters.categoryId,
+            minPrice: filters.priceMin,
+            maxPrice: filters.priceMax,
+            minRating: filters.minRating,
+            page: currentPage,
+            size: pageSize,
+          });
         } else {
           // Get all products
           response = await getProducts(currentPage, pageSize);
         }
 
-        console.log('📦 ProductListPage - Products response:', response);
+        console.log('📦 Product response:', response);
 
-        if (response.code === 200) {
-          let productList = response.data.content || response.data;
-          console.log('✅ Products loaded:', productList.length, 'items');
-          
-          // Apply price filter
-          if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
-            productList = productList.filter(product => {
-              const price = product.price || product.basePrice || 0;
-              const minCheck = filters.priceMin === undefined || price >= filters.priceMin;
-              const maxCheck = filters.priceMax === undefined || price <= filters.priceMax;
-              return minCheck && maxCheck;
-            });
-          }
+        // Handle ResponseDTO structure: { status, error, message, data }
+        if (response && response.data) {
+          const pageData = response.data;
+          let productList = pageData.content || pageData || [];
 
-          // Apply sorting
+          console.log('📦 Page data:', pageData);
+          console.log('📦 Product list:', productList);
+          console.log('📦 Total pages:', pageData.totalPages);
+          console.log('📦 Total elements:', pageData.totalElements);
+
+          // Apply client-side sorting
           productList = sortProducts(productList, sortBy);
 
           setProducts(productList);
-          setTotalPages(response.data.totalPages || 1);
+          setTotalPages(pageData.totalPages || 1);
+          setTotalElements(pageData.totalElements || 0);
         } else {
-          console.warn('❌ Products load failed:', response.message);
+          console.warn('Unexpected response structure:', response);
+          setProducts([]);
         }
       } catch (error) {
         console.error('Failed to load products:', error);
-        toast.error('Failed to load products');
+        toast.error('Không thể tải sản phẩm');
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -130,13 +136,23 @@ const ProductListPage = () => {
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     setCurrentPage(0);
+    
+    // Update URL params
+    const params = {};
+    if (newFilters.categoryId) params.category = newFilters.categoryId;
+    if (newFilters.priceMin) params.minPrice = newFilters.priceMin;
+    if (newFilters.priceMax) params.maxPrice = newFilters.priceMax;
+    if (newFilters.minRating) params.minRating = newFilters.minRating;
+    if (searchQuery) params.search = searchQuery;
+    setSearchParams(params);
   };
 
   const handleClearFilters = () => {
     setFilters({
-      categories: [],
+      categoryId: null,
       priceMin: undefined,
-      priceMax: undefined
+      priceMax: undefined,
+      minRating: undefined,
     });
     setSearchQuery('');
     setSearchParams({});
@@ -145,39 +161,62 @@ const ProductListPage = () => {
 
   const handleAddToCart = async (product, variant) => {
     try {
-      const variantId = variant?.id || product.variants?.[0]?.id;
-      if (!variantId) {
-        toast.error('Please select a variant');
+      // Check if product is active
+      if (!product.isActive) {
+        toast.error('Sản phẩm này hiện không khả dụng');
         return;
       }
 
-      const response = await addToCart(variantId, 1);
-      if (response.code === 200) {
-        toast.success('Added to cart!');
+      // Get variant or first available variant
+      const selectedVariant = variant || product.variants?.[0];
+      
+      if (!selectedVariant) {
+        toast.error('Sản phẩm không có phiên bản khả dụng');
+        return;
       }
+
+      // Check stock
+      if (selectedVariant.stock === 0) {
+        toast.error('Sản phẩm đã hết hàng');
+        return;
+      }
+
+      await addItemToCart(selectedVariant.id, 1);
+      toast.success('Đã thêm vào giỏ hàng!');
     } catch (error) {
       console.error('Add to cart error:', error);
-      toast.error('Failed to add to cart');
+      if (error.response?.status === 404) {
+        toast.error('Không tìm thấy sản phẩm');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response.data.message || 'Số lượng không hợp lệ');
+      } else {
+        toast.error('Không thể thêm vào giỏ hàng');
+      }
     }
   };
 
   const handleWishlist = (product) => {
-    toast.info('Wishlist feature coming soon!');
+    toast.info('Tính năng yêu thích đang phát triển!');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-1">
-            Discover our collection of sports accessories
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Navbar */}
+      <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content */}
+      <main className="flex-1">
+        {/* Header */}
+        <div className="bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h1 className="text-3xl font-bold text-gray-900">Sản phẩm</h1>
+            <p className="text-gray-600 mt-1">
+              Khám phá bộ sưu tập phụ kiện thể thao của chúng tôi
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="mb-8">
           <div className="flex gap-3">
@@ -215,7 +254,11 @@ const ProductListPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <p className="text-sm text-gray-600">
-                    {products.length} products found
+                    {totalElements > 0 ? (
+                      <>Hiển thị {products.length} trong số {totalElements} sản phẩm</>
+                    ) : (
+                      <>Không tìm thấy sản phẩm nào</>
+                    )}
                   </p>
                 </div>
 
@@ -226,10 +269,10 @@ const ProductListPage = () => {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="name">Sort by Name</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="newest">Newest First</option>
+                    <option value="newest">Mới nhất</option>
+                    <option value="name">Tên A-Z</option>
+                    <option value="price-asc">Giá: Thấp đến cao</option>
+                    <option value="price-desc">Giá: Cao đến thấp</option>
                   </select>
 
                   {/* View Mode */}
@@ -254,17 +297,18 @@ const ProductListPage = () => {
             {/* Products Grid */}
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <Loading size="lg" text="Loading products..." />
+                <Loading size="lg" text="Đang tải sản phẩm..." />
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-lg">
-                <p className="text-gray-600">No products found</p>
+                <p className="text-gray-600 text-lg mb-2">Không tìm thấy sản phẩm</p>
+                <p className="text-gray-500 text-sm mb-4">Thử điều chỉnh bộ lọc hoặc tìm kiếm khác</p>
                 <Button onClick={handleClearFilters} variant="outline" className="mt-4">
-                  Clear Filters
+                  Xóa bộ lọc
                 </Button>
               </div>
             ) : (
-              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'} gap-6`}>
                 {products.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -284,7 +328,7 @@ const ProductListPage = () => {
                   disabled={currentPage === 0}
                   variant="outline"
                 >
-                  Previous
+                  Trang trước
                 </Button>
                 
                 <div className="flex gap-2">
@@ -296,7 +340,7 @@ const ProductListPage = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-lg ${
+                        className={`w-10 h-10 rounded-lg transition-colors ${
                           currentPage === page
                             ? 'bg-primary-600 text-white'
                             : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
@@ -313,13 +357,17 @@ const ProductListPage = () => {
                   disabled={currentPage === totalPages - 1}
                   variant="outline"
                 >
-                  Next
+                  Trang sau
                 </Button>
               </div>
             )}
           </div>
         </div>
-      </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

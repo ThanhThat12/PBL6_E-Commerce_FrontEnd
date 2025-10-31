@@ -49,6 +49,13 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
   const displayBanners = banners.length > 0 ? banners : defaultBanners;
 
   // Auto-play slider
+  const handleNext = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setActiveIndex((prev) => (prev + 1) % displayBanners.length);
+    setTimeout(() => setIsTransitioning(false), 500);
+  };
+
   useEffect(() => {
     if (displayBanners.length <= 1) return;
 
@@ -57,14 +64,7 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
     }, autoPlayInterval);
 
     return () => clearInterval(timer);
-  }, [activeIndex, displayBanners.length]);
-
-  const handleNext = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setActiveIndex((prev) => (prev + 1) % displayBanners.length);
-    setTimeout(() => setIsTransitioning(false), 500);
-  };
+  }, [autoPlayInterval, displayBanners.length]);
 
   const handlePrev = () => {
     if (isTransitioning) return;

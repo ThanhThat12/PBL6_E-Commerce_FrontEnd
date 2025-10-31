@@ -6,7 +6,7 @@ import {
   logout as logoutService,
   logoutAll as logoutAllService,
   completeRegistration,
-  resetPassword,
+  getCurrentUser,
 } from '../services/authService';
 import { 
   getUserInfo, 
@@ -14,8 +14,10 @@ import {
   clearAuthData,
   isAuthenticated as checkAuth,
 } from '../utils/storage';
+import { handleAuthError, requiresReAuthentication } from '../utils/authErrorHandler';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
+import { onAuthChange, SYNC_EVENTS } from '../utils/storageSync';
 
 // Create Auth Context
 export const AuthContext = createContext(null);
@@ -23,17 +25,13 @@ export const AuthContext = createContext(null);
 /**
  * AuthProvider Component
  * Provides authentication state and methods to entire app
+ * Syncs authentication across multiple tabs
  */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
-  // Initialize auth state on mount
-  useEffect(() => {
-    initializeAuth();
-  }, []);
 
   /**
    * Initialize authentication state
@@ -44,12 +42,35 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       
       if (checkAuth()) {
-        const userInfo = getUserInfo();
+        let userInfo = getUserInfo();
+        
         if (userInfo) {
+          // User info exists in storage
           setUser(userInfo);
+          console.log('[initializeAuth] User loaded from storage:', userInfo);
         } else {
-          // Token exists but no user info - clear and logout
-          clearAuthData();
+          // Token exists but no user info - fetch from API
+          console.log('[initializeAuth] Token exists but no user info, fetching from API...');
+          
+          try {
+            const fetchedUser = await getCurrentUser();
+            
+            if (fetchedUser) {
+              saveUserInfo(fetchedUser);
+              setUser(fetchedUser);
+              console.log('[initializeAuth] User fetched from API:', fetchedUser);
+            } else {
+              // Failed to fetch user - clear auth data
+              console.warn('[initializeAuth] Failed to fetch user, clearing auth data');
+              clearAuthData();
+            }
+          } catch (err) {
+            console.error('[initializeAuth] Error fetching user:', err);
+            // If it's an auth error, clear data
+            if (err.response?.status === 401) {
+              clearAuthData();
+            }
+          }
         }
       }
     } catch (err) {
@@ -58,6 +79,33 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Initialize auth state on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Sync authentication state across tabs
+  useEffect(() => {
+    const unsubscribe = onAuthChange((data) => {
+      console.log('[AuthContext] Cross-tab auth event received:', data);
+      
+      // Re-initialize auth state when other tab login/logout
+      if (checkAuth()) {
+        const userInfo = getUserInfo();
+        if (userInfo) {
+          setUser(userInfo);
+          console.log('[AuthContext] User synced from other tab:', userInfo);
+        }
+      } else {
+        // Logout event from other tab
+        setUser(null);
+        console.log('[AuthContext] Logged out from other tab');
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   /**
@@ -72,7 +120,8 @@ export const AuthProvider = ({ children }) => {
       
       const response = await loginService(credentials);
       
-      if (response.status === 'success' && response.data?.user) {
+      // Backend may return status: 200 (number) or status: 'success' (string)
+      if ((response.status === 200 || response.status === 'success') && response.data?.user) {
         setUser(response.data.user);
         return { success: true, data: response.data };
       }
@@ -82,9 +131,20 @@ export const AuthProvider = ({ children }) => {
         message: response.message || 'Đăng nhập thất bại' 
       };
     } catch (err) {
-      const errorMessage = err.message || 'Đã xảy ra lỗi khi đăng nhập';
-      setError(errorMessage);
-      return { success: false, message: errorMessage };
+      const errorInfo = handleAuthError(err);
+      setError(errorInfo.message);
+      
+      // If error requires re-authentication, clear auth data
+      if (requiresReAuthentication(errorInfo.errorCode)) {
+        clearAuthData();
+        setUser(null);
+      }
+      
+      return { 
+        success: false, 
+        message: errorInfo.message,
+        errorCode: errorInfo.errorCode 
+      };
     } finally {
       setLoading(false);
     }
@@ -104,11 +164,32 @@ export const AuthProvider = ({ children }) => {
       
       console.log('[AuthContext] loginWithGoogle response:', response);
       
-      // Check for success status (service returns status: 'success')
-      if (response.status === 'success' && response.data?.user) {
-        const userData = response.data.user;
-        setUser(userData);
-        console.log('[AuthContext] User set:', userData);
+      // Check for success status
+      if (response.status === 'success' && response.data) {
+        // Backend may not return user object directly
+        let userData = response.data.user;
+        
+        if (userData) {
+          // User info available
+          setUser(userData);
+          console.log('[AuthContext] User set from response:', userData);
+        } else {
+          // User info not in response, fetch it
+          console.log('[AuthContext] User not in response, fetching...');
+          
+          try {
+            const fetchedUser = await getCurrentUser();
+            if (fetchedUser) {
+              saveUserInfo(fetchedUser);
+              setUser(fetchedUser);
+              console.log('[AuthContext] User fetched:', fetchedUser);
+            }
+          } catch (err) {
+            console.error('[AuthContext] Failed to fetch user:', err);
+            // Continue anyway, user will be fetched on next render
+          }
+        }
+        
         return { success: true, data: response.data };
       }
       
@@ -117,10 +198,20 @@ export const AuthProvider = ({ children }) => {
         message: response.message || 'Đăng nhập Google thất bại' 
       };
     } catch (err) {
-      const errorMessage = err.message || 'Đã xảy ra lỗi khi đăng nhập Google';
-      console.error('[AuthContext] loginWithGoogle error:', errorMessage, err);
-      setError(errorMessage);
-      return { success: false, message: errorMessage };
+      const errorInfo = handleAuthError(err);
+      console.error('[AuthContext] loginWithGoogle error:', errorInfo, err);
+      setError(errorInfo.message);
+      
+      if (requiresReAuthentication(errorInfo.errorCode)) {
+        clearAuthData();
+        setUser(null);
+      }
+      
+      return { 
+        success: false, 
+        message: errorInfo.message,
+        errorCode: errorInfo.errorCode 
+      };
     } finally {
       setLoading(false);
     }
@@ -140,11 +231,32 @@ export const AuthProvider = ({ children }) => {
       
       console.log('[AuthContext] loginWithFacebook response:', response);
       
-      // Check for success status (service returns status: 'success')
-      if (response.status === 'success' && response.data?.user) {
-        const userData = response.data.user;
-        setUser(userData);
-        console.log('[AuthContext] User set:', userData);
+      // Check for success status
+      if (response.status === 'success' && response.data) {
+        // Backend may not return user object directly
+        let userData = response.data.user;
+        
+        if (userData) {
+          // User info available
+          setUser(userData);
+          console.log('[AuthContext] User set from response:', userData);
+        } else {
+          // User info not in response, fetch it
+          console.log('[AuthContext] User not in response, fetching...');
+          
+          try {
+            const fetchedUser = await getCurrentUser();
+            if (fetchedUser) {
+              saveUserInfo(fetchedUser);
+              setUser(fetchedUser);
+              console.log('[AuthContext] User fetched:', fetchedUser);
+            }
+          } catch (err) {
+            console.error('[AuthContext] Failed to fetch user:', err);
+            // Continue anyway, user will be fetched on next render
+          }
+        }
+        
         return { success: true, data: response.data };
       }
       
@@ -153,10 +265,20 @@ export const AuthProvider = ({ children }) => {
         message: response.message || 'Đăng nhập Facebook thất bại' 
       };
     } catch (err) {
-      const errorMessage = err.message || 'Đã xảy ra lỗi khi đăng nhập Facebook';
-      console.error('[AuthContext] loginWithFacebook error:', errorMessage, err);
-      setError(errorMessage);
-      return { success: false, message: errorMessage };
+      const errorInfo = handleAuthError(err);
+      console.error('[AuthContext] loginWithFacebook error:', errorInfo, err);
+      setError(errorInfo.message);
+      
+      if (requiresReAuthentication(errorInfo.errorCode)) {
+        clearAuthData();
+        setUser(null);
+      }
+      
+      return { 
+        success: false, 
+        message: errorInfo.message,
+        errorCode: errorInfo.errorCode 
+      };
     } finally {
       setLoading(false);
     }
@@ -172,25 +294,60 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
+      // Step 1: Complete registration (no token returned)
       const response = await completeRegistration(userData);
       
-      if (response.status === 'success' && response.data?.user) {
-        setUser(response.data.user);
-        return { success: true, data: response.data };
+      console.log('🔍 [AuthContext] register RAW response:', response);
+      console.log('🔍 [AuthContext] response.status:', response.status, typeof response.status);
+      console.log('🔍 [AuthContext] response.data:', response.data);
+      
+      // Check if registration was successful
+      if (response.status === 200) {
+        console.log('✅ [AuthContext] Registration successful, now auto-login...');
+        
+        // Step 2: Auto-login after successful registration
+        const loginResult = await login({
+          username: userData.username,
+          password: userData.password,
+          rememberMe: true
+        });
+        
+        console.log('🔍 [AuthContext] Auto-login result:', loginResult);
+        
+        if (loginResult.success) {
+          console.log('✅ [AuthContext] Auto-login SUCCESS, returning { success: true }');
+          return { 
+            success: true, 
+            message: response.message || 'Đăng ký thành công',
+            data: loginResult.data 
+          };
+        } else {
+          console.log('❌ [AuthContext] Auto-login FAILED');
+          return {
+            success: false,
+            message: 'Đăng ký thành công nhưng đăng nhập thất bại. Vui lòng đăng nhập thủ công.'
+          };
+        }
       }
       
+      console.log('❌ [AuthContext] Registration FAILED, returning { success: false }');
       return { 
         success: false, 
         message: response.message || 'Đăng ký thất bại' 
       };
     } catch (err) {
-      const errorMessage = err.message || 'Đã xảy ra lỗi khi đăng ký';
-      setError(errorMessage);
-      return { success: false, message: errorMessage };
+      const errorInfo = handleAuthError(err);
+      setError(errorInfo.message);
+      console.error('❌ [AuthContext] Registration ERROR:', err, errorInfo);
+      return { 
+        success: false, 
+        message: errorInfo.message,
+        errorCode: errorInfo.errorCode 
+      };
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [login]);
 
   /**
    * Logout current session
@@ -203,6 +360,8 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', err);
       // Continue with local logout even if API fails
     } finally {
+      // Clear all auth data from storage
+      clearAuthData();
       setUser(null);
       setError(null);
       setLoading(false);
@@ -220,6 +379,8 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Logout all error:', err);
     } finally {
+      // Clear all auth data from storage
+      clearAuthData();
       setUser(null);
       setError(null);
       setLoading(false);
@@ -300,6 +461,15 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Custom hook to use Auth Context
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
 };
 
 export default AuthContext;

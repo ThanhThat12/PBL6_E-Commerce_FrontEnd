@@ -43,10 +43,13 @@ const ProductCard = ({ product, onAddToCart, onWishlist }) => {
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         <img
-          src={product.mainImage || '/placeholder-product.jpg'}
+          src={product.mainImage || 'https://via.placeholder.com/400x400?text=No+Image'}
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           loading="lazy"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/400x400?text=No+Image';
+          }}
         />
         
         {/* Badges */}
