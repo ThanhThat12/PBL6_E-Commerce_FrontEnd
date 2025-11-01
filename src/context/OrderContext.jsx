@@ -18,11 +18,18 @@ export const OrderProvider = ({ children }) => {
     setError(null);
     try {
       const response = await orderService.getMyOrders();
-      if (response.status === 200) {
+      console.log('📦 fetchOrders response:', response);
+      // Backend returns ResponseDTO { status, error, message, data }
+      if (response && !response.error && (response.status === 200 || response.status === 201)) {
         setOrders(response.data || []);
+      } else {
+        const errorMsg = response?.message || 'Không thể tải danh sách đơn hàng';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Không thể tải danh sách đơn hàng';
+      console.error('❌ fetchOrders error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể tải danh sách đơn hàng';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -38,12 +45,19 @@ export const OrderProvider = ({ children }) => {
     setError(null);
     try {
       const response = await orderService.getOrderDetail(orderId);
-      if (response.status === 200) {
+      console.log('📦 fetchOrderDetail response:', response);
+      if (response && !response.error && (response.status === 200 || response.status === 201)) {
         setCurrentOrder(response.data);
         return response.data;
+      } else {
+        const errorMsg = response?.message || 'Không thể tải chi tiết đơn hàng';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        throw new Error(errorMsg);
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Không thể tải chi tiết đơn hàng';
+      console.error('❌ fetchOrderDetail error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể tải chi tiết đơn hàng';
       setError(errorMsg);
       toast.error(errorMsg);
       throw err;
@@ -60,12 +74,19 @@ export const OrderProvider = ({ children }) => {
     setError(null);
     try {
       const response = await orderService.createOrder(orderData);
-      if (response.status === 201 || response.status === 200) {
-        toast.success('Đặt hàng thành công!');
+      console.log('📦 createOrder response:', response);
+      if (response && !response.error && (response.status === 200 || response.status === 201)) {
+        toast.success(response.message || 'Đặt hàng thành công!');
         return response.data;
+      } else {
+        const errorMsg = response?.message || 'Không thể tạo đơn hàng';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        throw new Error(errorMsg);
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Không thể tạo đơn hàng';
+      console.error('❌ createOrder error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể tạo đơn hàng';
       setError(errorMsg);
       toast.error(errorMsg);
       throw err;
@@ -82,14 +103,21 @@ export const OrderProvider = ({ children }) => {
     setError(null);
     try {
       const response = await orderService.cancelOrder(orderId);
-      if (response.status === 200) {
-        toast.success('Đã hủy đơn hàng');
+      console.log('📦 cancelOrder response:', response);
+      if (response && !response.error && response.status === 200) {
+        toast.success(response.message || 'Đã hủy đơn hàng');
         // Refresh orders list
         await fetchOrders();
         return response.data;
+      } else {
+        const errorMsg = response?.message || 'Không thể hủy đơn hàng';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        throw new Error(errorMsg);
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Không thể hủy đơn hàng';
+      console.error('❌ cancelOrder error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể hủy đơn hàng';
       setError(errorMsg);
       toast.error(errorMsg);
       throw err;
@@ -106,11 +134,17 @@ export const OrderProvider = ({ children }) => {
     setError(null);
     try {
       const response = await orderService.getOrdersByStatus(status);
-      if (response.status === 200) {
+      console.log('📦 filterOrdersByStatus response:', response);
+      if (response && !response.error && response.status === 200) {
         setOrders(response.data || []);
+      } else {
+        const errorMsg = response?.message || 'Không thể lọc đơn hàng';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Không thể lọc đơn hàng';
+      console.error('❌ filterOrdersByStatus error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể lọc đơn hàng';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {

@@ -32,7 +32,7 @@ const menuItems = [
   { label: "Liên hệ", href: "/contact", badge: null },
 ];
 
-export default function NavbarNew() {
+export default function NavbarNew({ isHomePage = false }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -89,7 +89,7 @@ export default function NavbarNew() {
 
   return (
     <header className={`
-      sticky 
+      ${isHomePage ? 'sticky' : 'relative'}
       top-0 
       z-40 
       bg-white

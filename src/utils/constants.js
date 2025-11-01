@@ -1,69 +1,78 @@
 // API Base URL
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081/api/';
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    LOGIN: '/api/authenticate',
-    LOGIN_GOOGLE: '/api/authenticate/google',
-    LOGIN_FACEBOOK: '/api/authenticate/facebook',
-    REFRESH_TOKEN: '/api/refresh-token',
-    LOGOUT: '/api/logout',
+    LOGIN: 'authenticate',
+    LOGIN_GOOGLE: 'authenticate/google',
+    LOGIN_FACEBOOK: 'authenticate/facebook',
+    REFRESH_TOKEN: 'refresh-token',
+    LOGOUT: 'logout',
     
     // Register
     REGISTER: {
-      CHECK_CONTACT: '/api/register/check-contact',
-      VERIFY_OTP: '/api/register/verify-otp',
-      REGISTER: '/api/register/register',
+      CHECK_CONTACT: 'register/check-contact',
+      VERIFY_OTP: 'register/verify-otp',
+      REGISTER: 'register/register',
     },
     
     // Forgot Password
     FORGOT_PASSWORD: {
-      SEND_OTP: '/api/forgot-password/send-otp',
-      VERIFY_OTP: '/api/forgot-password/verify-otp',
-      RESET: '/api/forgot-password/reset',
+      SEND_OTP: 'forgot-password/send-otp',
+      VERIFY_OTP: 'forgot-password/verify-otp',
+      RESET: 'forgot-password/reset',
     },
   },
   
   // User Profile
   PROFILE: {
-    ME: '/api/user/me',
-    GET: '/api/user/profile',
-    UPDATE: '/api/user/profile',
-    CHANGE_PASSWORD: '/api/user/change-password',
-    CHANGE_EMAIL: '/api/user/change-email',
-    VERIFY_EMAIL_CHANGE: '/api/user/verify-email-change',
+    ME: 'user/me',
+    GET: 'user/profile',
+    UPDATE: 'user/profile',
+    CHANGE_PASSWORD: 'user/change-password',
+    CHANGE_EMAIL: 'user/change-email',
+    VERIFY_EMAIL_CHANGE: 'user/verify-email-change',
   },
   
   // Cart
   CART: {
-    GET: '/api/cart',
-    ADD_ITEM: '/api/cart/items',
-    UPDATE_ITEM: (itemId) => `/api/cart/items/${itemId}`,
-    REMOVE_ITEM: (itemId) => `/api/cart/items/${itemId}`,
-    CLEAR: '/api/cart',
+    GET: 'cart',
+    ADD_ITEM: 'cart/items',
+    UPDATE_ITEM: (itemId) => `cart/items/${itemId}`,
+    REMOVE_ITEM: (itemId) => `cart/items/${itemId}`,
+    CLEAR: 'cart',
   },
   
   // Product
   PRODUCT: {
-    GET_ALL: '/api/products',
-    GET_BY_ID: (id) => `/api/products/${id}`,
-    SEARCH: '/api/products/search',
-    BY_CATEGORY: (categoryId) => `/api/products/category/${categoryId}`,
+    GET_ALL: 'products',
+    GET_BY_ID: (id) => `products/${id}`,
+    SEARCH: 'products/search',
+    BY_CATEGORY: (categoryId) => `products/category/${categoryId}`,
   },
   
   // Category
   CATEGORY: {
-    GET_ALL: '/api/categories',
-    GET_BY_ID: (id) => `/api/categories/${id}`,
+    GET_ALL: 'categories',
+    GET_BY_ID: (id) => `categories/${id}`,
+  },
+  
+  // Order (fixed: added missing ORDER endpoints)
+  // Note: CREATE and GET_LIST use same path 'orders' but different HTTP methods (POST vs GET)
+  ORDER: {
+    CREATE: 'orders',           // POST /api/orders
+    GET_LIST: 'orders',          // GET /api/orders (get all user's orders)
+    GET_BY_ID: (orderId) => `orders/${orderId}`,
+    CANCEL: (orderId) => `orders/${orderId}/cancel`,
   },
   
   // Security
   SECURITY: {
-    LOGIN_HISTORY: '/api/user/login-history',
-    ACTIVE_SESSIONS: '/api/user/active-sessions',
-    REVOKE_SESSION: '/api/user/revoke-session',
+    LOGIN_HISTORY: 'user/login-history',
+    ACTIVE_SESSIONS: 'user/active-sessions',
+    REVOKE_SESSION: 'user/revoke-session',
   },
 };
 
@@ -85,6 +94,8 @@ export const STORAGE_KEYS = {
   USER_INFO: 'user_info',
   REMEMBER_ME: 'remember_me',
   THEME: 'theme',
+  // Checkout
+  CHECKOUT_SHIPPING_ADDRESS: 'checkout_shipping_address',
 };
 
 // Validation Regex

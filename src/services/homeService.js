@@ -78,7 +78,7 @@ const transformCategory = (category) => {
  */
 export const getFeaturedProducts = async (limit = 8) => {
   try {
-    const response = await api.get('/api/products', {
+    const response = await api.get('products', {
       params: {
         page: 0,
         size: limit,
@@ -108,7 +108,7 @@ export const getFeaturedProducts = async (limit = 8) => {
  */
 export const getCategories = async () => {
   try {
-    const response = await api.get('/api/categories');
+    const response = await api.get('categories');
     console.log('📦 getCategories raw response:', response);
     
     // Response structure: {code: 200, data: [...], message: ""}
@@ -133,7 +133,7 @@ export const getCategories = async () => {
 export const getBestSellingProducts = async (limit = 8) => {
   try {
     // TODO: Replace with actual best-selling endpoint when available
-    const response = await api.get('/api/products', {
+    const response = await api.get('products', {
       params: {
         page: 0,
         size: limit,
@@ -160,7 +160,7 @@ export const getBestSellingProducts = async (limit = 8) => {
  */
 export const getNewArrivals = async (limit = 8) => {
   try {
-    const response = await api.get('/api/products', {
+    const response = await api.get('products', {
       params: {
         page: 0,
         size: limit,
@@ -188,7 +188,7 @@ export const getNewArrivals = async (limit = 8) => {
  */
 export const getProductsByCategory = async (categoryId, limit = 4) => {
   try {
-    const response = await api.get(`/api/categories/${categoryId}/products`, {
+    const response = await api.get(`categories/${categoryId}/products`, {
       params: {
         page: 0,
         size: limit

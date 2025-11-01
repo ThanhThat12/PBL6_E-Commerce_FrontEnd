@@ -15,7 +15,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import Homepage from './pages/public/Homepage';
-
+import PaymentPage from './pages/order/PaymentPage';
+import PaymentResultPage from './pages/order/PaymentResultPage';
 
 // Product Pages
 import ProductListPage from './pages/products/ProductListPage';
@@ -69,6 +70,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <CheckoutPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/payment" 
+                element={
+                  <ProtectedRoute>
+                    <PaymentPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/payment-result" 
+                element={
+                  <ProtectedRoute>
+                    <PaymentResultPage />
                   </ProtectedRoute>
                 } 
               />

@@ -25,8 +25,8 @@ export const loginUser = async (loginData) => {
  * Get user's saved addresses
  */
 export const getAddresses = async () => {
-  console.log('getAddresses: Calling /api/me/addresses');
-  const responseDTO = await api.get('/api/me/addresses');
+  console.log('getAddresses: Calling me/addresses');
+  const responseDTO = await api.get('me/addresses');
   console.log('getAddresses responseDTO:', responseDTO);
   // Interceptor returns response.data which is ResponseDTO { status, message, data }
   return responseDTO;
@@ -37,7 +37,7 @@ export const getAddresses = async () => {
  */
 export const createAddress = async (addressData) => {
   console.log('createAddress: Sending data:', addressData);
-  const responseDTO = await api.post('/api/me/addresses', addressData);
+  const responseDTO = await api.post('me/addresses', addressData);
   console.log('createAddress responseDTO:', responseDTO);
   // Interceptor returns response.data which is ResponseDTO { status, message, data }
   return responseDTO;
@@ -48,7 +48,7 @@ export const createAddress = async (addressData) => {
  */
 export const updateAddress = async (addressId, addressData) => {
   console.log('updateAddress: Sending data:', addressData);
-  const responseDTO = await api.put(`/api/me/addresses/${addressId}`, addressData);
+  const responseDTO = await api.put(`me/addresses/${addressId}`, addressData);
   console.log('updateAddress responseDTO:', responseDTO);
   return responseDTO;
 };
@@ -57,7 +57,7 @@ export const updateAddress = async (addressId, addressData) => {
  * Delete address
  */
 export const deleteAddress = async (addressId) => {
-  const response = await api.delete(`/api/me/addresses/${addressId}`);
+  const response = await api.delete(`me/addresses/${addressId}`);
   return response.data;
 };
 
@@ -65,7 +65,7 @@ export const deleteAddress = async (addressId) => {
  * Set address as primary
  */
 export const setAsPrimary = async (addressId) => {
-  const response = await api.post(`/api/me/addresses/${addressId}/primary`);
+  const response = await api.post(`me/addresses/${addressId}/primary`);
   return response.data;
 };
 
@@ -107,7 +107,7 @@ export const updateAvatar = async (avatarUrl) => {
  * Note: api interceptor already returns response.data, so we get data directly
  */
 export const getProvinces = async () => {
-  const data = await api.get('/api/ghn/master/provinces');
+  const data = await api.get('ghn/master/provinces');
   console.log('getProvinces data:', data);
   return Array.isArray(data) ? data : [];
 };
@@ -117,7 +117,7 @@ export const getProvinces = async () => {
  * @param {number} provinceId - Province ID from GHN
  */
 export const getDistricts = async (provinceId) => {
-  const data = await api.get(`/api/ghn/master/districts?province_id=${provinceId}`);
+  const data = await api.get(`ghn/master/districts?province_id=${provinceId}`);
   console.log('getDistricts data:', data);
   return Array.isArray(data) ? data : [];
 };
@@ -127,7 +127,7 @@ export const getDistricts = async (provinceId) => {
  * @param {number} districtId - District ID from GHN
  */
 export const getWards = async (districtId) => {
-  const data = await api.get(`/api/ghn/master/wards?district_id=${districtId}`);
+  const data = await api.get(`ghn/master/wards?district_id=${districtId}`);
   console.log('getWards data:', data);
   return Array.isArray(data) ? data : [];
 };
@@ -137,7 +137,7 @@ export const getWards = async (districtId) => {
  * @param {Object} addressData - { province, district, ward }
  */
 export const resolveAddress = async (addressData) => {
-  const data = await api.post('/api/ghn/master/resolve', addressData);
+  const data = await api.post('ghn/master/resolve', addressData);
   console.log('resolveAddress data:', data);
   return data;
 };

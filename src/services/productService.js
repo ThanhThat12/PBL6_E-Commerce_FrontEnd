@@ -157,7 +157,7 @@ export const getProductsByCategory = async (categoryId, page = 0, size = 12) => 
  */
 export const getCategories = async () => {
   try {
-    const response = await api.get('/api/categories');
+    const response = await api.get('categories');
     console.log('📦 getCategories response:', response);
     
     const categories = response?.data || [];

@@ -66,7 +66,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-background-primary">
       {/* Navbar */}
-      <Navbar />
+      <Navbar isHomePage={true} />
 
       {/* Loading State */}
       {loading && (

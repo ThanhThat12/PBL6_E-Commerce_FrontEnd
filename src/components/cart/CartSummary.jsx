@@ -9,7 +9,7 @@ import Button from '../common/Button';
  * Shows cart totals and checkout button
  */
 const CartSummary = () => {
-  const { totalItems, totalAmount, isEmpty } = useCart();
+  const { totalAmount, isEmpty } = useCart();
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -64,7 +64,7 @@ const CartSummary = () => {
           variant="primary"
           size="lg"
           className="w-full"
-          onClick={() => (window.location.href = '/checkout')}
+          onClick={() => (window.location.href = '/payment')}
         >
           Tiến hành thanh toán
         </Button>

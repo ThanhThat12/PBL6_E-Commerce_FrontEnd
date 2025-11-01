@@ -1,4 +1,5 @@
 import api from './api';
+import { API_ENDPOINTS } from '../utils/constants';
 
 /**
  * Order Service
@@ -13,8 +14,9 @@ const orderService = {
    */
   createOrder: async (orderData) => {
     try {
-      const response = await api.post('/orders', orderData);
-      return response.data;
+      const response = await api.post(API_ENDPOINTS.ORDER.CREATE, orderData);
+      // api interceptor already returns response.data (ResponseDTO)
+      return response;
     } catch (error) {
       throw error;
     }
@@ -26,8 +28,9 @@ const orderService = {
    */
   getMyOrders: async () => {
     try {
-      const response = await api.get('/orders');
-      return response.data;
+      const response = await api.get(API_ENDPOINTS.ORDER.GET_LIST);
+      // api interceptor already returns response.data (ResponseDTO)
+      return response;
     } catch (error) {
       throw error;
     }
@@ -40,8 +43,9 @@ const orderService = {
    */
   getOrderDetail: async (orderId) => {
     try {
-      const response = await api.get(`/orders/${orderId}`);
-      return response.data;
+      const response = await api.get(API_ENDPOINTS.ORDER.GET_BY_ID(orderId));
+      // api interceptor already returns response.data (ResponseDTO)
+      return response;
     } catch (error) {
       throw error;
     }
@@ -54,8 +58,9 @@ const orderService = {
    */
   cancelOrder: async (orderId) => {
     try {
-      const response = await api.put(`/orders/${orderId}/cancel`);
-      return response.data;
+      const response = await api.put(API_ENDPOINTS.ORDER.CANCEL(orderId));
+      // api interceptor already returns response.data (ResponseDTO)
+      return response;
     } catch (error) {
       throw error;
     }
@@ -68,10 +73,11 @@ const orderService = {
    */
   getOrdersByStatus: async (status) => {
     try {
-      const response = await api.get('/orders', {
+      const response = await api.get(API_ENDPOINTS.ORDER.GET_LIST, {
         params: { status }
       });
-      return response.data;
+      // api interceptor already returns response.data (ResponseDTO)
+      return response;
     } catch (error) {
       throw error;
     }
