@@ -83,6 +83,58 @@ const colorPattern = {
   gradientAccent: '#FF6B35',
 };
 
+// Tailwind color format (with shade variations)
+export const tailwindColors = {
+  primary: {
+    50: '#F0F6FF',
+    100: '#E1EDFF',
+    200: '#C3DBFF',
+    300: '#A5C9FF',
+    400: '#87B7FF',
+    500: colorPattern.primary, // #0F52BA
+    600: colorPattern.primaryDark, // #0A3D8F
+    700: '#082D6B',
+    800: '#061D47',
+    900: '#040D23',
+  },
+  secondary: {
+    50: '#FFF5F0',
+    100: '#FFEBE1',
+    200: '#FFD7C3',
+    300: '#FFC3A5',
+    400: '#FFAF87',
+    500: colorPattern.secondary, // #FF6B35
+    600: colorPattern.secondaryDark, // #E65100
+    700: '#CC4700',
+    800: '#993400',
+    900: '#662300',
+  },
+  accent: {
+    50: '#F0FDF4',
+    100: '#DCFCE7',
+    200: '#BBFBCF',
+    300: '#86EFB7',
+    400: colorPattern.accentLight, // #6EE7B7
+    500: colorPattern.accent, // #10B981
+    600: colorPattern.accentDark, // #059669
+    700: '#047857',
+    800: '#065F46',
+    900: '#034E3F',
+  },
+  gold: {
+    50: '#FFFBEB',
+    100: '#FEF3C7',
+    200: colorPattern.goldLight, // #FCD34D
+    300: '#FBD13A',
+    400: '#FAC515',
+    500: colorPattern.gold, // #F59E0B
+    600: '#E5971D',
+    700: colorPattern.goldDark, // #D97706
+    800: '#B45309',
+    900: '#92400E',
+  },
+};
+
 // Helper function to get color with opacity
 export const withOpacity = (color, opacity) => {
   // Convert hex to rgba
