@@ -196,5 +196,5 @@ export const HTTP_STATUS = {
 export const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 // OAuth Configuration
-export const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+export const GOOGLE_CLIENT_ID = '675831796221-gv53a00leksrq5f08lbds5kej9jjlm4q.apps.googleusercontent.com';
 export const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '';

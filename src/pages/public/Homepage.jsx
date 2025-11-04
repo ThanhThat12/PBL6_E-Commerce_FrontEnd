@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import usePendingOrderCleanup from "../../hooks/usePendingOrderCleanup";
 import Navbar from "../../components/common/Navbar";
 import HeroSection from "../../components/feature/home/HeroSection";
 import CategorySection from "../../components/feature/home/CategorySection";
@@ -18,6 +19,9 @@ import { getCategories, getFeaturedProducts, getBestSellingProducts, getNewArriv
  */
 const HomePage = () => {
   const [showButton, setShowButton] = useState(false);
+
+  // Cleanup pending MoMo orders when user returns to homepage
+  usePendingOrderCleanup();
 
   // State cho data từ API
   const [categories, setCategories] = useState([]);

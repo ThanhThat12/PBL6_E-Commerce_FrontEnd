@@ -1,81 +1,170 @@
 /**
  * Address Service
- * Service to fetch provinces, districts, and wards
+ * Service to fetch provinces, districts, and wards from Vietnam
+ * 
+ * Primary API: https://provinces.open-api.vn/api/
+ * Fallback API: https://vapi.vnappmob.com/api/province
  */
 
-// You can also use this public API: https://provinces.open-api.vn/api/
-const BASE_URL = 'https://provinces.open-api.vn/api';
+// Primary API endpoints
+const PRIMARY_API = 'https://provinces.open-api.vn/api';
+
+// Fallback API endpoint
+const FALLBACK_API = 'https://vapi.vnappmob.com/api/province';
+
+// Timeout configuration (5 seconds)
+const FETCH_TIMEOUT = 5000;
+
+/**
+ * Fetch with timeout
+ * @param {string} url
+ * @param {number} timeout
+ * @returns {Promise}
+ */
+const fetchWithTimeout = (url, timeout = FETCH_TIMEOUT) => {
+  return Promise.race([
+    fetch(url),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), timeout)
+    )
+  ]);
+};
 
 const addressService = {
   /**
-   * Get all provinces/cities
+   * Get all provinces/cities with fallback
+   * @returns {Promise<Array>}
    */
   getProvinces: async () => {
     try {
-      const response = await fetch(`${BASE_URL}/p/`);
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching provinces:', error);
-      throw error;
+      console.log('📍 Fetching provinces from primary API...');
+      const response = await fetchWithTimeout(`${PRIMARY_API}/p/`);
+      const data = await response.json();
+      console.log('✅ Provinces loaded from primary API');
+      return data;
+    } catch (primaryError) {
+      console.warn('⚠️ Primary API failed, trying fallback:', primaryError.message);
+      
+      try {
+        console.log('📍 Fetching provinces from fallback API...');
+        const response = await fetchWithTimeout(`${FALLBACK_API}`);
+        const data = await response.json();
+        console.log('✅ Provinces loaded from fallback API');
+        
+        // Transform fallback API response to match primary API format
+        return data.data || [];
+      } catch (fallbackError) {
+        console.error('❌ Both APIs failed:', fallbackError.message);
+        throw new Error('Unable to fetch provinces from both APIs');
+      }
     }
   },
 
   /**
-   * Get districts by province code
+   * Get districts by province code with fallback
    * @param {string} provinceCode - Province code
+   * @returns {Promise<Array>}
    */
   getDistricts: async (provinceCode) => {
+    if (!provinceCode) {
+      console.warn('⚠️ Province code is required');
+      return [];
+    }
+
     try {
-      const response = await fetch(`${BASE_URL}/p/${provinceCode}?depth=2`);
+      console.log(`📍 Fetching districts for province ${provinceCode} from primary API...`);
+      const response = await fetchWithTimeout(`${PRIMARY_API}/p/${provinceCode}?depth=2`);
       const data = await response.json();
+      console.log(`✅ Districts loaded from primary API`);
       return data.districts || [];
-    } catch (error) {
-      console.error('Error fetching districts:', error);
-      throw error;
+    } catch (primaryError) {
+      console.warn('⚠️ Primary API failed, trying fallback:', primaryError.message);
+      
+      try {
+        console.log(`📍 Fetching districts for province ${provinceCode} from fallback API...`);
+        const response = await fetchWithTimeout(`${FALLBACK_API}?id=${provinceCode}`);
+        const data = await response.json();
+        console.log(`✅ Districts loaded from fallback API`);
+        
+        // Transform fallback API response
+        return data.data?.districts || data.data || [];
+      } catch (fallbackError) {
+        console.error('❌ Both APIs failed:', fallbackError.message);
+        return [];
+      }
     }
   },
 
   /**
-   * Get wards by district code
+   * Get wards by district code with fallback
    * @param {string} districtCode - District code
+   * @returns {Promise<Array>}
    */
   getWards: async (districtCode) => {
+    if (!districtCode) {
+      console.warn('⚠️ District code is required');
+      return [];
+    }
+
     try {
-      const response = await fetch(`${BASE_URL}/d/${districtCode}?depth=2`);
+      console.log(`📍 Fetching wards for district ${districtCode} from primary API...`);
+      const response = await fetchWithTimeout(`${PRIMARY_API}/d/${districtCode}?depth=2`);
       const data = await response.json();
+      console.log(`✅ Wards loaded from primary API`);
       return data.wards || [];
-    } catch (error) {
-      console.error('Error fetching wards:', error);
-      throw error;
+    } catch (primaryError) {
+      console.warn('⚠️ Primary API failed, trying fallback:', primaryError.message);
+      
+      try {
+        console.log(`📍 Fetching wards for district ${districtCode} from fallback API...`);
+        const response = await fetchWithTimeout(`${FALLBACK_API}?id=${districtCode}`);
+        const data = await response.json();
+        console.log(`✅ Wards loaded from fallback API`);
+        
+        // Transform fallback API response
+        return data.data?.wards || data.data || [];
+      } catch (fallbackError) {
+        console.error('❌ Both APIs failed:', fallbackError.message);
+        return [];
+      }
     }
   },
 
   /**
-   * Get full address details
+   * Get full address details with fallback
    * @param {string} provinceCode
    * @param {string} districtCode
    * @param {string} wardCode
+   * @returns {Promise<Object>}
    */
   getFullAddress: async (provinceCode, districtCode, wardCode) => {
     try {
+      console.log('📍 Fetching full address details...');
       const [provinces, districtData, wardData] = await Promise.all([
         addressService.getProvinces(),
-        fetch(`${BASE_URL}/d/${districtCode}?depth=2`).then(r => r.json()),
-        fetch(`${BASE_URL}/w/${wardCode}?depth=2`).then(r => r.json())
+        addressService.getDistricts(districtCode),
+        addressService.getWards(wardCode)
       ]);
 
       const province = provinces.find(p => p.code === parseInt(provinceCode));
-      const district = districtData;
-      const ward = wardData;
+      const district = districtData.find(d => d.code === parseInt(districtCode));
+      const ward = wardData.find(w => w.code === parseInt(wardCode));
 
-      return {
+      const result = {
         province: province?.name || '',
         district: district?.name || '',
         ward: ward?.name || ''
       };
+
+      console.log('✅ Full address loaded:', result);
+      return result;
     } catch (error) {
-      console.error('Error getting full address:', error);
-      throw error;
+      console.error('❌ Error getting full address:', error.message);
+      return {
+        province: '',
+        district: '',
+        ward: ''
+      };
     }
   },
 
@@ -112,6 +201,8 @@ const addressService = {
         fee = 20000; // Major cities
       }
 
+      console.log(`💰 Calculated shipping fee: ${fee}₫`);
+
       return {
         total: fee,
         service_type_name: 'Giao hàng tiêu chuẩn',
@@ -120,7 +211,7 @@ const addressService = {
         weight: weight
       };
     } catch (error) {
-      console.error('Error calculating shipping fee:', error);
+      console.error('❌ Error calculating shipping fee:', error);
       throw error;
     }
   }

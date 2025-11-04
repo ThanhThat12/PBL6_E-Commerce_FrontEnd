@@ -26,6 +26,26 @@ const CheckoutPage = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [weightGrams] = useState(500);
   const [shippingFee] = useState(0); // Default to free shipping
+  const [checkoutItems, setCheckoutItems] = useState([]);
+
+  // Load selected items from sessionStorage
+  useEffect(() => {
+    const storedItems = sessionStorage.getItem('checkoutItems');
+    if (storedItems) {
+      try {
+        const items = JSON.parse(storedItems);
+        setCheckoutItems(items);
+      } catch (error) {
+        console.error('Error parsing checkout items:', error);
+        toast.error('Lỗi tải thông tin đơn hàng');
+        navigate('/cart');
+      }
+    } else {
+      // If no selected items, redirect to cart
+      toast.error('Vui lòng chọn sản phẩm để thanh toán');
+      navigate('/cart');
+    }
+  }, [navigate]);
 
   useEffect(() => {
     // Fetch cart on mount
@@ -34,34 +54,38 @@ const CheckoutPage = () => {
     }
   }, [cart, fetchCart]);
 
-  // Redirect if cart is empty
+  // Redirect if no checkout items
   useEffect(() => {
-    if (!cartLoading && (!cart || !cart.items || cart.items.length === 0)) {
-      toast.error('Giỏ hàng trống!');
-      navigate('/cart');
+    if (!cartLoading && checkoutItems.length === 0) {
+      const storedItems = sessionStorage.getItem('checkoutItems');
+      if (!storedItems) {
+        toast.error('Vui lòng chọn sản phẩm để thanh toán');
+        navigate('/cart');
+      }
     }
-  }, [cart, cartLoading, navigate]);
+  }, [checkoutItems, cartLoading, navigate]);
 
   // Handle address change
   const handleAddressChange = (addressData) => {
     setShippingAddress(addressData);
   };
 
-  // Prepare order items from cart
+  // Prepare order items from selected checkout items
   const prepareOrderItems = () => {
-    if (!cart || !cart.items) return [];
+    if (!checkoutItems || checkoutItems.length === 0) return [];
     
-    return cart.items.map(item => ({
+    return checkoutItems.map(item => ({
       variantId: item.variantId,
       quantity: item.quantity,
-      price: item.price
+      price: item.unitPrice
     }));
   };
 
-  // Calculate total
+  // Calculate total from selected items
   const calculateTotal = () => {
-    if (!cart) return 0;
-    return cart.totalAmount + shippingFee;
+    if (!checkoutItems || checkoutItems.length === 0) return 0;
+    const subtotal = checkoutItems.reduce((sum, item) => sum + item.subTotal, 0);
+    return subtotal + shippingFee;
   };
 
   // Handle place order
@@ -95,6 +119,9 @@ const CheckoutPage = () => {
       const result = await createOrder(orderData);
       
       if (result) {
+        // Clear checkout items from sessionStorage
+        sessionStorage.removeItem('checkoutItems');
+        
         // Clear cart and navigate to success page
         navigate(`/orders/${result.id}`, {
           state: { fromCheckout: true }
@@ -105,16 +132,12 @@ const CheckoutPage = () => {
     }
   };
 
-  if (cartLoading) {
+  if (cartLoading || checkoutItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loading />
       </div>
     );
-  }
-
-  if (!cart || !cart.items || cart.items.length === 0) {
-    return null;
   }
 
   return (
@@ -193,11 +216,11 @@ const CheckoutPage = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-4">
               <OrderSummaryCard
-                items={cart.items.map(item => ({
+                items={checkoutItems.map(item => ({
                   name: item.productName,
                   variant: item.variantAttributes,
                   quantity: item.quantity,
-                  price: item.price
+                  price: item.unitPrice
                 }))}
                 shippingFee={shippingFee}
                 totalAmount={calculateTotal()}

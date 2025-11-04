@@ -21,7 +21,7 @@ import { removeItem } from '../../utils/storage';
  */
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cartItems, loading: cartLoading, fetchCart } = useCart();
+  const { cartItems, loading: cartLoading, fetchCart, clearCart } = useCart();
   
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [shippingAddress, setShippingAddress] = useState(null);
@@ -31,6 +31,30 @@ const PaymentPage = () => {
   const [shippingFee, setShippingFee] = useState(0);
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [checkoutItems, setCheckoutItems] = useState([]);
+
+  // Load selected items from sessionStorage
+  useEffect(() => {
+    const storedItems = sessionStorage.getItem('checkoutItems');
+    console.log('📦 Stored checkout items:', storedItems);
+    
+    if (storedItems) {
+      try {
+        const items = JSON.parse(storedItems);
+        console.log('✅ Parsed checkout items:', items);
+        setCheckoutItems(items);
+      } catch (error) {
+        console.error('❌ Error parsing checkout items:', error);
+        toast.error('Lỗi tải thông tin đơn hàng');
+        navigate('/cart');
+      }
+    } else {
+      // If no selected items, redirect to cart
+      console.warn('⚠️ No checkout items found in sessionStorage');
+      toast.error('Vui lòng chọn sản phẩm để thanh toán');
+      navigate('/cart');
+    }
+  }, [navigate]);
 
   // Fetch cart on mount
   useEffect(() => {
@@ -44,13 +68,16 @@ const PaymentPage = () => {
     }
   }, [fetchCart]);
 
-  // Redirect if cart is empty (after loading finished)
+  // Redirect if no checkout items
   useEffect(() => {
-    if (!cartLoading && cartItems && cartItems.length === 0) {
-      toast.error('Giỏ hàng trống!');
-      navigate('/cart');
+    if (!cartLoading && checkoutItems.length === 0) {
+      const storedItems = sessionStorage.getItem('checkoutItems');
+      if (!storedItems) {
+        toast.error('Vui lòng chọn sản phẩm để thanh toán');
+        navigate('/cart');
+      }
     }
-  }, [cartItems, cartLoading, navigate]);
+  }, [checkoutItems, cartLoading, navigate]);
 
   // Handle shipping address change
   const handleAddressChange = (addressData) => {
@@ -81,16 +108,18 @@ const PaymentPage = () => {
     }
   };
 
-  // Calculate totals - sử dụng useMemo để tự động tính lại khi cartItems thay đổi
+  // Calculate totals - sử dụng useMemo để tự động tính lại khi checkoutItems thay đổi
   const { subtotal, total, finalTotal } = useMemo(() => {
-    console.log('🧮 Calculating totals with cartItems:', cartItems);
+    console.log('🧮 Calculating totals with checkoutItems:', checkoutItems);
+    console.log('🧮 Current shippingFee:', shippingFee);
+    console.log('🧮 Current voucherDiscount:', voucherDiscount);
     
-    if (!cartItems || cartItems.length === 0) {
-      console.log('⚠️ No cart items, returning 0');
-      return { subtotal: 0, shipping: shippingFee, total: shippingFee };
+    if (!checkoutItems || checkoutItems.length === 0) {
+      console.log('⚠️ No checkout items, returning 0');
+      return { subtotal: 0, shipping: shippingFee, total: shippingFee, finalTotal: shippingFee - voucherDiscount };
     }
     
-    const subtotal = cartItems.reduce((sum, item) => {
+    const subtotal = checkoutItems.reduce((sum, item) => {
       // Kiểm tra cả unitPrice và price
       const price = parseFloat(item.unitPrice || item.price) || 0;
       const quantity = parseInt(item.quantity) || 0;
@@ -107,13 +136,13 @@ const PaymentPage = () => {
     console.log(`✅ Subtotal: ${subtotal}, Shipping: ${shippingFee}, Voucher: ${voucherDiscount}, Total: ${total}, Final: ${finalTotal}`);
     
     return { subtotal, shipping: shippingFee, total, finalTotal };
-  }, [cartItems, shippingFee, voucherDiscount]);
+  }, [checkoutItems, shippingFee, voucherDiscount]);
 
-  // Prepare order items from cart
+  // Prepare order items from selected checkout items
   const prepareOrderItems = () => {
-    if (!cartItems || cartItems.length === 0) return [];
+    if (!checkoutItems || checkoutItems.length === 0) return [];
     
-    return cartItems.map(item => ({
+    return checkoutItems.map(item => ({
       variantId: item.variantId,
       quantity: item.quantity
     }));
@@ -186,18 +215,36 @@ const PaymentPage = () => {
       if (isOk) {
         const orderId = response.data?.orderId || response.orderId;
         
+        console.log('🎯 Order created successfully! Order ID:', orderId);
+        console.log('💳 Current payment method:', paymentMethod);
+        console.log('🔍 Payment method type:', typeof paymentMethod);
+        console.log('🔍 Is MOMO?', paymentMethod === 'MOMO');
+        
+        // Clear checkout items from sessionStorage
+        sessionStorage.removeItem('checkoutItems');
+        
         // Nếu chọn MoMo, tạo link thanh toán và chuyển hướng
         if (paymentMethod === 'MOMO') {
           console.log('💳 Creating MoMo payment for order:', orderId);
+          console.log('💰 Payment amount details:');
+          console.log('  - Subtotal:', subtotal);
+          console.log('  - Shipping Fee:', shippingFee);
+          console.log('  - Voucher Discount:', voucherDiscount);
+          console.log('  - Total:', total);
+          console.log('  - Final Total (to MoMo):', finalTotal);
           
           try {
-            const momoResponse = await api.post('payment/momo/create', {
+            const momoPayload = {
               orderId: orderId,
               amount: finalTotal,
               orderInfo: `Thanh toán đơn hàng #${orderId}`,
               returnUrl: `${window.location.origin}/payment-result`,
               notifyUrl: `${window.location.origin}/api/payment/momo/callback`
-            });
+            };
+            
+            console.log('📤 Sending MoMo payment request:', momoPayload);
+            
+            const momoResponse = await api.post('payment/momo/create', momoPayload);
             
             console.log('✅ MoMo payment response:', momoResponse.data);
             
@@ -205,6 +252,15 @@ const PaymentPage = () => {
               toast.success('Đang chuyển đến trang thanh toán MoMo...');
               // Clear persisted shipping address after order is created
               removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
+              
+              // LƯU Ý: KHÔNG xóa cart ở đây cho MoMo
+              // Cart sẽ được xóa sau khi thanh toán MoMo thành công (trong PaymentResultPage)
+              console.log('⚠️ Cart will be cleared after MoMo payment success');
+              
+              // Lưu orderId vào sessionStorage để xóa nếu thanh toán thất bại
+              sessionStorage.setItem('pendingMomoOrderId', orderId);
+              console.log('💾 Saved pending MoMo order ID:', orderId);
+              
               // Chuyển hướng đến trang thanh toán MoMo
               window.location.href = momoResponse.data.payUrl;
               return;
@@ -218,6 +274,10 @@ const PaymentPage = () => {
             navigate('/orders');
           }
         } else {
+          // COD - xóa cart ngay vì không cần thanh toán online
+          console.log('🗑️ Clearing cart for COD payment');
+          await clearCart();
+          
           // COD - chuyển đến trang đơn hàng
           toast.success(response.message || 'Đặt hàng thành công!');
           // Clear persisted shipping address
@@ -273,7 +333,10 @@ const PaymentPage = () => {
   // Debug: Check cart data
   console.log('🛒 Cart Items:', cartItems);
   console.log('📊 Subtotal:', subtotal);
-  console.log('💰 Total:', total);
+  console.log('� Shipping Fee:', shippingFee);
+  console.log('🎫 Voucher Discount:', voucherDiscount);
+  console.log('�💰 Total:', total);
+  console.log('💳 Final Total:', finalTotal);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -308,13 +371,13 @@ const PaymentPage = () => {
                   Chi tiết đơn hàng
                 </h2>
                 
-                {!cartItems || cartItems.length === 0 ? (
+                {!checkoutItems || checkoutItems.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <p>Không có sản phẩm trong giỏ hàng</p>
+                    <p>Không có sản phẩm được chọn</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {cartItems.map((item) => (
+                    {checkoutItems.map((item) => (
                       <CartItemCard key={item.id} item={item} />
                     ))}
                   </div>

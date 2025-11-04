@@ -187,10 +187,6 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
     setSelectedAddressId(address.id);
     setShowNewAddressForm(false);
     
-    // Parse fullAddress to extract province, district, ward if available
-    // Format: "số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
-    const addressParts = address.fullAddress.split(',').map(part => part.trim());
-    
     // Ưu tiên lấy tên từ địa chỉ đã lưu, không lấy từ storage để tránh ghi đè
     // Priority: address.contactName > address.receiverName > user profile
     let recipientName = address.contactName || address.receiverName || user?.name || user?.fullName || '';
@@ -222,16 +218,50 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
     
     console.log('✅ Final recipient name:', recipientName);
     
+    // Parse fullAddress to get detailed parts
+    // If fullAddress already contains full info (street, ward, district, province), parse it
+    // Otherwise, construct from individual fields
+    let streetAddress = address.fullAddress || '';
+    let wardName = '';
+    let districtName = '';
+    let provinceName = '';
+    
+    // Try to parse if fullAddress contains commas (full format)
+    const addressParts = address.fullAddress.split(',').map(part => part.trim());
+    if (addressParts.length >= 4) {
+      // Full format: "street, ward, district, province"
+      streetAddress = addressParts[0];
+      wardName = addressParts[addressParts.length - 3] || '';
+      districtName = addressParts[addressParts.length - 2] || '';
+      provinceName = addressParts[addressParts.length - 1] || '';
+    } else {
+      // fullAddress only has street address, need to construct full address from other fields
+      streetAddress = address.fullAddress;
+      // Backend returns wardName, districtName, provinceName (not ward, district, province)
+      wardName = address.wardName || address.ward || '';
+      districtName = address.districtName || address.district || '';
+      provinceName = address.provinceName || address.province || '';
+    }
+    
+    console.log('🏠 Address parts:', { streetAddress, wardName, districtName, provinceName });
+    
+    // Construct full address for display: "street, ward, district, province"
+    const fullAddressDisplay = [streetAddress, wardName, districtName, provinceName]
+      .filter(part => part && part.trim())
+      .join(', ');
+    
+    console.log('📍 Full address display:', fullAddressDisplay);
+    
     const addressData = {
       addressId: address.id,
       toName: recipientName,
       toPhone: address.contactPhone,
-      toAddress: address.fullAddress,
+      toAddress: fullAddressDisplay, // Full address with province/district/ward
       toDistrictId: address.districtId?.toString() || '',
       toWardCode: address.wardCode || '',
-      province: addressParts[addressParts.length - 1] || '',
-      district: addressParts[addressParts.length - 2] || '',
-      ward: addressParts[addressParts.length - 3] || '',
+      province: provinceName,
+      district: districtName,
+      ward: wardName,
       provinceCode: address.provinceId || address.provinceCode || '',
       districtCode: address.districtId || address.districtCode || '',
       wardCode: address.wardCode || ''
@@ -361,8 +391,15 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
           provinceId: parseInt(formData.provinceCode) || undefined,
           districtId: parseInt(formData.districtCode) || undefined,
           wardCode: formData.wardCode,
+          // Thêm các tên để backend có thể lưu vào DB
+          provinceName: formData.province,
+          districtName: formData.district,
+          wardName: formData.ward,
           primaryAddress: addresses.length === 0 // Set làm mặc định nếu chưa có địa chỉ nào
         };
+        
+        console.log('💾 Saving address to database:', addressToSave);
+        
         const response = await userService.createAddress(addressToSave);
         if (response.status === 200) {
           // Reload addresses list

@@ -94,6 +94,8 @@ const OrderDetailPage = () => {
     );
   }
 
+  console.log('===[DEBUG] currentOrder:', currentOrder);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Navbar */}
@@ -165,7 +167,7 @@ const OrderDetailPage = () => {
               updatedAt={currentOrder.updatedAt}
             />
 
-            {/* Shipping Information */}
+                        {/* Shipping Information */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Thông tin giao hàng
@@ -174,19 +176,19 @@ const OrderDetailPage = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Người nhận:</span>
                   <span className="font-medium text-gray-900">
-                    {currentOrder.recipientName || 'N/A'}
+                    {currentOrder.receiverName || 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Số điện thoại:</span>
                   <span className="font-medium text-gray-900">
-                    {currentOrder.recipientPhone || 'N/A'}
+                    {currentOrder.receiverPhone || 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Địa chỉ:</span>
                   <span className="font-medium text-gray-900 text-right max-w-xs">
-                    {currentOrder.shippingAddress || 'N/A'}
+                    {currentOrder.receiverAddress || 'N/A'}
                   </span>
                 </div>
               </div>

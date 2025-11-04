@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { useCart } from '../../context/CartContext';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 import Loading from '../../components/common/Loading';
@@ -14,6 +15,7 @@ import Button from '../../components/common/Button';
 const PaymentResultPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { clearCart } = useCart();
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [orderInfo, setOrderInfo] = useState(null);
@@ -36,7 +38,25 @@ const PaymentResultPage = () => {
           amount
         });
 
+        // Nếu không có params từ MoMo, kiểm tra sessionStorage có pending order không
         if (!orderId || !resultCode) {
+          const pendingOrderId = sessionStorage.getItem('pendingMomoOrderId');
+          
+          if (pendingOrderId) {
+            console.log('⚠️ No MoMo callback params, but found pending order:', pendingOrderId);
+            console.log('🗑️ Deleting pending order...');
+            
+            try {
+              await api.delete(`/api/orders/${pendingOrderId}`);
+              console.log('✅ Pending order deleted successfully');
+              sessionStorage.removeItem('pendingMomoOrderId');
+              toast.warning('Đơn hàng chưa thanh toán đã bị hủy');
+            } catch (deleteError) {
+              console.error('❌ Error deleting pending order:', deleteError);
+              sessionStorage.removeItem('pendingMomoOrderId');
+            }
+          }
+          
           toast.error('Thông tin thanh toán không hợp lệ');
           setPaymentStatus('error');
           setLoading(false);
@@ -62,15 +82,46 @@ const PaymentResultPage = () => {
             amount,
             message: 'Thanh toán thành công'
           });
+          
+          // Xóa cart sau khi thanh toán MoMo thành công
+          console.log('🗑️ Clearing cart after successful MoMo payment');
+          try {
+            await clearCart();
+            console.log('✅ Cart cleared successfully');
+          } catch (clearError) {
+            console.error('❌ Error clearing cart:', clearError);
+            // Không hiển thị lỗi cho user vì thanh toán đã thành công
+          }
+          
+          // Xóa pending order ID khỏi sessionStorage
+          sessionStorage.removeItem('pendingMomoOrderId');
+          console.log('✅ Removed pending MoMo order ID from session');
+          
           toast.success('Thanh toán thành công!');
         } else {
-          // Thanh toán thất bại
+          // Thanh toán thất bại - XÓA ORDER
           setPaymentStatus('failed');
           setOrderInfo({
             orderId,
             amount,
             message: message || 'Thanh toán thất bại'
           });
+          
+          console.log('❌ Payment failed, deleting order:', orderId);
+          
+          // Xóa order đã tạo
+          try {
+            await api.delete(`/api/orders/${orderId}`);
+            console.log('✅ Order deleted successfully');
+            toast.warning('Đơn hàng đã bị hủy do thanh toán thất bại');
+          } catch (deleteError) {
+            console.error('❌ Error deleting order:', deleteError);
+            // Vẫn hiển thị thông báo thất bại cho user
+          }
+          
+          // Xóa pending order ID khỏi sessionStorage
+          sessionStorage.removeItem('pendingMomoOrderId');
+          
           toast.error('Thanh toán thất bại: ' + message);
         }
 
@@ -84,7 +135,7 @@ const PaymentResultPage = () => {
     };
 
     verifyPayment();
-  }, [searchParams]);
+  }, [searchParams, clearCart]);
 
   if (loading) {
     return (

@@ -12,6 +12,7 @@ const useCartStore = create(
       cartCount: 0,
       loading: false,
       error: null,
+      selectedItems: [], // Danh sách ID các item được chọn để thanh toán
 
       // Actions
       /**
@@ -216,8 +217,63 @@ const useCartStore = create(
           cart: null,
           cartCount: 0,
           loading: false,
-          error: null
-        })
+          error: null,
+          selectedItems: []
+        }),
+
+      /**
+       * Toggle item selection for checkout
+       * @param {number} itemId - Cart item ID
+       */
+      toggleItemSelection: (itemId) => {
+        const { selectedItems } = get();
+        // Ensure itemId is a number for consistent comparison
+        const normalizedItemId = typeof itemId === 'string' ? parseInt(itemId, 10) : itemId;
+        
+        console.log('� Toggle item:', normalizedItemId, 'Current selected:', selectedItems);
+        
+        const isSelected = selectedItems.includes(normalizedItemId);
+        console.log('📌 Is selected?', isSelected);
+        
+        const newSelectedItems = isSelected
+          ? selectedItems.filter(id => id !== normalizedItemId)
+          : [...selectedItems, normalizedItemId];
+        
+        console.log('✅ New selected items:', newSelectedItems);
+        set({ selectedItems: newSelectedItems });
+      },
+
+      /**
+       * Select all items
+       */
+      selectAllItems: () => {
+        const { cart } = get();
+        const allItemIds = cart?.items?.map(item => item.id) || [];
+        set({ selectedItems: allItemIds });
+      },
+
+      /**
+       * Deselect all items
+       */
+      deselectAllItems: () => {
+        set({ selectedItems: [] });
+      },
+
+      /**
+       * Get selected items data
+       */
+      getSelectedItems: () => {
+        const { cart, selectedItems } = get();
+        return cart?.items?.filter(item => selectedItems.includes(item.id)) || [];
+      },
+
+      /**
+       * Get total amount of selected items
+       */
+      getSelectedTotal: () => {
+        const selectedItems = get().getSelectedItems();
+        return selectedItems.reduce((sum, item) => sum + item.subTotal, 0);
+      }
     }),
     { name: 'cartStore' }
   )

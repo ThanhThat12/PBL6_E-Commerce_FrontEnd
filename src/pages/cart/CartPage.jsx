@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiShoppingBag } from 'react-icons/fi';
 
 import ProfileLayout from '../../components/layout/ProfileLayout';
 import useCart from '../../hooks/useCart';
+import useCartStore from '../../store/cartStore';
+import usePendingOrderCleanup from '../../hooks/usePendingOrderCleanup';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import Modal from '../../components/common/Modal';
@@ -17,7 +19,33 @@ import { CartItemCard, CartSummary } from '../../components/cart';
 const CartPage = () => {
   const navigate = useNavigate();
   const { cartItems, loading, isEmpty, clearCart } = useCart();
+  const selectedItems = useCartStore((state) => state.selectedItems);
+  const selectAllItems = useCartStore((state) => state.selectAllItems);
+  const deselectAllItems = useCartStore((state) => state.deselectAllItems);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Cleanup pending MoMo orders when user returns to cart
+  usePendingOrderCleanup();
+
+  // Auto-select all items when cart loads for the first time
+  useEffect(() => {
+    if (!hasInitialized && cartItems && cartItems.length > 0 && selectedItems.length === 0) {
+      console.log('🎯 Auto-selecting all items on first load');
+      selectAllItems();
+      setHasInitialized(true);
+    }
+  }, [cartItems, selectedItems.length, selectAllItems, hasInitialized]);
+
+  const allSelected = cartItems.length > 0 && selectedItems.length === cartItems.length;
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      deselectAllItems();
+    } else {
+      selectAllItems();
+    }
+  };
   const handleClearCart = async () => {
     try {
       const result = await clearCart();
@@ -77,11 +105,20 @@ const CartPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Clear Cart Button */}
+            {/* Header with Select All and Clear Cart */}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-neutral-900">
-                Chi tiết đơn hàng
-              </h2>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={handleToggleSelectAll}
+                  className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 cursor-pointer"
+                  aria-label="Chọn tất cả sản phẩm"
+                />
+                <h2 className="text-xl font-bold text-neutral-900">
+                  Chọn tất cả ({cartItems.length})
+                </h2>
+              </div>
               <button
                 onClick={() => setShowClearModal(true)}
                 className="text-sm text-error-600 hover:text-error-700 font-medium"
