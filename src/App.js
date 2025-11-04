@@ -36,7 +36,7 @@ import ChangePasswordPage from './pages/user/ChangePasswordPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // 🧑‍💼 Admin Pages
-import ProtectedRoute from "./components/admin/ProtectedRoute";
+import ProtectedRouteAdmin from "./components/admin/ProtectedRoute";
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
 import OrdersPage from "./pages/admin/Orders/OrdersPage";
@@ -147,6 +147,21 @@ function App() {
               
               {/* Catch-all redirect to home */}
               <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+            
+            
+            
+            {/* ================= ADMIN ROUTES ================= */}
+            <Route path="/admin" element={<ProtectedRouteAdmin><Dashboard /></ProtectedRouteAdmin>} />
+            <Route path="/admin/dashboard" element={<ProtectedRouteAdmin><Dashboard /></ProtectedRouteAdmin >} />
+            <Route path="/admin/products" element={<ProtectedRouteAdmin><ProductsPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/orders" element={<ProtectedRouteAdmin><OrdersPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/categories" element={<ProtectedRouteAdmin><CategoriesPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><Customers /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><Sellers /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
+            <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
+            {/* ================================================= */}
             </Routes>
             
             {/* React Hot Toast */}
