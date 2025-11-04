@@ -35,6 +35,18 @@ import ChangePasswordPage from './pages/user/ChangePasswordPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+// 🧑‍💼 Admin Pages
+import ProtectedRoute from "./components/admin/ProtectedRoute";
+import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
+import ProductsPage from "./pages/admin/Products/ProductsPage"; 
+import OrdersPage from "./pages/admin/Orders/OrdersPage";
+import CategoriesPage from "./pages/admin/Categories/CategoriesPage";
+import Customers from "./pages/admin/Users/Customers";
+import Sellers from "./pages/admin/Users/Sellers";
+import Admins from "./pages/admin/Users/Admins";
+import SettingsPage from "./pages/admin/Settings/SettingsPage";
+import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
+
 function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
