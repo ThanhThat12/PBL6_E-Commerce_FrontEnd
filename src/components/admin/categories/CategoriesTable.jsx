@@ -139,7 +139,6 @@ const CategoriesTable = () => {
       <div className="categories-header">
         <div className="categories-title-section">
           <h1 className="categories-title">Categories Management</h1>
-          <p className="categories-subtitle">Manage product categories and classifications</p>
         </div>
 
         <div className="categories-actions">
@@ -171,7 +170,6 @@ const CategoriesTable = () => {
             <div className="stat-content">
               <p className="stat-label">{stat.title}</p>
               <p className="stat-value">{stat.value}</p>
-              <p className="stat-description">{stat.description}</p>
             </div>
           </div>
         ))}

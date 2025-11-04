@@ -240,13 +240,6 @@ const ProductsTable = () => {
             <div className="stat-content">
               <p className="stat-label">{stat.title}</p>
               <p className="stat-value">{stat.value}</p>
-              <p className="stat-description">{stat.description}</p>
-              <div className="stat-change">
-                <span className={`change-indicator ${stat.changeType}`}>
-                  {stat.change}
-                </span>
-                <span className="change-period">vs last month</span>
-              </div>
             </div>
           </div>
         ))}
