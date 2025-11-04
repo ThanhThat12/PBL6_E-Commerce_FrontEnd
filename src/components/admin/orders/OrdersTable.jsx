@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, X, Package, DollarSign, Clock, TrendingUp, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
-import OrderActions from './OrderActions';
+import { Search, X, Package, DollarSign, Clock, TrendingUp, ChevronLeft, ChevronRight, Filter, Eye, Printer, Trash2 } from 'lucide-react';
+import OrderDetailModal from './OrderDetailModal';
 import './OrdersTable.css';
 
 const OrdersTable = () => {
@@ -10,82 +10,93 @@ const OrdersTable = () => {
   const [sortDirection, setSortDirection] = useState('desc');
   const [statusFilter, setStatusFilter] = useState('');
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Mock data for orders
   const ordersData = [
     {
-      id: 1,
+      idOrder: 1,
       orderNumber: 'ORD-2024-001',
       customer: {
         name: 'John Doe',
         email: 'john.doe@email.com',
+        phone: '+1 (555) 123-4567',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
       },
+      shopName: 'Tech Paradise Store',
       orderDate: '2024-10-16',
       status: 'Processing',
       total: 299.99,
       items: 3,
-      paymentMethod: 'Credit Card',
+      paymentMethod: 'COD',
       shippingAddress: '123 Main St, City, State 12345'
     },
     {
-      id: 2,
+      idOrder: 2,
       orderNumber: 'ORD-2024-002',
       customer: {
         name: 'Jane Smith',
         email: 'jane.smith@email.com',
+        phone: '+1 (555) 234-5678',
         avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face'
       },
+      shopName: 'Fashion Hub',
       orderDate: '2024-10-15',
       status: 'Shipped',
       total: 149.50,
       items: 2,
-      paymentMethod: 'PayPal',
+      paymentMethod: 'Momo',
       shippingAddress: '456 Oak Ave, City, State 67890'
     },
     {
-      id: 3,
+      idOrder: 3,
       orderNumber: 'ORD-2024-003',
       customer: {
         name: 'Mike Johnson',
         email: 'mike.johnson@email.com',
+        phone: '+1 (555) 345-6789',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face'
       },
+      shopName: 'Home Essentials',
       orderDate: '2024-10-15',
       status: 'Delivered',
       total: 89.99,
       items: 1,
-      paymentMethod: 'Credit Card',
+      paymentMethod: 'COD',
       shippingAddress: '789 Pine St, City, State 54321'
     },
     {
-      id: 4,
+      idOrder: 4,
       orderNumber: 'ORD-2024-004',
       customer: {
         name: 'Sarah Wilson',
         email: 'sarah.wilson@email.com',
+        phone: '+1 (555) 456-7890',
         avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face'
       },
+      shopName: 'Beauty & Care',
       orderDate: '2024-10-14',
       status: 'Pending',
       total: 459.99,
       items: 5,
-      paymentMethod: 'Bank Transfer',
+      paymentMethod: 'Momo',
       shippingAddress: '321 Elm St, City, State 98765'
     },
     {
-      id: 5,
+      idOrder: 5,
       orderNumber: 'ORD-2024-005',
       customer: {
         name: 'David Brown',
         email: 'david.brown@email.com',
+        phone: '+1 (555) 567-8901',
         avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face'
       },
+      shopName: 'Sports World',
       orderDate: '2024-10-14',
       status: 'Cancelled',
       total: 199.99,
       items: 2,
-      paymentMethod: 'Credit Card',
+      paymentMethod: 'COD',
       shippingAddress: '654 Maple Ave, City, State 13579'
     }
   ];
@@ -100,7 +111,7 @@ const OrdersTable = () => {
 
   // Filter and search logic
   const filteredOrders = ordersData.filter(order => {
-    const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = order.idOrder.toString().includes(searchTerm.toLowerCase()) ||
                          order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.customer.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === '' || order.status === statusFilter;
@@ -148,6 +159,22 @@ const OrdersTable = () => {
     setCurrentPage(page);
   };
 
+  const handleViewDetails = (order) => {
+    setSelectedOrder(order);
+  };
+
+  const handlePrint = (order) => {
+    console.log('Print order:', order);
+    // TODO: Implement print functionality
+  };
+
+  const handleDelete = (order) => {
+    if (window.confirm(`Are you sure you want to delete order #${order.idOrder}?`)) {
+      console.log('Delete order:', order);
+      // TODO: Implement delete functionality
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusClasses = {
       'Pending': 'status-pending',
@@ -159,54 +186,75 @@ const OrdersTable = () => {
     return statusClasses[status] || 'status-default';
   };
 
+  // Stats data configuration
+  const statsData = [
+    { 
+      title: 'Total Orders', 
+      value: totalOrders.toLocaleString(), 
+      icon: <Package size={24} />, 
+      color: 'blue',
+      description: 'All orders received',
+      change: '+12.5%',
+      changeType: 'positive'
+    },
+    { 
+      title: 'Pending Orders', 
+      value: pendingOrders, 
+      icon: <Clock size={24} />, 
+      color: 'orange',
+      description: 'Awaiting processing',
+      change: '+3.2%',
+      changeType: 'positive'
+    },
+    { 
+      title: 'Completed Orders', 
+      value: completedOrders, 
+      icon: <TrendingUp size={24} />, 
+      color: 'green',
+      description: 'Successfully delivered',
+      change: '+18.7%',
+      changeType: 'positive'
+    },
+    { 
+      title: 'Total Revenue', 
+      value: `$${totalRevenue.toLocaleString()}`, 
+      icon: <DollarSign size={24} />, 
+      color: 'purple',
+      description: 'Revenue generated',
+      change: '+25.3%',
+      changeType: 'positive'
+    }
+  ];
+
   return (
-    <div className="orders-container">
+    <div>
+      {/* Header Section */}
       <div className="orders-header">
-        <h1>Orders Management</h1>
-        <p>Monitor and manage all customer orders</p>
+        <div className="orders-title-section">
+          <h1 className="orders-title">Orders Management</h1>
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon total-orders">
-            <Package size={24} />
+        {statsData.map((stat, index) => (
+          <div key={index} className={`stat-card stat-${stat.color}`}>
+            <div className="stat-icon">
+              {stat.icon}
+            </div>
+            <div className="stat-content">
+              <p className="stat-label">{stat.title}</p>
+              <p className="stat-value">{stat.value}</p>
+              <p className="stat-description">{stat.description}</p>
+              <div className="stat-change">
+                <span className={`change-indicator ${stat.changeType}`}>
+                  {stat.change}
+                </span>
+                <span className="change-period">vs last month</span>
+              </div>
+            </div>
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{totalOrders.toLocaleString()}</div>
-            <div className="stat-label">Total Orders</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon pending-orders">
-            <Clock size={24} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{pendingOrders}</div>
-            <div className="stat-label">Pending Orders</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon completed-orders">
-            <TrendingUp size={24} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{completedOrders}</div>
-            <div className="stat-label">Completed Orders</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon revenue">
-            <DollarSign size={24} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">${totalRevenue.toLocaleString()}</div>
-            <div className="stat-label">Total Revenue</div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Filters and Search */}
@@ -265,9 +313,9 @@ const OrdersTable = () => {
         <table className="orders-table">
           <thead>
             <tr>
-              <th onClick={() => handleSort('orderNumber')}>
-                Order Number
-                {sortField === 'orderNumber' && (
+              <th onClick={() => handleSort('idOrder')}>
+                Order ID
+                {sortField === 'idOrder' && (
                   <span className={`sort-indicator ${sortDirection}`}>
                     {sortDirection === 'asc' ? '↑' : '↓'}
                   </span>
@@ -326,10 +374,10 @@ const OrdersTable = () => {
           </thead>
           <tbody>
             {currentOrders.map((order) => (
-              <tr key={order.id}>
+              <tr key={order.idOrder}>
                 <td>
                   <div className="order-number">
-                    {order.orderNumber}
+                    {order.idOrder}
                   </div>
                 </td>
                 <td>
@@ -371,7 +419,29 @@ const OrdersTable = () => {
                   </div>
                 </td>
                 <td>
-                  <OrderActions order={order} />
+                  <div className="customer-actions order-actions">
+                    <button 
+                      className="action-btn view-btn"
+                      title="View Details"
+                      onClick={() => handleViewDetails(order)}
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button 
+                      className="action-btn print-btn"
+                      title="Print Order"
+                      onClick={() => handlePrint(order)}
+                    >
+                      <Printer size={16} />
+                    </button>
+                    <button 
+                      className="action-btn delete-btn"
+                      title="Delete Order"
+                      onClick={() => handleDelete(order)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -380,54 +450,37 @@ const OrdersTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="pagination">
+      <div className="pagination-container">
         <div className="pagination-info">
-          Showing {startIndex + 1} to {Math.min(endIndex, sortedOrders.length)} of {sortedOrders.length} results
+          <button className="pagination-nav">
+            <span>← Previous</span>
+          </button>
         </div>
         
-        <div className="pagination-controls">
-          <button 
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="pagination-btn"
-          >
-            <ChevronLeft size={16} />
-            Previous
-          </button>
-          
-          {[...Array(Math.min(5, totalPages))].map((_, index) => {
-            let pageNum;
-            if (totalPages <= 5) {
-              pageNum = index + 1;
-            } else if (currentPage <= 3) {
-              pageNum = index + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + index;
-            } else {
-              pageNum = currentPage - 2 + index;
-            }
-            
-            return (
-              <button
-                key={pageNum}
-                onClick={() => handlePageChange(pageNum)}
-                className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
-          
-          <button 
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="pagination-btn"
-          >
-            Next
-            <ChevronRight size={16} />
+        <div className="pagination-numbers">
+          <button className="page-btn active">1</button>
+          <button className="page-btn">2</button>
+          <button className="page-btn">3</button>
+          <button className="page-btn">4</button>
+          <button className="page-btn">5</button>
+          <span className="pagination-dots">...</span>
+          <button className="page-btn">24</button>
+        </div>
+        
+        <div className="pagination-info">
+          <button className="pagination-nav">
+            <span>Next →</span>
           </button>
         </div>
       </div>
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <OrderDetailModal 
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+        />
+      )}
     </div>
   );
 };

@@ -1,10 +1,20 @@
 // 📁 src/components/admin/layout/Header.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Search, Settings, LogOut, User } from "lucide-react";
 
 const Header = () => {
+  const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+
+  const handleLogout = () => {
+    // Clear admin authentication
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    // Redirect to admin login
+    navigate('/admin');
+  };
 
   return (
     <header className="flex items-center justify-between bg-white shadow-sm border-b border-gray-200 px-6 h-16">
@@ -81,7 +91,10 @@ const Header = () => {
                 Settings
               </button>
               <hr className="my-2 border-gray-100" />
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              >
                 <LogOut size={16} />
                 Sign Out
               </button>

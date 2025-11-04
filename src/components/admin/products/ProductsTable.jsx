@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Search, Filter, Package, TrendingUp, AlertTriangle, ShoppingCart, Plus, Upload } from 'lucide-react';
-import ProductActions from './ProductActions';
+import { Search, Filter, Package, TrendingUp, AlertTriangle, ShoppingCart, Plus, Upload, Eye, Trash2 } from 'lucide-react';
 import './ProductsTable.css';
+import ProductDetailModal from './ProductDetailModal';
 
 const ProductsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   
   // Stats data cho products
   const statsData = [
@@ -54,8 +56,10 @@ const ProductsTable = () => {
     { 
       id: 'PRD001', 
       name: 'iPhone 15 Pro Max', 
+      shopName: 'Apple Store Official',
       sku: 'IP15PM001',
       category: 'Electronics',
+      description: 'The latest iPhone with A17 Pro chip, titanium design, and advanced camera system.',
       price: 1199.00,
       stock: 45,
       status: 'Active',
@@ -67,8 +71,10 @@ const ProductsTable = () => {
     { 
       id: 'PRD002', 
       name: 'MacBook Pro M3', 
+      shopName: 'Apple Store Official',
       sku: 'MBP24001',
       category: 'Electronics',
+      description: 'Powerful laptop with M3 chip, stunning Liquid Retina XDR display, and all-day battery life.',
       price: 2499.00,
       stock: 12,
       status: 'Active',
@@ -80,8 +86,10 @@ const ProductsTable = () => {
     { 
       id: 'PRD003', 
       name: 'Nike Air Max', 
+      shopName: 'Nike Official Store',
       sku: 'NAM2024',
       category: 'Fashion',
+      description: 'Classic Nike sneakers with Air cushioning technology for superior comfort.',
       price: 159.99,
       stock: 0,
       status: 'Out of Stock',
@@ -93,11 +101,13 @@ const ProductsTable = () => {
     { 
       id: 'PRD004', 
       name: 'Coffee Table Oak', 
+      shopName: 'Furniture World',
       sku: 'CTO2024',
       category: 'Furniture',
+      description: 'Modern oak coffee table with minimalist design, perfect for any living room.',
       price: 349.00,
       stock: 8,
-      status: 'Low Stock',
+      status: 'Inactive',
       sales: 245,
       rating: 4.3,
       image: 'https://via.placeholder.com/50x50',
@@ -106,8 +116,10 @@ const ProductsTable = () => {
     { 
       id: 'PRD005', 
       name: 'Samsung Galaxy S24', 
+      shopName: 'Samsung Official',
       sku: 'SGS24001',
       category: 'Electronics',
+      description: 'Latest Samsung flagship with AI-powered camera, stunning display, and 5G connectivity.',
       price: 899.00,
       stock: 67,
       status: 'Active',
@@ -121,9 +133,8 @@ const ProductsTable = () => {
   const getStatusClass = (status) => {
     switch(status) {
       case 'Active': return 'status-active';
-      case 'Out of Stock': return 'status-out-of-stock';
-      case 'Low Stock': return 'status-low-stock';
       case 'Inactive': return 'status-inactive';
+      case 'Out of Stock': return 'status-out-of-stock';
       default: return 'status-default';
     }
   };
@@ -161,23 +172,27 @@ const ProductsTable = () => {
 
   const handleProductAction = {
     onView: (product) => {
-      console.log('View product:', product);
-    },
-    onEdit: (product) => {
-      console.log('Edit product:', product);
-    },
-    onDuplicate: (product) => {
-      console.log('Duplicate product:', product);
+      setSelectedProduct(product);
+      setShowDetailModal(true);
     },
     onDelete: (product) => {
       console.log('Delete product:', product);
       if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
-        // Delete logic here
+        alert(`${product.name} has been deleted`);
       }
-    },
-    onUpdateStock: (product) => {
-      console.log('Update stock for product:', product);
     }
+  };
+
+  const handleUpdateProduct = async (productId, updatedData) => {
+    console.log('Updating product:', productId, updatedData);
+    // TODO: Call API to update product
+    // For now, just simulate success
+    return Promise.resolve();
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailModal(false);
+    setSelectedProduct(null);
   };
 
   const categories = ['All', 'Accessories', 'Bags', 'Clothing', 'Fitness Equipment', 'Shoes', 'Sports Equipment'];
@@ -189,7 +204,6 @@ const ProductsTable = () => {
       <div className="products-header">
         <div className="products-title-section">
           <h1 className="products-title">Products Management</h1>
-          <p className="products-subtitle">Manage your product catalog and inventory</p>
         </div>
         
         {/* Actions */}
@@ -333,14 +347,22 @@ const ProductsTable = () => {
                   <span className="rating-value">{product.rating}</span>
                 </td>
                 <td className="action-cell">
-                  <ProductActions 
-                    product={product}
-                    onView={handleProductAction.onView}
-                    onEdit={handleProductAction.onEdit}
-                    onDuplicate={handleProductAction.onDuplicate}
-                    onDelete={handleProductAction.onDelete}
-                    onUpdateStock={handleProductAction.onUpdateStock}
-                  />
+                  <div className="customer-actions product-actions">
+                    <button
+                      className="action-btn view-btn"
+                      onClick={(e) => { e.stopPropagation(); handleProductAction.onView(product); }}
+                      title="View Details"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      className="action-btn delete-btn"
+                      onClick={(e) => { e.stopPropagation(); handleProductAction.onDelete(product); }}
+                      title="Delete Product"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -351,21 +373,36 @@ const ProductsTable = () => {
       {/* Pagination */}
       <div className="pagination-container">
         <div className="pagination-info">
-          <span>Showing 1 to 5 of {productsData.length} results</span>
+          <button className="pagination-nav">
+            <span>← Previous</span>
+          </button>
         </div>
         
-        <div className="pagination-controls">
-          <button className="pagination-btn">Previous</button>
-          <div className="pagination-numbers">
-            <button className="page-btn active">1</button>
-            <button className="page-btn">2</button>
-            <button className="page-btn">3</button>
-            <span className="pagination-dots">...</span>
-            <button className="page-btn">10</button>
-          </div>
-          <button className="pagination-btn">Next</button>
+        <div className="pagination-numbers">
+          <button className="page-btn active">1</button>
+          <button className="page-btn">2</button>
+          <button className="page-btn">3</button>
+          <button className="page-btn">4</button>
+          <button className="page-btn">5</button>
+          <span className="pagination-dots">...</span>
+          <button className="page-btn">24</button>
+        </div>
+        
+        <div className="pagination-info">
+          <button className="pagination-nav">
+            <span>Next →</span>
+          </button>
         </div>
       </div>
+
+      {/* Product Detail Modal */}
+      {showDetailModal && selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={handleCloseModal}
+          onUpdate={handleUpdateProduct}
+        />
+      )}
     </div>
   );
 };

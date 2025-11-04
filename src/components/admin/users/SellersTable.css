@@ -243,6 +243,7 @@
 }
 
 .seller-name {
+  font-size: 15px;
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 4px;
@@ -258,15 +259,18 @@
   min-width: 180px;
 }
 
-.contact-email {
-  font-weight: 500;
-  color: #1e293b;
-  margin-bottom: 4px;
+.seller-contact .contact-email,
+.seller-contact .contact-phone {
+  display: block;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: #042458;
+  line-height: 1.5;
 }
 
-.contact-phone {
-  font-size: 13px;
-  color: #64748b;
+.seller-contact .contact-email {
+  margin-bottom: 4px;
 }
 
 /* Status Badge */
@@ -311,61 +315,115 @@
   color: #dc2626;
 }
 
-/* Performance Styles */
-.seller-performance {
-  min-width: 140px;
+/* Products Column */
+.seller-products {
+  min-width: 100px;
+  text-align: left;
 }
 
-.performance-products {
-  color: #64748b;
-  font-size: 13px;
-  margin-bottom: 4px;
+.products-count {
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 500;
 }
 
-.performance-sales {
+/* Revenue Column */
+.seller-revenue {
+  min-width: 120px;
+  text-align: left;
+}
+
+.revenue-amount {
   color: #10b981;
   font-weight: 600;
-  font-size: 14px;
-}
-
-/* Rating Styles */
-.seller-rating {
-  min-width: 120px;
-}
-
-.rating-stars {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-bottom: 4px;
-}
-
-.star-filled {
-  color: #fbbf24;
-  font-size: 14px;
-}
-
-.star-half {
-  color: #fbbf24;
-  font-size: 14px;
-  opacity: 0.5;
-}
-
-.star-empty {
-  color: #e5e7eb;
-  font-size: 14px;
-}
-
-.rating-value {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
+  font-size: 15px;
 }
 
 /* Action Cell */
 .action-cell {
   text-align: right;
-  min-width: 120px;
+  min-width: 240px;
+}
+
+.seller-actions{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.seller-actions .action-btn{
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.seller-actions .view-btn,
+.customer-actions .view-btn {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.seller-actions .view-btn:hover,
+.customer-actions .view-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.seller-actions .delete-btn,
+.customer-actions .delete-btn {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.seller-actions .delete-btn:hover,
+.customer-actions .delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.action-buttons-group {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.view-btn:hover {
+  background: #2563eb;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
 }
 
 /* Pagination */
@@ -482,5 +540,14 @@
     flex-direction: column;
     gap: 16px;
     align-items: center;
+  }
+  
+  .action-buttons-group {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

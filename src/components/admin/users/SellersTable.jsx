@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Search, Filter, TrendingUp, Users, CheckCircle, Clock, XCircle } from 'lucide-react';
-import SellerActions from './SellerActions';
+import { Search, TrendingUp, Users, CheckCircle, Clock, XCircle, Eye, Trash2 } from 'lucide-react';
+import SellerDetailModal from './SellerDetailModal';
 import './SellersTable.css';
 
 const SellersTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSeller, setSelectedSeller] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   
-  // Mock data cho sellers dựa trên ảnh và file Sellers.jsx
+  // Mock data cho sellers
   const sellersData = [
     { 
       id: 'SEL001', 
@@ -17,7 +19,7 @@ const SellersTable = () => {
       status: 'Verified', 
       joinDate: '2024-01-10', 
       products: 150, 
-      sales: '45,230.50',
+      sales: '45,230',
       totalSales: 45230.50, 
       rating: 4.8, 
       avatar: 'https://via.placeholder.com/40',
@@ -31,7 +33,7 @@ const SellersTable = () => {
       status: 'Pending', 
       joinDate: '2024-02-15', 
       products: 85, 
-      sales: '23,890.75',
+      sales: '23,890',
       totalSales: 23890.75, 
       rating: 4.5, 
       avatar: 'https://via.placeholder.com/40',
@@ -45,7 +47,7 @@ const SellersTable = () => {
       status: 'Verified', 
       joinDate: '2024-01-25', 
       products: 200, 
-      sales: '67,450.25',
+      sales: '67,450',
       totalSales: 67450.25, 
       rating: 4.9, 
       avatar: 'https://via.placeholder.com/40',
@@ -59,7 +61,7 @@ const SellersTable = () => {
       status: 'Suspended', 
       joinDate: '2024-03-05', 
       products: 45, 
-      sales: '12,340.00',
+      sales: '12,340',
       totalSales: 12340.00, 
       rating: 3.2, 
       avatar: 'https://via.placeholder.com/40',
@@ -81,35 +83,31 @@ const SellersTable = () => {
     }
   ];
 
-  // Stats data dựa trên ảnh
+  // Stats data
   const statsData = [
     { 
       title: 'Total Sellers', 
       value: '456', 
       icon: <Users size={24} />, 
       color: 'indigo',
-      description: 'Active marketplace sellers'
     },
     { 
       title: 'Verified', 
       value: '342', 
       icon: <CheckCircle size={24} />, 
       color: 'green',
-      description: 'Verified seller accounts'
     },
     { 
       title: 'Pending', 
       value: '89', 
       icon: <Clock size={24} />, 
       color: 'yellow',
-      description: 'Awaiting verification'
     },
     { 
       title: 'Suspended', 
       value: '25', 
       icon: <XCircle size={24} />, 
       color: 'red',
-      description: 'Suspended accounts'
     }
   ];
 
@@ -126,55 +124,21 @@ const SellersTable = () => {
     return '●';
   };
 
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-    
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <span key={i} className="star-filled">★</span>
-      );
-    }
-    
-    if (hasHalfStar) {
-      stars.push(
-        <span key="half" className="star-half">★</span>
-      );
-    }
-    
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(
-        <span key={`empty-${i}`} className="star-empty">★</span>
-      );
-    }
-    
-    return stars;
+  const handleViewDetails = (seller) => {
+    setSelectedSeller(seller);
+    setShowModal(true);
   };
 
-  const handleSellerAction = {
-    onView: (seller) => {
-      console.log('View seller:', seller);
-    },
-    onApprove: (seller) => {
-      console.log('Approve seller:', seller);
-      if (window.confirm(`Approve ${seller.name}?`)) {
-        // Approve logic here
-      }
-    },
-    onSuspend: (seller) => {
-      console.log('Suspend seller:', seller);
-      if (window.confirm(`Suspend ${seller.name}?`)) {
-        // Suspend logic here
-      }
-    },
-    onDelete: (seller) => {
-      console.log('Delete seller:', seller);
-      if (window.confirm(`Are you sure you want to delete ${seller.name}?`)) {
-        // Delete logic here
-      }
+  const handleDelete = (seller) => {
+    console.log('Delete seller:', seller);
+    if (window.confirm(`Are you sure you want to delete ${seller.name}?`)) {
+      alert(`${seller.name} has been deleted`);
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedSeller(null);
   };
 
   return (
@@ -183,7 +147,6 @@ const SellersTable = () => {
       <div className="sellers-header">
         <div className="sellers-title-section">
           <h1 className="sellers-title">Sellers Management</h1>
-          <p className="sellers-subtitle">Manage seller accounts and monitor their performance</p>
         </div>
         
         {/* Actions */}
@@ -222,7 +185,6 @@ const SellersTable = () => {
             <div className="stat-content">
               <p className="stat-label">{stat.title}</p>
               <p className="stat-value">{stat.value}</p>
-              <p className="stat-description">{stat.description}</p>
             </div>
           </div>
         ))}
@@ -236,27 +198,27 @@ const SellersTable = () => {
               <th>Seller</th>
               <th>Contact</th>
               <th>Status</th>
-              <th>Performance</th>
-              <th>Rating</th>
+              <th>Products</th>
+              <th>Revenue</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {sellersData.map((seller, index) => (
               <tr key={index} className="table-row">
+
                 <td className="seller-info">
                   <div className="seller-avatar-container">
                     <img 
                       src={seller.avatar} 
-                      alt={seller.name}
                       className="seller-avatar"
                     />
                     <div className="seller-details">
                       <div className="seller-name">{seller.name}</div>
-                      <div className="seller-join-date">Since: {seller.joinDate}</div>
                     </div>
                   </div>
                 </td>
+
                 <td className="seller-contact">
                   <div className="contact-email">{seller.email}</div>
                   <div className="contact-phone">{seller.phone}</div>
@@ -267,25 +229,32 @@ const SellersTable = () => {
                     {seller.status}
                   </span>
                 </td>
-                <td className="seller-performance">
-                  <div className="performance-products">{seller.products} Products</div>
-                  <div className="performance-sales">${seller.sales} Sales</div>
+                <td className="seller-products">
+                  <span className="products-count">{seller.products}</span>
                 </td>
-                <td className="seller-rating">
-                  <div className="rating-stars">
-                    {renderStars(seller.rating)}
-                  </div>
-                  <span className="rating-value">{seller.rating}</span>
+                <td className="seller-revenue">
+                  <span className="revenue-amount">{seller.sales}</span>
                 </td>
+
                 <td className="action-cell">
-                  <SellerActions 
-                    seller={seller}
-                    onView={handleSellerAction.onView}
-                    onApprove={handleSellerAction.onApprove}
-                    onSuspend={handleSellerAction.onSuspend}
-                    onDelete={handleSellerAction.onDelete}
-                  />
+                  <div className="customer-actions seller-actions">
+                    <button
+                      className="action-btn view-btn"
+                      onClick={(e) => { e.stopPropagation(); handleViewDetails(seller); }}
+                      title="View Details"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      className="action-btn delete-btn"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(seller); }}
+                      title="Delete Seller"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
+                
               </tr>
             ))}
           </tbody>
@@ -295,21 +264,35 @@ const SellersTable = () => {
       {/* Pagination */}
       <div className="pagination-container">
         <div className="pagination-info">
-          <span>Showing 1 to 5 of {sellersData.length} results</span>
+          <button className="pagination-nav">
+            <span>← Previous</span>
+          </button>
         </div>
         
-        <div className="pagination-controls">
-          <button className="pagination-btn">Previous</button>
-          <div className="pagination-numbers">
-            <button className="page-btn active">1</button>
-            <button className="page-btn">2</button>
-            <button className="page-btn">3</button>
-            <span className="pagination-dots">...</span>
-            <button className="page-btn">10</button>
-          </div>
-          <button className="pagination-btn">Next</button>
+        <div className="pagination-numbers">
+          <button className="page-btn active">1</button>
+          <button className="page-btn">2</button>
+          <button className="page-btn">3</button>
+          <button className="page-btn">4</button>
+          <button className="page-btn">5</button>
+          <span className="pagination-dots">...</span>
+          <button className="page-btn">24</button>
+        </div>
+        
+        <div className="pagination-info">
+          <button className="pagination-nav">
+            <span>Next →</span>
+          </button>
         </div>
       </div>
+
+      {/* Seller Detail Modal */}
+      {showModal && (
+        <SellerDetailModal 
+          seller={selectedSeller}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };

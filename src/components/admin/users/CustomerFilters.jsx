@@ -14,7 +14,6 @@ const CustomerFilters = ({ onSearch, onFilter, searchTerm, setSearchTerm }) => {
     { value: '', label: 'All Status' },
     { value: 'Active', label: 'Active' },
     { value: 'Inactive', label: 'Inactive' },
-    { value: 'VIP', label: 'VIP' }
   ];
 
   const handleFilterChange = (key, value) => {

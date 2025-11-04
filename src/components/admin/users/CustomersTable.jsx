@@ -1,70 +1,185 @@
-import React, { useState } from 'react';
-import { Search, Filter, Users, UserCheck, Star, Package, TrendingUp, ShoppingBag, Receipt } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { UserPlus , Search, Filter, Users, UserCheck, Star, Package, TrendingUp, ShoppingBag, Receipt } from 'lucide-react';
 import CustomerActions from './CustomerActions';
+import CustomerDetailModal from './CustomerDetailModal';
+import AddCustomerModal from './AddCustomerModal';
+import { getCustomers, getCustomerDetail, deleteUser } from '../../../services/adminService';
 import './CustomersTable.css';
 
 const CustomersTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch customers from API
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Fetching customers...');
+      console.log('📍 API URL:', 'http://localhost:8081/api/admin/users/customers');
+      console.log('🔑 Token:', localStorage.getItem('adminToken'));
+      
+      const response = await getCustomers();
+      console.log('✅ Response:', response);
+      
+      if (response.statusCode === 200 && response.data) {
+        setCustomers(response.data);
+        setError(null);
+        console.log('👥 Customers loaded:', response.data.length);
+      } else {
+        setError('Failed to fetch customers');
+        console.error('❌ Bad response:', response);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching customers:', err);
+      console.error('❌ Error details:', err.response?.data || err.message);
+      setError('An error occurred while fetching customers. Please make sure you are logged in.');
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  // Stats data cho customers
+  // Dữ liệu thống kê cho khách hàng
   const statsData = [
     { 
       title: 'Total Customers', 
       value: '2,847', 
       icon: <Users size={24} />, 
       color: 'blue',
-      description: 'Registered customers',
-      change: '+12.5%',
-      changeType: 'positive'
     },
     { 
       title: 'Active Customers', 
       value: '1,942', 
       icon: <UserCheck size={24} />, 
       color: 'green',
-      description: 'Active this month',
-      change: '+8.2%',
-      changeType: 'positive'
     },
     { 
       title: 'Total order', 
       value: '156', 
       icon: <ShoppingBag size={24} />, 
       color: 'yellow',
-      description: 'Tổng đơn hàng đã giao thành công',
-      change: '+15.1%',
-      changeType: 'positive'
     },
     { 
       title: 'Total Revenue', 
-      value: '$284.50', 
+      value: '$2845', 
       icon: <Receipt size={24} />, 
       color: 'purple',
-      description: 'Average per order',
-      change: '+5.8%',
-      changeType: 'positive'
     }
   ];
   
-  // Mock data dựa theo ảnh
+  // Mock data dựa theo ảnh - Thêm đầy đủ thông tin cho modal
   const customersData = [
-    { id: '#CUST001', name: 'John Doe', phone: '+1234567890', orderCount: 25, totalSpend: 3450.00, status: 'Active' },
-    { id: '#CUST001', name: 'John Doe', phone: '+1234567890', orderCount: 25, totalSpend: 3450.00, status: 'Active' },
-    { id: '#CUST001', name: 'John Doe', phone: '+1234567890', orderCount: 25, totalSpend: 3450.00, status: 'Active' },
-    { id: '#CUST001', name: 'John Doe', phone: '+1234567890', orderCount: 25, totalSpend: 3450.00, status: 'Active' },
-    { id: '#CUST001', name: 'Jane Smith', phone: '+1234567890', orderCount: 5, totalSpend: 250.00, status: 'Inactive' },
-    { id: '#CUST001', name: 'Emily Davis', phone: '+1234567890', orderCount: 30, totalSpend: 4600.00, status: 'VIP' },
-    { id: '#CUST001', name: 'Jane Smith', phone: '+1234567890', orderCount: 5, totalSpend: 250.00, status: 'Inactive' },
-    { id: '#CUST001', name: 'John Doe', phone: '+1234567890', orderCount: 25, totalSpend: 3450.00, status: 'Active' },
-    { id: '#CUST001', name: 'Emily Davis', phone: '+1234567890', orderCount: 30, totalSpend: 4600.00, status: 'VIP' },
-    { id: '#CUST001', name: 'Jane Smith', phone: '+1234567890', orderCount: 5, totalSpend: 250.00, status: 'Inactive' },
+    { 
+      id: '#CUST001', 
+      name: 'John Doe', 
+      email: 'john.doe@example.com',
+      phone: '+1234567890', 
+      address: '123 Main St, New York, NY 10001',
+      orderCount: 25, 
+      totalSpend: 3450.00, 
+      status: 'Active',
+      registerAt: '2024-01-15',
+      lastOrderDate: '2024-10-20'
+    },
+    { 
+      id: '#CUST002', 
+      name: 'Jane Smith', 
+      email: 'jane.smith@example.com',
+      phone: '+1234567891', 
+      address: '456 Oak Ave, Los Angeles, CA 90001',
+      orderCount: 5, 
+      totalSpend: 250.00, 
+      status: 'Inactive',
+      registerAt: '2024-03-10',
+      lastOrderDate: '2024-08-15'
+    },
+
+    { 
+      id: '#CUST004', 
+      name: 'Michael Brown', 
+      email: 'michael.brown@example.com',
+      phone: '+1234567893', 
+      address: '321 Elm St, Houston, TX 77001',
+      orderCount: 15, 
+      totalSpend: 1890.00, 
+      status: 'Active',
+      registerAt: '2024-02-28',
+      lastOrderDate: '2024-10-18'
+    },
+    { 
+      id: '#CUST005', 
+      name: 'Sarah Wilson', 
+      email: 'sarah.wilson@example.com',
+      phone: '+1234567894', 
+      address: '654 Maple Dr, Phoenix, AZ 85001',
+      orderCount: 8, 
+      totalSpend: 675.00, 
+      status: 'Active',
+      registerAt: '2024-04-05',
+      lastOrderDate: '2024-10-10'
+    },
+    { 
+      id: '#CUST006', 
+      name: 'David Lee', 
+      email: 'david.lee@example.com',
+      phone: '+1234567895', 
+      address: '987 Cedar Ln, Philadelphia, PA 19101',
+      orderCount: 3, 
+      totalSpend: 180.00, 
+      status: 'Inactive',
+      registerAt: '2024-05-12',
+      lastOrderDate: '2024-07-25'
+    },
+    { 
+      id: '#CUST008', 
+      name: 'James Taylor', 
+      email: 'james.taylor@example.com',
+      phone: '+1234567897', 
+      address: '258 Spruce Ave, San Diego, CA 92101',
+      orderCount: 12, 
+      totalSpend: 1540.00, 
+      status: 'Active',
+      registerAt: '2024-01-30',
+      lastOrderDate: '2024-10-19'
+    },
+    { 
+      id: '#CUST009', 
+      name: 'Maria Garcia', 
+      email: 'maria.garcia@example.com',
+      phone: '+1234567898', 
+      address: '369 Willow Way, Dallas, TX 75201',
+      orderCount: 18, 
+      totalSpend: 2340.00, 
+      status: 'Active',
+      registerAt: '2023-12-15',
+      lastOrderDate: '2024-10-17'
+    },
+    { 
+      id: '#CUST010', 
+      name: 'Robert Martinez', 
+      email: 'robert.martinez@example.com',
+      phone: '+1234567899', 
+      address: '741 Ash Blvd, San Jose, CA 95101',
+      orderCount: 6, 
+      totalSpend: 420.00, 
+      status: 'Inactive',
+      registerAt: '2024-06-22',
+      lastOrderDate: '2024-09-05'
+    },
   ];
 
   const getStatusClass = (status) => {
     switch(status) {
       case 'Active': return 'status-active';
       case 'Inactive': return 'status-inactive';
-      case 'VIP': return 'status-vip';
       default: return '';
     }
   };
@@ -73,38 +188,72 @@ const CustomersTable = () => {
     switch(status) {
       case 'Active': return '●';
       case 'Inactive': return '●';
-      case 'VIP': return '●';
-      default: return '●';
+      default: return '';
     }
   };
 
-  const handleCustomerAction = {
-    onView: (customer) => {
-      console.log('View customer:', customer);
-      // Implement view logic
-    },
-    onEdit: (customer) => {
-      console.log('Edit customer:', customer);
-      // Implement edit logic
-    },
-    onDelete: (customer) => {
-      console.log('Delete customer:', customer);
-      // Implement delete logic
-      if (window.confirm(`Are you sure you want to delete ${customer.name}?`)) {
-        // Delete logic here
+  const handleView = async (customer) => {
+    try {
+      // Fetch detailed customer info from API
+      const response = await getCustomerDetail(customer.id);
+      
+      if (response.statusCode === 200 && response.data) {
+        setSelectedCustomer(response.data);
+        setShowModal(true);
+      } else {
+        alert('Failed to fetch customer details');
       }
-    },
-    onContact: (customer, type) => {
-      console.log(`Contact customer ${customer.name} via ${type}`);
-      // Implement contact logic
+    } catch (error) {
+      console.error('Error fetching customer detail:', error);
+      alert('An error occurred while fetching customer details');
     }
+  };
+
+  const handleDelete = async (customer) => {
+    if (window.confirm(`Are you sure you want to delete ${customer.username || customer.name}?`)) {
+      try {
+        const response = await deleteUser(customer.id);
+        
+        if (response.statusCode === 200) {
+          alert(`Customer ${customer.username || customer.name} has been deleted successfully`);
+          // Refresh customer list
+          fetchCustomers();
+        } else {
+          alert('Failed to delete customer');
+        }
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+        alert('An error occurred while deleting customer');
+      }
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleAddCustomer = () => {
+    setShowAddModal(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+  };
+
+  const handleSubmitCustomer = (formData) => {
+    console.log('New customer data:', formData);
+    // TODO: Implement API call to create customer
+    // After successful creation, refresh the customer list
   };
 
   return (
     <div>
       {/* Header Section */}
       <div className="customers-header">
-        <h1 className="customers-title">Customers</h1>
+        <div className="customers-title-section">
+          <h1 className="customers-title">Customers Management</h1>
+        </div>
         
         {/* Search and Filter */}
         <div className="customers-actions">
@@ -123,6 +272,11 @@ const CustomersTable = () => {
             <Filter size={20} />
             Filter
           </button>
+
+          <button className="add-customer-btn" onClick={handleAddCustomer}>
+            <UserPlus size={20} />
+            Add Customer
+          </button>
         </div>
       </div>
 
@@ -136,13 +290,7 @@ const CustomersTable = () => {
             <div className="stat-content">
               <p className="stat-label">{stat.title}</p>
               <p className="stat-value">{stat.value}</p>
-              <p className="stat-description">{stat.description}</p>
-              <div className="stat-change">
-                <span className={`change-indicator ${stat.changeType}`}>
-                  {stat.change}
-                </span>
-                <span className="change-period">vs last month</span>
-              </div>
+            
             </div>
           </div>
         ))}
@@ -150,45 +298,63 @@ const CustomersTable = () => {
 
       {/* Table */}
       <div className="customers-table-container">
-        <table className="customers-table">
-          <thead>
-            <tr>
-              <th>Customer Id</th>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Order Count</th>
-              <th>Total Spend</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customersData.map((customer, index) => (
-              <tr key={index} className="table-row">
-                <td className="customer-id">{customer.id}</td>
-                <td className="customer-name">{customer.name}</td>
-                <td className="customer-phone">{customer.phone}</td>
-                <td className="order-count">{customer.orderCount}</td>
-                <td className="total-spend">{customer.totalSpend.toFixed(2)}</td>
-                <td>
-                  <span className={`status-badge ${getStatusClass(customer.status)}`}>
-                    <span className="status-dot">{getStatusDot(customer.status)}</span>
-                    {customer.status}
-                  </span>
-                </td>
-                <td className="action-cell">
-                  <CustomerActions 
-                    customer={customer}
-                    onView={handleCustomerAction.onView}
-                    onEdit={handleCustomerAction.onEdit}
-                    onDelete={handleCustomerAction.onDelete}
-                    onContact={handleCustomerAction.onContact}
-                  />
-                </td>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>Loading customers...</p>
+          </div>
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>
+            <p>{error}</p>
+            <button onClick={fetchCustomers} style={{ marginTop: '10px' }}>Retry</button>
+          </div>
+        ) : customers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>No customers found</p>
+          </div>
+        ) : (
+          <table className="customers-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Customer ID</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {customers
+                .filter(customer => 
+                  customer.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  customer.phoneNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((customer, index) => (
+                  <tr key={customer.id || index} className="table-row">
+                    <td className="customer-name">{customer.username || 'N/A'}</td>
+                    <td className="customer-id">#{customer.id}</td>
+                    <td className="customer-email">{customer.email || 'N/A'}</td>
+                    <td className="customer-phone">{customer.phoneNumber || 'N/A'}</td>
+                    <td>
+                      <span className={`status-badge ${customer.activated ? 'status-active' : 'status-inactive'}`}>
+                        <span className="status-dot">{customer.activated ? '●' : '●'}</span>
+                        {customer.activated ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="action-cell">
+                      <CustomerActions 
+                        customer={customer}
+                        onView={handleView}
+                        onDelete={handleDelete}
+                      />
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Pagination */}
@@ -215,6 +381,22 @@ const CustomersTable = () => {
           </button>
         </div>
       </div>
+
+      {/* Customer Detail Modal */}
+      {showModal && (
+        <CustomerDetailModal 
+          customer={selectedCustomer}
+          onClose={handleCloseModal}
+        />
+      )}
+
+      {/* Add Customer Modal */}
+      {showAddModal && (
+        <AddCustomerModal 
+          onClose={handleCloseAddModal}
+          onSubmit={handleSubmitCustomer}
+        />
+      )}
     </div>
   );
 };

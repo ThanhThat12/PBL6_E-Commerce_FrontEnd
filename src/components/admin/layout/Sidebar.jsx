@@ -16,6 +16,11 @@ import {
   UserCheck,
   Shield,
   Menu,
+  Layers,
+  Tags,
+  Folder,
+  LayoutGrid,
+  Grid3x3,
   X
 } from "lucide-react";
 import "./Sidebar.css";
@@ -25,6 +30,14 @@ const Sidebar = ({ onToggle }) => {
   const [isCollapsed, setIsCollapsed] = useState(false); // 👉 trạng thái thu gọn sidebar
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = () => {
+    // Clear admin authentication
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    // Redirect to admin login
+    navigate('/admin');
+  };
 
   // Thông báo cho Layout khi sidebar thay đổi trạng thái
   useEffect(() => {
@@ -58,15 +71,15 @@ const Sidebar = ({ onToggle }) => {
       ],
     },
     { name: "Products", icon: <ShoppingBag size={20} />, path: "/admin/products" },
+    { name: "Categories", icon: <LayoutGrid size={20} />, path: "/admin/categories" },
     { name: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
     { name: "Analytics", icon: <BarChart2 size={20} />, path: "/admin/analytics" },
-    { name: "Reports", icon: <FileText size={20} />, path: "/admin/reports" },
-    { name: "My Profile", icon: <User size={20} />, path: "/admin/settings" },
+    { name: "My Profile", icon: <User size={20} />, path: "/admin/myprofile" },
     { name: "Settings", icon: <Settings size={20} />, path: "/admin/settings" },
   ];
 
   return (
-    <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
+    <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>    
       {/* === HEADER === */}
       <div className="sidebar-header">
         <div className="flex items-center justify-between w-full">
@@ -154,7 +167,7 @@ const Sidebar = ({ onToggle }) => {
               <span className="user-email">Marketing Designer</span>
             </div>
           </div>
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={handleLogout}>
             <LogOut size={20} />
           </button>
         </div>

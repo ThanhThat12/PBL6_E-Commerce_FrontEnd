@@ -394,21 +394,12 @@
 }
 
 .status-out-of-stock {
-  background: #fee2e2;
-  color: #dc2626;
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .status-out-of-stock .status-dot {
-  color: #dc2626;
-}
-
-.status-low-stock {
-  background: #fed7aa;
-  color: #ea580c;
-}
-
-.status-low-stock .status-dot {
-  color: #ea580c;
+  color: #92400e;
 }
 
 .status-inactive {
@@ -464,6 +455,53 @@
 .action-cell {
   text-align: right;
   min-width: 120px;
+}
+
+/* Make action buttons look like CustomerActions (icon-only) */
+.product-actions,
+.customer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.product-actions .action-btn,
+.customer-actions .action-btn {
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.product-actions .view-btn,
+.customer-actions .view-btn {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.product-actions .view-btn:hover,
+.customer-actions .view-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.product-actions .delete-btn,
+.customer-actions .delete-btn {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.product-actions .delete-btn:hover,
+.customer-actions .delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 /* Pagination */

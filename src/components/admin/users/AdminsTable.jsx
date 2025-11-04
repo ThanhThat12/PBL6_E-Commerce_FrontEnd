@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Search, Filter, Users, Shield, Clock, UserCheck, Settings, Crown } from 'lucide-react';
-import AdminActions from './AdminActions';
+import { UserPlus, Search, Filter, Users, Shield, Clock, UserCheck, Settings, Crown, Eye, Trash2 } from 'lucide-react';
+import AddAdminModal from './AddAdminModal';
 import './AdminsTable.css';
 
 const AdminsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
   
   // Mock data cho admins
   const adminsData = [
@@ -83,28 +84,24 @@ const AdminsTable = () => {
       value: '15', 
       icon: <Users size={24} />, 
       color: 'blue',
-      description: 'Active admin accounts'
     },
     { 
       title: 'Super Admins', 
       value: '3', 
       icon: <Crown size={24} />, 
       color: 'purple',
-      description: 'Full access administrators'
     },
     { 
       title: 'Active Sessions', 
       value: '12', 
       icon: <UserCheck size={24} />, 
       color: 'green',
-      description: 'Currently logged in'
     },
     { 
       title: 'Inactive', 
       value: '3', 
       icon: <Clock size={24} />, 
       color: 'orange',
-      description: 'Inactive admin accounts'
     }
   ];
 
@@ -146,29 +143,30 @@ const AdminsTable = () => {
     return date.toLocaleDateString();
   };
 
-  const handleAdminAction = {
-    onView: (admin) => {
-      console.log('View admin:', admin);
-    },
-    onEdit: (admin) => {
-      console.log('Edit admin:', admin);
-    },
-    onChangeRole: (admin) => {
-      console.log('Change role for admin:', admin);
-    },
-    onToggleStatus: (admin) => {
-      console.log('Toggle status for admin:', admin);
-      const action = admin.status === 'Active' ? 'deactivate' : 'activate';
-      if (window.confirm(`Are you sure you want to ${action} ${admin.name}?`)) {
-        // Toggle logic here
-      }
-    },
-    onDelete: (admin) => {
-      console.log('Delete admin:', admin);
-      if (window.confirm(`Are you sure you want to delete ${admin.name}?`)) {
-        // Delete logic here
-      }
+  const handleViewDetails = (admin) => {
+    console.log('View details:', admin);
+    alert(`Viewing details for ${admin.name}`);
+  };
+
+  const handleDelete = (admin) => {
+    console.log('Delete admin:', admin);
+    if (window.confirm(`Are you sure you want to delete ${admin.name}?`)) {
+      alert(`${admin.name} has been deleted`);
     }
+  };
+
+  const handleAddAdmin = () => {
+    setShowAddModal(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+  };
+
+  const handleSubmitAdmin = (formData) => {
+    console.log('New admin data:', formData);
+    // TODO: Implement API call to create admin
+    // After successful creation, refresh the admin list
   };
 
   return (
@@ -177,7 +175,7 @@ const AdminsTable = () => {
       <div className="admins-header">
         <div className="admins-title-section">
           <h1 className="admins-title">Admin Management</h1>
-          <p className="admins-subtitle">Manage administrator accounts and permissions</p>
+          {/* <p className="admins-subtitle">Manage administrator accounts and permissions</p> */}
         </div>
         
         {/* Actions */}
@@ -194,8 +192,8 @@ const AdminsTable = () => {
           </div>
           
           <div className="action-buttons">
-            <button className="add-admin-btn">
-              <Users size={18} />
+            <button className="add-admin-btn" onClick={handleAddAdmin}>
+              <UserPlus size={18} />
               Add Admin
             </button>
             <button className="export-btn">
@@ -216,7 +214,6 @@ const AdminsTable = () => {
             <div className="stat-content">
               <p className="stat-label">{stat.title}</p>
               <p className="stat-value">{stat.value}</p>
-              <p className="stat-description">{stat.description}</p>
             </div>
           </div>
         ))}
@@ -228,8 +225,8 @@ const AdminsTable = () => {
           <thead>
             <tr>
               <th>Administrator</th>
-              <th>Contact</th>
-              <th>Role</th>
+              <th>Email</th>
+              <th>Phone</th>
               <th>Status</th>
               <th>Last Login</th>
               <th>Actions</th>
@@ -251,15 +248,11 @@ const AdminsTable = () => {
                     </div>
                   </div>
                 </td>
-                <td className="admin-contact">
-                  <div className="contact-email">{admin.email}</div>
-                  <div className="contact-phone">{admin.phone}</div>
+                <td className="admin-email">
+                  <span className="email-text">{admin.email}</span>
                 </td>
-                <td>
-                  <div className={`role-badge ${getRoleClass(admin.role)}`}>
-                    <span className="role-icon">{getRoleIcon(admin.role)}</span>
-                    {admin.role}
-                  </div>
+                <td className="admin-phone">
+                  <span className="phone-text">{admin.phone}</span>
                 </td>
                 <td>
                   <span className={`status-badge ${getStatusClass(admin.status)}`}>
@@ -269,17 +262,24 @@ const AdminsTable = () => {
                 </td>
                 <td className="last-login">
                   <div className="login-time">{formatLastLogin(admin.lastLogin)}</div>
-                  <div className="login-date">{admin.lastLogin.split(' ')[0]}</div>
                 </td>
                 <td className="action-cell">
-                  <AdminActions 
-                    admin={admin}
-                    onView={handleAdminAction.onView}
-                    onEdit={handleAdminAction.onEdit}
-                    onChangeRole={handleAdminAction.onChangeRole}
-                    onToggleStatus={handleAdminAction.onToggleStatus}
-                    onDelete={handleAdminAction.onDelete}
-                  />
+                  <div className="customer-actions admin-actions">
+                    <button
+                      className="action-btn view-btn"
+                      onClick={(e) => { e.stopPropagation(); handleViewDetails(admin); }}
+                      title="View Details"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      className="action-btn delete-btn"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(admin); }}
+                      title="Delete Admin"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -290,19 +290,35 @@ const AdminsTable = () => {
       {/* Pagination */}
       <div className="pagination-container">
         <div className="pagination-info">
-          <span>Showing 1 to 5 of {adminsData.length} results</span>
+          <button className="pagination-nav">
+            <span>← Previous</span>
+          </button>
         </div>
         
-        <div className="pagination-controls">
-          <button className="pagination-btn">Previous</button>
-          <div className="pagination-numbers">
-            <button className="page-btn active">1</button>
-            <button className="page-btn">2</button>
-            <button className="page-btn">3</button>
-          </div>
-          <button className="pagination-btn">Next</button>
+        <div className="pagination-numbers">
+          <button className="page-btn active">1</button>
+          <button className="page-btn">2</button>
+          <button className="page-btn">3</button>
+          <button className="page-btn">4</button>
+          <button className="page-btn">5</button>
+          <span className="pagination-dots">...</span>
+          <button className="page-btn">24</button>
+        </div>
+        
+        <div className="pagination-info">
+          <button className="pagination-nav">
+            <span>Next →</span>
+          </button>
         </div>
       </div>
+
+      {/* Add Admin Modal */}
+      {showAddModal && (
+        <AddAdminModal 
+          onClose={handleCloseAddModal}
+          onSubmit={handleSubmitAdmin}
+        />
+      )}
     </div>
   );
 };
