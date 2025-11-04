@@ -12,8 +12,8 @@ const Header = () => {
     // Clear admin authentication
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    // Redirect to admin login
-    navigate('/admin');
+    // Redirect to login page
+    navigate('/login');
   };
 
   return (

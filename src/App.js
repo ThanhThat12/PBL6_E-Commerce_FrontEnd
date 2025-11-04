@@ -19,7 +19,6 @@ import AccountPage from "./pages/customer/AccountPage";
 import { UserProvider } from "./context/UserContext";
 
 // 🧑‍💼 Admin Pages
-import LoginAdmin from "./pages/admin/LoginAdmin/LoginAdmin";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
@@ -49,7 +48,7 @@ function App() {
             <Route path="/profile" element={<AccountPage />} />
 
             {/* ================= ADMIN ROUTES ================= */}
-            <Route path="/admin" element={<LoginAdmin />} />
+            <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
             <Route path="/admin/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />

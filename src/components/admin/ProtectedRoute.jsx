@@ -85,7 +85,7 @@ const ProtectedRoute = ({ children }) => {
 
   // Nếu không authenticated, redirect về trang login
   if (!isAuthenticated) {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Nếu authenticated, render component được bảo vệ
