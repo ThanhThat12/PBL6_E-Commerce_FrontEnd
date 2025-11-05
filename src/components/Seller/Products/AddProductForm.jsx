@@ -36,39 +36,48 @@ const AddProductForm = () => {
   const [shopId, setShopId] = useState(null);
 
   useEffect(() => {
-    const categoriesData = productService.getCategories();
-    setCategories(categoriesData);
-
-    // Lấy shopId hiện tại của seller (nếu có)
-    (async () => {
+    const fetchInitialData = async () => {
       try {
+        // Lấy categories từ API
+        const categoriesData = await productService.getCategories();
+        setCategories(categoriesData);
+
+        // Lấy shopId hiện tại của seller (nếu có)
         const shop = await shopService.getShopInfo();
         if (shop && shop.id) setShopId(shop.id);
       } catch (err) {
-        console.warn('Không lấy được shop info:', err);
+        console.warn('Không lấy được dữ liệu khởi tạo:', err);
+        message.error('Có lỗi khi tải dữ liệu');
       }
-    })();
+    };
+
+    fetchInitialData();
   }, []);
 
-  const handleCategoryChange = (categoryId) => {
-    const category = productService.getCategoryById(categoryId);
-    setSelectedCategory(category);
-    
-    // Reset form khi đổi category
-    const basicFields = ['name', 'description', 'price', 'stock', 'category'];
-    const formValues = form.getFieldsValue();
-    const resetValues = {};
-    
-    // Giữ lại các field cơ bản
-    basicFields.forEach(field => {
-      if (formValues[field] !== undefined) {
-        resetValues[field] = formValues[field];
-      }
-    });
-    
-    form.resetFields();
-    form.setFieldsValue(resetValues);
-    setVariants([]);
+  const handleCategoryChange = async (categoryId) => {
+    try {
+      const category = await productService.getCategoryById(categoryId);
+      setSelectedCategory(category);
+      
+      // Reset form khi đổi category
+      const basicFields = ['name', 'description', 'price', 'stock', 'category'];
+      const formValues = form.getFieldsValue();
+      const resetValues = {};
+      
+      // Giữ lại các field cơ bản
+      basicFields.forEach(field => {
+        if (formValues[field] !== undefined) {
+          resetValues[field] = formValues[field];
+        }
+      });
+      
+      form.resetFields();
+      form.setFieldsValue(resetValues);
+      setVariants([]);
+    } catch (error) {
+      console.error('Error loading category:', error);
+      message.error('Có lỗi khi tải thông tin danh mục');
+    }
   };
 
   const handleImageUpload = ({ fileList }) => {
@@ -86,12 +95,13 @@ const AddProductForm = () => {
       sku: '',
       price: 0,
       stock: 0,
-      attributes: {}
+      variantValues: selectedCategory.attributes.map(attr => ({
+        id: null, // Will be set by backend
+        productAttributeId: attr.id,
+        name: attr.name,
+        value: ''
+      }))
     };
-    
-    selectedCategory.attributes.forEach(attr => {
-      newVariant.attributes[attr.name] = '';
-    });
     
     setVariants([...variants, newVariant]);
   };
@@ -100,10 +110,17 @@ const AddProductForm = () => {
     setVariants(variants.filter(v => v.id !== variantId));
   };
 
-  const updateVariant = (variantId, attributeName, value) => {
+  const updateVariant = (variantId, attributeId, value) => {
     setVariants(variants.map(variant => 
       variant.id === variantId 
-        ? { ...variant, attributes: { ...variant.attributes, [attributeName]: value } }
+        ? {
+            ...variant, 
+            variantValues: variant.variantValues.map(vv => 
+              vv.productAttributeId === attributeId 
+                ? { ...vv, value: value }
+                : vv
+            )
+          }
         : variant
     ));
   };
@@ -112,62 +129,104 @@ const AddProductForm = () => {
     setLoading(true);
     
     try {
-      // Upload images
-      let imageUrls = [];
-      if (imageList.length > 0) {
-        const uploadResult = await productService.uploadImages(imageList);
-        if (uploadResult.success) {
-          imageUrls = uploadResult.urls;
-        }
+      // Validate variants
+      if (variants.length === 0) {
+        message.warning('Vui lòng thêm ít nhất một biến thể sản phẩm');
+        setLoading(false);
+        return;
       }
 
-      // Map variants to backend format ProductVariantDTO
+      // Validate each variant
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        if (!variant.price || variant.price <= 0) {
+          message.warning(`Biến thể ${i + 1}: Vui lòng nhập giá hợp lệ`);
+          setLoading(false);
+          return;
+        }
+        if (!variant.stock || variant.stock < 0) {
+          message.warning(`Biến thể ${i + 1}: Vui lòng nhập số lượng tồn kho hợp lệ`);
+          setLoading(false);
+          return;
+        }
+        
+        // Check required attributes
+        const requiredAttrs = selectedCategory.attributes.filter(attr => attr.required);
+        for (const attr of requiredAttrs) {
+          const variantValue = variant.variantValues.find(vv => vv.productAttributeId === attr.id);
+          if (!variantValue || !variantValue.value || variantValue.value.trim() === '') {
+            message.warning(`Biến thể ${i + 1}: Vui lòng nhập ${attr.label.toLowerCase()}`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      // Upload images - tạm thời dùng URL placeholder
+      let imageUrls = [];
+      let mainImage = '';
+      
+      if (imageList.length > 0) {
+        // Tạm thời dùng placeholder URLs
+        imageUrls = imageList.map((file, index) => 
+          `https://example.com/product_image_${Date.now()}_${index}.jpg`
+        );
+        mainImage = imageUrls[0];
+      }
+
+      // Map variants theo đúng API format
       const mappedVariants = variants.map(v => ({
         sku: v.sku || `SKU-${Date.now()}-${Math.random().toString(36).substr(2,4)}`,
         price: v.price || 0,
         stock: v.stock || 0,
-        variantValues: Object.keys(v.attributes).map(attrName => ({
-          productAttributeId: null, // backend can match by attribute name or we can enhance later
-          value: v.attributes[attrName],
-          productAttribute: { name: attrName }
-        }))
+        variantValues: v.variantValues
+          .filter(vv => vv.value && vv.value.trim() !== '')
+          .map(vv => ({
+            productAttributeId: vv.productAttributeId,
+            value: vv.value
+          }))
       }));
 
-      // Prepare product payload matching ProductCreateDTO
+      // Prepare product data theo đúng API format
       const productData = {
-        categoryId: selectedCategory?.id,
-        shopId: shopId,
         name: values.name,
         description: values.description || '',
-        basePrice: values.price || 0,
-        isActive: values.status !== undefined ? values.status : true,
-        mainImage: imageUrls[0] || '',
-        variants: mappedVariants,
+        basePrice: variants.length > 0 ? variants[0].price : (values.price || 0),
+        categoryId: selectedCategory?.id,
+        mainImage: mainImage,
         imageUrls: imageUrls,
+        variants: mappedVariants
       };
+
+      console.log('🚀 Submitting product data:', productData);
 
       const result = await productService.createProduct(productData);
 
-      // Backend returns created ProductDTO or similar
-      if (result) {
-        message.success('Thêm sản phẩm thành công!');
+      if (result.success) {
+        message.success(result.message || 'Thêm sản phẩm thành công!');
+        console.log('✅ Product created:', result.data);
+        
+        // Reset form
         form.resetFields();
         setSelectedCategory(null);
         setImageList([]);
         setVariants([]);
       }
     } catch (error) {
-      message.error('Có lỗi xảy ra khi thêm sản phẩm');
+      console.error('❌ Submit product failed:', error);
+      message.error(error.message || 'Có lỗi xảy ra khi thêm sản phẩm');
     } finally {
       setLoading(false);
     }
   };
 
   const renderAttributeField = (attribute, variant = null, variantId = null) => {
-    const value = variant ? variant.attributes[attribute.name] : undefined;
+    const variantValue = variant ? 
+      variant.variantValues.find(vv => vv.productAttributeId === attribute.id) : 
+      null;
+    const value = variantValue ? variantValue.value : undefined;
     
     const onChange = variant 
-      ? (val) => updateVariant(variantId, attribute.name, val)
+      ? (val) => updateVariant(variantId, attribute.id, val)
       : undefined;
 
     switch (attribute.type) {
@@ -311,11 +370,7 @@ const AddProductForm = () => {
                     </Form.Item>
                   </Col>
 
-                  <Col xs={24} md={8}>
-                    <Form.Item label="Trạng thái" name="status" valuePropName="checked">
-                      <Switch checkedChildren="Hoạt động" unCheckedChildren="Ẩn" />
-                    </Form.Item>
-                  </Col>
+                  
                 </Row>
               </Card>
             </Col>
@@ -388,8 +443,64 @@ const AddProductForm = () => {
                       style={{ marginBottom: 16 }}
                     >
                       <Row gutter={[16, 16]}>
+                        {/* SKU, Price, Stock */}
+                        <Col xs={24} md={8}>
+                          <div className="attribute-field">
+                            <label className="attribute-label">SKU</label>
+                            <Input
+                              placeholder="Mã SKU (tự động nếu để trống)"
+                              value={variant.sku}
+                              onChange={(e) => {
+                                const newVariants = variants.map(v => 
+                                  v.id === variant.id ? { ...v, sku: e.target.value } : v
+                                );
+                                setVariants(newVariants);
+                              }}
+                            />
+                          </div>
+                        </Col>
+                        
+                        <Col xs={24} md={8}>
+                          <div className="attribute-field">
+                            <label className="attribute-label">Giá (VND) <span style={{ color: '#ff4d4f' }}>*</span></label>
+                            <InputNumber
+                              placeholder="0"
+                              style={{ width: '100%' }}
+                              min={0}
+                              value={variant.price}
+                              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                              parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                              onChange={(value) => {
+                                const newVariants = variants.map(v => 
+                                  v.id === variant.id ? { ...v, price: value || 0 } : v
+                                );
+                                setVariants(newVariants);
+                              }}
+                            />
+                          </div>
+                        </Col>
+                        
+                        <Col xs={24} md={8}>
+                          <div className="attribute-field">
+                            <label className="attribute-label">Tồn kho <span style={{ color: '#ff4d4f' }}>*</span></label>
+                            <InputNumber
+                              placeholder="0"
+                              style={{ width: '100%' }}
+                              min={0}
+                              value={variant.stock}
+                              onChange={(value) => {
+                                const newVariants = variants.map(v => 
+                                  v.id === variant.id ? { ...v, stock: value || 0 } : v
+                                );
+                                setVariants(newVariants);
+                              }}
+                            />
+                          </div>
+                        </Col>
+
+                        {/* Category Attributes */}
                         {selectedCategory.attributes.map(attribute => (
-                          <Col xs={24} md={12} lg={8} key={attribute.name}>
+                          <Col xs={24} md={12} lg={8} key={attribute.id}>
                             <div className="attribute-field">
                               <label className="attribute-label">
                                 {attribute.label}

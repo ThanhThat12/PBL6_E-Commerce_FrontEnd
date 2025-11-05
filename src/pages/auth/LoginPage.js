@@ -132,20 +132,30 @@ const LoginPage = () => {
       console.log("✅ Login response:", response);
       console.log("📦 Response data:", response.data);
       
-      // Backend trả về format: {status, message, data: {token}}
-      if (response.data && response.data.data && response.data.data.token) {
-        const token = response.data.data.token;
-        console.log("🔑 Token received:", token.substring(0, 50) + "...");
+      // ✅ Backend mới trả về format: {status, message, data: {user, token, refreshToken}}
+      if (response.data && response.data.data) {
+        const { user: backendUser, token, refreshToken } = response.data.data;
         
-        // Extract user info từ JWT token
-        const user = extractUserFromToken(token);
+        console.log("🔑 Token received:", token?.substring(0, 50) + "...");
+        console.log("👤 User from backend:", backendUser);
         
-        if (user && user.role !== null) {
-          console.log("👤 Extracted user:", user);
+        if (token && backendUser) {
+          // ✅ Sử dụng user info trực tiếp từ backend thay vì extract từ JWT
+          const user = {
+            id: backendUser.id,
+            username: backendUser.username,
+            email: backendUser.email,
+            role: backendUser.role === 'SELLER' ? 1 : 
+                  backendUser.role === 'BUYER' ? 2 : 
+                  backendUser.role === 'ADMIN' ? 0 : null,
+            authorities: backendUser.role
+          };
+          
+          console.log("👤 Processed user:", user);
           console.log("🎭 User role:", user.role, `(${user.authorities})`);
           
           // Lưu vào AuthContext
-          login(user, token);
+          login(user, token, refreshToken);
           
           // Phân quyền và điều hướng
           if (user.role === 1) { // SELLER
@@ -153,7 +163,7 @@ const LoginPage = () => {
             navigate("/seller/dashboard");
           } else if (user.role === 2) { // BUYER/CUSTOMER
             console.log("→ Redirecting to customer home");
-            navigate("/customer/home");
+            navigate("/home");
           } else if (user.role === 0) { // ADMIN
             console.log("→ Redirecting to admin dashboard");
             navigate("/admin/dashboard");
@@ -162,8 +172,8 @@ const LoginPage = () => {
             navigate("/");
           }
         } else {
-          console.error("❌ Cannot extract user info from token");
-          setError("Không thể xử lý thông tin đăng nhập. Token không hợp lệ!");
+          console.error("❌ Missing token or user info");
+          setError("Phản hồi từ server thiếu thông tin cần thiết!");
         }
       } else {
         console.error("❌ Invalid response format:", response.data);
@@ -198,32 +208,40 @@ const LoginPage = () => {
         idToken: credentialResponse.credential,
       });
       
-      // Backend trả về format: {status, message, data: {token}}
-      if (res.data && res.data.data && res.data.data.token) {
-        const token = res.data.data.token;
-        console.log("🔑 Google token received:", token.substring(0, 50) + "...");
+      // ✅ Cập nhật format mới cho Google login
+      if (res.data && res.data.data) {
+        const { user: backendUser, token, refreshToken } = res.data.data;
         
-        // Extract user info từ JWT token
-        const user = extractUserFromToken(token);
+        console.log("🔑 Google token received:", token?.substring(0, 50) + "...");
         
-        if (user && user.role !== null) {
+        if (token && backendUser) {
+          const user = {
+            id: backendUser.id,
+            username: backendUser.username,
+            email: backendUser.email,
+            role: backendUser.role === 'SELLER' ? 1 : 
+                  backendUser.role === 'BUYER' ? 2 : 
+                  backendUser.role === 'ADMIN' ? 0 : null,
+            authorities: backendUser.role
+          };
+          
           console.log("👤 Google user:", user);
           
           // Lưu vào AuthContext
-          login(user, token);
+          login(user, token, refreshToken);
           
           // Phân quyền và điều hướng
           if (user.role === 1) { // SELLER
             navigate("/seller/dashboard");
           } else if (user.role === 2) { // BUYER/CUSTOMER
-            navigate("/customer/home");
+            navigate("/home");
           } else if (user.role === 0) { // ADMIN
             navigate("/admin/dashboard");
           } else {
             navigate("/");
           }
         } else {
-          setError("Không thể xử lý thông tin đăng nhập Google!");
+          setError("Phản hồi Google thiếu thông tin cần thiết!");
         }
       } else {
         setError("Google trả về dữ liệu không hợp lệ!");
@@ -234,7 +252,11 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleError = () => setError("Đăng nhập Google thất bại!");
+  // ✅ Thêm function handleGoogleError
+  const handleGoogleError = (error) => {
+    console.error("❌ Google login error:", error);
+    setError("Đăng nhập Google thất bại! Vui lòng thử lại.");
+  };
 
   const handleFacebookLogin = () => {
     if (!window.FB) {
@@ -251,32 +273,40 @@ const LoginPage = () => {
           const { accessToken } = response.authResponse;
           axios.post("http://localhost:8081/api/authenticate/facebook", { accessToken }, { headers: { 'Content-Type': 'application/json' } })
             .then((res) => {
-              // Backend trả về format: {status, message, data: {token}}
-              if (res.data && res.data.data && res.data.data.token) {
-                const token = res.data.data.token;
-                console.log("🔑 Facebook token received:", token.substring(0, 50) + "...");
+              // ✅ Cập nhật format mới cho Facebook login
+              if (res.data && res.data.data) {
+                const { user: backendUser, token, refreshToken } = res.data.data;
                 
-                // Extract user info từ JWT token
-                const user = extractUserFromToken(token);
+                console.log("🔑 Facebook token received:", token?.substring(0, 50) + "...");
                 
-                if (user && user.role !== null) {
+                if (token && backendUser) {
+                  const user = {
+                    id: backendUser.id,
+                    username: backendUser.username,
+                    email: backendUser.email,
+                    role: backendUser.role === 'SELLER' ? 1 : 
+                          backendUser.role === 'BUYER' ? 2 : 
+                          backendUser.role === 'ADMIN' ? 0 : null,
+                    authorities: backendUser.role
+                  };
+                  
                   console.log("👤 Facebook user:", user);
                   
                   // Lưu vào AuthContext
-                  login(user, token);
+                  login(user, token, refreshToken);
                   
                   // Phân quyền và điều hướng
                   if (user.role === 1) { // SELLER
                     navigate("/seller/dashboard");
                   } else if (user.role === 2) { // BUYER/CUSTOMER
-                    navigate("/customer/home");
+                    navigate("/home");
                   } else if (user.role === 0) { // ADMIN
                     navigate("/admin/dashboard");
                   } else {
                     navigate("/");
                   }
                 } else {
-                  setError("Không thể xử lý thông tin đăng nhập Facebook!");
+                  setError("Phản hồi Facebook thiếu thông tin cần thiết!");
                 }
               } else {
                 setError("Facebook trả về dữ liệu không hợp lệ!");

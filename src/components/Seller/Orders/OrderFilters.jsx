@@ -81,7 +81,6 @@ const OrderFilters = ({ onFilterChange, onReset }) => {
               <Option value="all">Tất cả</Option>
               <Option value="Pending">Chờ xử lý</Option>
               <Option value="Processing">Đang xử lý</Option>
-              <Option value="Shipping">Đang giao</Option>
               <Option value="Completed">Hoàn thành</Option>
               <Option value="Cancelled">Đã hủy</Option>
             </Select>

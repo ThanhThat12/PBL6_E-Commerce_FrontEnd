@@ -21,10 +21,11 @@ const CategoriesPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     fetchCategories();
-    fetchProducts('all');
+    fetchAllProducts();
   }, []);
 
   const fetchCategories = async () => {
@@ -32,21 +33,57 @@ const CategoriesPage = () => {
     setCategories(data);
   };
 
-  const fetchProducts = async (filter) => {
+  const fetchAllProducts = async () => {
     setLoading(true);
-    const data = await categoryService.getProducts(filter);
-    
-    // Filter products based on tab
-    let filteredData = data;
-    if (filter === 'featured') {
-      filteredData = data.filter(p => p.featured);
-    } else if (filter === 'on-sale') {
-      filteredData = data.filter(p => p.onSale);
-    } else if (filter === 'out-of-stock') {
-      filteredData = data.filter(p => p.outOfStock);
+    try {
+      const data = await categoryService.getAllProducts();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching all products:', error);
     }
-    
-    setProducts(filteredData);
+    setLoading(false);
+  };
+
+  const fetchProductsByCategory = async (categoryId, categoryName) => {
+    setLoading(true);
+    try {
+      console.log(`🔄 Loading products for category: ${categoryName} (ID: ${categoryId})`);
+      const data = await categoryService.getProductsByCategory(categoryId);
+      setProducts(data);
+      setSelectedCategory({ id: categoryId, name: categoryName });
+      setActiveTab('category');
+    } catch (error) {
+      console.error(`Error fetching products for category ${categoryId}:`, error);
+    }
+    setLoading(false);
+  };
+
+  const fetchProducts = async (filter) => {
+    if (filter === 'all') {
+      setSelectedCategory(null);
+      await fetchAllProducts();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const allData = await categoryService.getAllProducts();
+      
+      // Filter products based on tab
+      let filteredData = allData;
+      if (filter === 'featured') {
+        filteredData = allData.filter(p => p.featured);
+      } else if (filter === 'on-sale') {
+        filteredData = allData.filter(p => p.onSale);
+      } else if (filter === 'out-of-stock') {
+        filteredData = allData.filter(p => p.stock === 0 || !p.isActive);
+      }
+      
+      setProducts(filteredData);
+      setSelectedCategory(null);
+    } catch (error) {
+      console.error('Error fetching filtered products:', error);
+    }
     setLoading(false);
   };
 
@@ -89,7 +126,11 @@ const CategoriesPage = () => {
             <Row gutter={[16, 16]} className="categories-grid">
               {categories.map((category) => (
                 <Col key={category.id} xs={24} sm={12} md={8} lg={6}>
-                  <CategoryCard category={category} />
+                  <CategoryCard 
+                    category={category} 
+                    onClick={() => fetchProductsByCategory(category.id, category.name)}
+                    isSelected={selectedCategory?.id === category.id}
+                  />
                 </Col>
               ))}
             </Row>
@@ -105,12 +146,18 @@ const CategoriesPage = () => {
                 className="product-tabs"
               >
                 <TabPane 
-                  tab={`All Product (${categories.reduce((sum, cat) => sum + cat.productCount, 0)})`} 
+                  tab={`All Product (${products.length})`} 
                   key="all" 
                 />
                 <TabPane tab="Featured Products" key="featured" />
                 <TabPane tab="On Sale" key="on-sale" />
                 <TabPane tab="Out of Stock" key="out-of-stock" />
+                {selectedCategory && (
+                  <TabPane 
+                    tab={`${selectedCategory.name} (${products.length})`} 
+                    key="category" 
+                  />
+                )}
               </Tabs>
               
               <Space className="products-actions">
@@ -128,7 +175,11 @@ const CategoriesPage = () => {
             </div>
 
             {/* Products Table */}
-            <CategoryTable categories={products} loading={loading} />
+            <CategoryTable 
+              categories={products} 
+              loading={loading} 
+              title={selectedCategory ? `Products in ${selectedCategory.name}` : `Products (${products.length} items)`}
+            />
           </div>
         </Content>
       </Layout>

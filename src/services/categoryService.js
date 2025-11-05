@@ -1,189 +1,116 @@
-const API_BASE_URL = 'http://localhost:8081/api';
+import axiosInstance from '../utils/axiosConfig';
 
 // Icon mapping cho categories (tự động match theo tên category từ API)
 const categoryIcons = {
-  'Shoes': '👟',
+  'Cycling Accessories': '�',
   'Bags': '👜',
-  'Sport Equipment': '⚽',
+  'Football Accessories': '⚽',
   'Fitness Equipment': '💪',
-  'Clothing': '👔',
-  'Accessories': '⌚',
-  'Electronics': '💻',
+  'Swimming Equipment': '🏊',
+  'Basketball Gear': '🏀',
+  'Tennis Equipment': '🎾',
   'Fashion': '👗',
   'Home & Kitchen': '🏠',
-  'Sports & Outdoors': '🏃',
-  'Toys & Games': '🎮',
-  'Health & Fitness': '🏋️',
-  'Books': '📚',
+  'Running Gear': '🏃',
+  'Yoga & Fitness': '🧘',
+  'Gym Accessories': '🏋️',
+  'Outdoor & Hiking': '🥾',
   'default': '📦'
 };
 
 const categoryService = {
   async getCategories() {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`);
+      console.log('📊 Fetching seller categories');
+      const response = await axiosInstance.get('/categories/seller/my-categories');
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+      console.log('✅ Categories response:', response.data);
+      
+      if (response.data.status === 200 && Array.isArray(response.data.data)) {
+        // Transform data từ API
+        return response.data.data.map(category => ({
+          id: category.id,
+          name: category.name,
+          icon: categoryIcons[category.name] || categoryIcons['default'],
+          productCount: 0, // Sẽ được cập nhật khi load products
+        }));
       }
       
-      const result = await response.json();
-      
-      // API trả về: { status: 200, message: "...", data: [{id: 1, name: "Shoes"}, ...] }
-      const categories = result.data || result;
-      
-      return categories.map(category => ({
-        id: category.id,
-        name: category.name,
-        icon: categoryIcons[category.name] || categoryIcons['default'],
-        productCount: 0, // API không có productCount, set = 0 hoặc gọi API khác để lấy
-      }));
+      console.warn('Unexpected API response format for categories:', response.data);
+      return [];
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      // Fallback to fake data if API fails
-      return [
-        { id: 1, name: 'Electronics', icon: '💻', productCount: 148 },
-        { id: 2, name: 'Fashion', icon: '👔', productCount: 256 },
-        { id: 3, name: 'Accessories', icon: '⌚', productCount: 189 },
-        { id: 4, name: 'Home & Kitchen', icon: '🏠', productCount: 143 },
-        { id: 5, name: 'Sports & Outdoors', icon: '⚽', productCount: 95 },
-        { id: 6, name: 'Toys & Games', icon: '🎮', productCount: 127 },
-        { id: 7, name: 'Health & Fitness', icon: '💪', productCount: 86 },
-        { id: 8, name: 'Books', icon: '📚', productCount: 234 },
-      ];
+      console.error('❌ Error fetching seller categories:', error);
+      // Fallback to empty array if API fails
+      return [];
     }
   },
 
-  async getProducts(filter = 'all') {
+  async getProductsByCategory(categoryId) {
     try {
-      // Gọi API products với filter
-      const url = `${API_BASE_URL}/products${filter !== 'all' ? `?filter=${filter}` : ''}`;
-      const response = await fetch(url);
+      console.log(`📦 Fetching products for category ID: ${categoryId}`);
+      const response = await axiosInstance.get(`/categories/seller/my-products/${categoryId}`);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
+      console.log('✅ Products response:', response.data);
+      
+      if (response.data.status === 200 && Array.isArray(response.data.data)) {
+        // Transform data từ API để phù hợp với CategoryTable
+        const transformedData = response.data.data.map(product => {
+          console.log('🔄 Transforming product:', product); // Debug log
+          return {
+            id: product.id,
+            name: product.name || 'Tên không có',
+            // image: product.mainImage || product.image || '📦',
+            // createdDate: new Date(product.createdAt || Date.now()).toLocaleDateString('vi-VN'),
+            order: product.stock || 0,
+            category: product.category,
+            categoryName: product.categoryName || product.category?.name,
+            price: new Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(product.basePrice || product.price || 0),
+            isActive: product.isActive !== undefined ? product.isActive : true,
+            stock: product.stock || 0,
+            variants: product.variants || []
+          };
+        });
+        console.log('✅ Transformed products:', transformedData);
+        return transformedData;
       }
       
-      const data = await response.json();
-      
-      // Map API response to frontend format
-      // Điều chỉnh mapping này theo cấu trúc response thực tế của bạn
-      return data.map(product => ({
-        id: product.id,
-        name: product.name || product.productName,
-        image: product.image || product.imageUrl || '📦',
-        createdDate: product.createdDate || product.createdAt || new Date().toLocaleDateString(),
-        order: product.orderCount || product.totalOrders || 0,
-        featured: product.featured || product.isFeatured || false,
-        onSale: product.onSale || product.isOnSale || false,
-        outOfStock: product.outOfStock || product.stock === 0 || false,
-      }));
+      console.warn('Unexpected API response format for category products:', response.data);
+      return [];
     } catch (error) {
-      console.error('Error fetching products:', error);
-      // Fallback to fake data if API fails
-      return [
-        {
-          id: 1,
-          name: 'Wireless Bluetooth Headphones',
-          image: '🎧',
-          createdDate: '01-01-2025',
-          order: 25,
-          featured: true,
-          onSale: false,
-          outOfStock: false,
-        },
-        {
-          id: 2,
-          name: "Men's T-Shirt",
-          image: '👕',
-          createdDate: '01-01-2025',
-          order: 20,
-          featured: false,
-          onSale: true,
-          outOfStock: false,
-        },
-        {
-          id: 3,
-          name: "Men's Leather Wallet",
-          image: '👛',
-          createdDate: '01-01-2025',
-          order: 35,
-          featured: false,
-          onSale: false,
-          outOfStock: false,
-        },
-        {
-          id: 4,
-          name: 'Memory Foam Pillow',
-          image: '🛏️',
-          createdDate: '01-01-2025',
-          order: 40,
-          featured: true,
-          onSale: false,
-          outOfStock: false,
-        },
-        {
-          id: 5,
-          name: 'Coffee Maker',
-          image: '☕',
-          createdDate: '01-01-2025',
-          order: 45,
-          featured: false,
-          onSale: false,
-          outOfStock: false,
-        },
-        {
-          id: 6,
-          name: 'Casual Baseball Cap',
-          image: '🧢',
-          createdDate: '01-01-2025',
-          order: 55,
-          featured: false,
-          onSale: true,
-          outOfStock: false,
-        },
-        {
-          id: 7,
-          name: 'Full HD Webcam',
-          image: '📷',
-          createdDate: '01-01-2025',
-          order: 20,
-          featured: false,
-          onSale: false,
-          outOfStock: false,
-        },
-        {
-          id: 8,
-          name: 'Smart LED Color Bulb',
-          image: '💡',
-          createdDate: '01-01-2025',
-          order: 16,
-          featured: false,
-          onSale: false,
-          outOfStock: false,
-        },
-        {
-          id: 9,
-          name: "Men's T-Shirt",
-          image: '👕',
-          createdDate: '01-01-2025',
-          order: 10,
-          featured: false,
-          onSale: false,
-          outOfStock: true,
-        },
-        {
-          id: 10,
-          name: "Men's Leather Wallet",
-          image: '👛',
-          createdDate: '01-01-2025',
-          order: 35,
-          featured: false,
-          onSale: false,
-          outOfStock: false,
-        },
-      ];
+      console.error(`❌ Error fetching products for category ${categoryId}:`, error);
+      return [];
     }
+  },
+
+  async getAllProducts() {
+    try {
+      // Lấy tất cả categories trước
+      const categories = await this.getCategories();
+      
+      // Lấy products từ tất cả categories
+      const allProductsPromises = categories.map(category => 
+        this.getProductsByCategory(category.id)
+      );
+      
+      const allProductsArrays = await Promise.all(allProductsPromises);
+      
+      // Flatten array và return
+      return allProductsArrays.flat();
+    } catch (error) {
+      console.error('❌ Error fetching all products:', error);
+      return [];
+    }
+  },
+
+  // Backward compatibility - deprecated, use getProductsByCategory instead
+  async getProducts(categoryId = null) {
+    if (categoryId && categoryId !== 'all') {
+      return this.getProductsByCategory(categoryId);
+    }
+    return this.getAllProducts();
   },
 };
 

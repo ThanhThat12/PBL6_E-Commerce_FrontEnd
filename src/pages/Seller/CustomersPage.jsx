@@ -36,30 +36,32 @@ const CustomersPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [customersData, statsData] = await Promise.all([
-        customerService.getCustomers(),
+      console.log('🔄 Fetching customers data...');
+      
+      // Thay đổi: lấy tất cả top buyers thay vì getCustomers
+      const [buyersData, statsData] = await Promise.all([
+        customerService.getAllTopBuyers(), // Sử dụng API mới
         customerService.getCustomerStats(),
       ]);
-      setCustomers(Array.isArray(customersData) ? customersData : []);
+      console.log('✅ Buyers data loaded:', { buyersData, statsData });
+      
+      setCustomers(Array.isArray(buyersData) ? buyersData : []);
       setStats(statsData);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('❌ Error fetching data:', error);
       setCustomers([]);
+      setStats(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // Cập nhật filter để phù hợp với dữ liệu buyers
   const filteredCustomers = Array.isArray(customers) ? customers.filter(customer => {
     const matchSearch = (customer.username && customer.username.toLowerCase().includes(searchText.toLowerCase())) ||
                        (customer.email && customer.email.toLowerCase().includes(searchText.toLowerCase()));
-    let matchStatus = true;
-    if (filterStatus === 'active') {
-      matchStatus = customer.activated === true;
-    } else if (filterStatus === 'inactive') {
-      matchStatus = customer.activated === false;
-    }
-    return matchSearch && matchStatus;
+    // Bỏ filterStatus vì buyers không có trạng thái active/inactive
+    return matchSearch;
   }) : [];
 
   const moreActionsMenu = {
@@ -80,18 +82,17 @@ const CustomersPage = () => {
       <Layout>
         <Header />
         <Content className="customers-content">
-          {/* Page Header */}
+          {/* Page Header - giữ nguyên */}
           <div className="page-header">
             <h1 className="page-title">Customers Management</h1>
             <Space>
-              
               <Dropdown menu={moreActionsMenu} trigger={['click']}>
                 <Button icon={<MoreOutlined />}>More Actions</Button>
               </Dropdown>
             </Space>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats Cards - giữ nguyên */}
           <Row gutter={[24, 24]} className="stats-section">
             <Col xs={24} sm={12} lg={6}>
               <CustomerStatsCard
@@ -131,7 +132,7 @@ const CustomersPage = () => {
             </Col>
           </Row>
 
-          {/* Top Spenders & Customer Segments */}
+          {/* Top Spenders & Customer Segments - GIỮ NGUYÊN */}
           <Row gutter={[24, 24]} className="insights-section">
             <Col xs={24} lg={12}>
               <TopSpendersCard topSpenders={stats?.topSpenders} />
@@ -141,35 +142,27 @@ const CustomersPage = () => {
             </Col>
           </Row>
 
-          {/* Customers Table */}
+          {/* Customers Table - CẬP NHẬT */}
           <div className="table-section">
             <div className="table-header">
-              <h2 className="table-title">All Customers ({filteredCustomers.length})</h2>
+              <h2 className="table-title">All Top Buyers ({filteredCustomers.length})</h2>
               <Space className="table-actions">
                 <Input
-                  placeholder="Search customers..."
+                  placeholder="Search buyers..."
                   prefix={<SearchOutlined />}
                   className="search-input"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                   allowClear
                 />
-                <Select
-                  defaultValue="all"
-                  style={{ width: 150 }}
-                  onChange={(value) => setFilterStatus(value)}
-                  className="status-filter"
-                >
-                  <Option value="all">All Status</Option>
-                  <Option value="active">Active</Option>
-                  <Option value="inactive">Inactive</Option>
-                </Select>
+                {/* Bỏ Status Filter vì buyers không có status */}
                 <Button icon={<FilterOutlined />}>Filters</Button>
                 <Button icon={<DownloadOutlined />}>Export</Button>
               </Space>
             </div>
             
-            <CustomerTable customers={filteredCustomers} loading={loading} />
+            {/* Sử dụng BuyersTable thay vì CustomerTable */}
+            <CustomerTable customers={filteredCustomers} loading={loading} isBuyerMode={true} />
           </div>
         </Content>
       </Layout>

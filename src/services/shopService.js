@@ -76,9 +76,9 @@ const shopService = {
       if (filters.search) params.append('search', filters.search);
       if (filters.category) params.append('category', filters.category);
       if (filters.isActive !== undefined) params.append('isActive', filters.isActive);
-      
+
       const response = await axiosInstance.get(`/products/manage?${params.toString()}`);
-      
+
       console.log('✅ Shop products response:', response.data);
       
       if (response.data.status === 200 && response.data.data) {
@@ -171,7 +171,7 @@ const shopService = {
         };
         
         console.log('🔍 Processed product detail:', product);
-        return product;
+        return product
       }
       
       throw new Error(response.data.message || 'Không thể lấy thông tin sản phẩm');

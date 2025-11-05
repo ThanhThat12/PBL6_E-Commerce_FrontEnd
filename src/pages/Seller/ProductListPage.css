@@ -1,0 +1,326 @@
+.product-list-layout {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.product-list-content {
+  padding: 24px;
+  background: #f5f5f5;
+}
+
+.page-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #262626;
+  margin: 0;
+}
+
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.approved {
+  border-left: 4px solid #52c41a;
+}
+
+.stat-card.pending {
+  border-left: 4px solid #faad14;
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+.stat-card.approved .stat-icon {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  color: white;
+}
+
+.stat-card.pending .stat-icon {
+  background: linear-gradient(135deg, #faad14 0%, #ffc53d 100%);
+  color: white;
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #262626;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #8c8c8c;
+  font-weight: 500;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+  border-radius: 8px;
+}
+
+.table-section {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pagination-section {
+  margin-top: 16px;
+  padding: 16px 0;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.pagination-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.page-info-text {
+  font-size: 14px;
+  color: #595959;
+  font-weight: 500;
+}
+
+.total-info {
+  margin-left: 8px;
+  color: #8c8c8c;
+  font-weight: 400;
+}
+
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-button {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.nav-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.prev-button {
+  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+  border: none;
+  color: white;
+}
+
+.prev-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+}
+
+.next-button {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  border: none;
+  color: white;
+}
+
+.next-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #389e0d 0%, #237804 100%);
+}
+
+.nav-button:disabled {
+  background: #f5f5f5 !important;
+  color: #bfbfbf !important;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.current-page-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.page-input {
+  width: 60px !important;
+  text-align: center;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+}
+
+.page-separator {
+  font-size: 14px;
+  color: #8c8c8c;
+  white-space: nowrap;
+}
+
+.pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 150px;
+}
+
+.size-label {
+  font-size: 14px;
+  color: #595959;
+  font-weight: 500;
+}
+
+.size-selector {
+  min-width: 100px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-list-content {
+    padding: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-content {
+    padding: 16px;
+  }
+  
+  .pagination-controls {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .pagination-info,
+  .pagination-size {
+    justify-content: center;
+    flex: none;
+  }
+  
+  .pagination-nav {
+    flex: none;
+    width: 100%;
+  }
+  
+  .nav-button {
+    flex: 1;
+    max-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-nav {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .nav-button {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .current-page-indicator {
+    order: -1;
+  }
+}
+
+/* Animation cho loading state */
+.pagination-controls.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Hover effects */
+.current-page-indicator:hover {
+  border-color: #40a9ff;
+  box-shadow: 0 2px 8px rgba(64, 169, 255, 0.2);
+}
+
+.size-selector:hover {
+  border-color: #40a9ff;
+}
+
+/* Force modal to show on top */
+.ant-modal-root {
+  z-index: 9999 !important;
+}
+
+.ant-modal-mask {
+  z-index: 9998 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+}
+
+.ant-modal {
+  z-index: 9999 !important;
+}
+
+/* Debug: Add red border to modal */
+.ant-modal-content {
+  border: 2px solid red !important;
+}
+
+.ant-modal-mask {
+  border: 2px solid blue !important;
+}

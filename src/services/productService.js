@@ -1,8 +1,58 @@
 import axiosInstance from '../utils/axiosConfig';
 
 const productService = {
-  // Danh sách các hạng mục và thuộc tính của chúng (tạm thời giữ mock để form hoạt động)
-  getCategories() {
+  // Lấy categories từ API thực tế
+  async getCategories() {
+    try {
+      console.log('📦 Fetching categories from API');
+      const response = await axiosInstance.get('/categories');
+      
+      if (response.data.status === 200 && Array.isArray(response.data.data)) {
+        // Map categories từ API với attributes mock (tạm thời)
+        return response.data.data.map(category => ({
+          id: category.id,
+          name: category.name,
+          slug: category.name.toLowerCase().replace(/\s+/g, '-'),
+          attributes: this.getMockAttributesForCategory(category.name)
+        }));
+      }
+      
+      console.warn('Unexpected categories API response:', response.data);
+      return this.getMockCategories();
+    } catch (error) {
+      console.error('❌ Error fetching categories:', error);
+      return this.getMockCategories();
+    }
+  },
+
+  // Mock attributes theo category name (tạm thời cho đến khi có API attributes)
+  getMockAttributesForCategory(categoryName) {
+    const attributeMap = {
+      'Gym Accessories': [
+        { id: 1, name: 'color', type: 'select', label: 'Màu sắc', required: true, options: ['Black', 'Red', 'Blue', 'White'] },
+        { id: 2, name: 'size', type: 'select', label: 'Kích cỡ', required: true, options: ['Small', 'Medium', 'Large', 'XL'] },
+        { id: 3, name: 'material', type: 'text', label: 'Chất liệu', required: false }
+      ],
+      'Running Gear': [
+        { id: 1, name: 'color', type: 'select', label: 'Màu sắc', required: true, options: ['Black', 'White', 'Red', 'Blue', 'Green'] },
+        { id: 2, name: 'size', type: 'select', label: 'Kích cỡ', required: true, options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+        { id: 4, name: 'brand', type: 'text', label: 'Thương hiệu', required: true }
+      ],
+      'Tennis Equipment': [
+        { id: 1, name: 'color', type: 'select', label: 'Màu sắc', required: true, options: ['Black', 'White', 'Red', 'Blue'] },
+        { id: 5, name: 'weight', type: 'text', label: 'Trọng lượng', required: false },
+        { id: 6, name: 'grip_size', type: 'select', label: 'Kích cỡ grip', required: true, options: ['4 1/8', '4 1/4', '4 3/8', '4 1/2'] }
+      ]
+    };
+    
+    return attributeMap[categoryName] || [
+      { id: 1, name: 'color', type: 'select', label: 'Màu sắc', required: true, options: ['Black', 'White', 'Red', 'Blue'] },
+      { id: 2, name: 'size', type: 'select', label: 'Kích cỡ', required: true, options: ['S', 'M', 'L', 'XL'] }
+    ];
+  },
+
+  // Fallback mock categories
+  getMockCategories() {
     return [
       {
         id: 1,
@@ -89,29 +139,36 @@ const productService = {
     ];
   },
 
-  getCategoryById(id) {
-    const categories = this.getCategories();
+  async getCategoryById(id) {
+    const categories = await this.getCategories();
     return categories.find(cat => cat.id === id);
   },
 
-  getCategoryBySlug(slug) {
-    const categories = this.getCategories();
+  async getCategoryBySlug(slug) {
+    const categories = await this.getCategories();
     return categories.find(cat => cat.slug === slug);
   },
 
-  // Tạo sản phẩm mới gọi backend
+  // Tạo sản phẩm mới gọi API thực tế
   async createProduct(productData) {
     try {
-      console.log('📦 productService.createProduct payload:', productData);
+      console.log('📦 Creating product with payload:', JSON.stringify(productData, null, 2));
+      
       const response = await axiosInstance.post('/products', productData);
-      console.log('✅ product create response:', response.data);
-      if (response.data.status === 200 || response.data.status === 201) {
-        return response.data.data || { success: true };
+      console.log('✅ Product created successfully:', response.data);
+      
+      if (response.data.status === 201 || response.data.status === 200) {
+        return {
+          success: true,
+          data: response.data.data,
+          message: response.data.message
+        };
       }
+      
       throw new Error(response.data.message || 'Không thể tạo sản phẩm');
     } catch (error) {
-      console.error('❌ productService.createProduct error:', error);
-      throw error;
+      console.error('❌ Product creation failed:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tạo sản phẩm');
     }
   },
 

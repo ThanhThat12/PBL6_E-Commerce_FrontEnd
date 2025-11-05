@@ -37,18 +37,21 @@ const EditProductForm = ({ product, visible, onCancel, onSuccess }) => {
   const [shopId, setShopId] = useState(null);
 
   useEffect(() => {
-    const categoriesData = productService.getCategories();
-    setCategories(categoriesData);
-
-    // Lấy shopId hiện tại của seller (nếu có)
-    (async () => {
+    const fetchInitialData = async () => {
       try {
+        // Fetch categories - now async
+        const categoriesData = await productService.getCategories();
+        setCategories(categoriesData);
+
+        // Lấy shopId hiện tại của seller (nếu có)
         const shop = await shopService.getShopInfo();
         if (shop && shop.id) setShopId(shop.id);
       } catch (err) {
-        console.warn('Không lấy được shop info:', err);
+        console.warn('Không lấy được dữ liệu khởi tạo:', err);
       }
-    })();
+    };
+
+    fetchInitialData();
   }, []);
 
   // Load dữ liệu sản phẩm khi modal mở
@@ -111,12 +114,17 @@ const EditProductForm = ({ product, visible, onCancel, onSuccess }) => {
     }
   };
 
-  const handleCategoryChange = (categoryId) => {
-    const category = productService.getCategoryById(categoryId);
-    setSelectedCategory(category);
-    
-    // Reset variants khi đổi category
-    setVariants([]);
+  const handleCategoryChange = async (categoryId) => {
+    try {
+      const category = await productService.getCategoryById(categoryId);
+      setSelectedCategory(category);
+      
+      // Reset variants khi đổi category
+      setVariants([]);
+    } catch (error) {
+      console.error('Error fetching category:', error);
+      message.error('Không thể lấy thông tin category');
+    }
   };
 
   const handleImageUpload = ({ fileList }) => {

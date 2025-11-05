@@ -42,13 +42,6 @@ const OrderStats = ({ statistics }) => {
       bgColor: '#e6fffb',
     },
     {
-      title: 'Đang giao hàng',
-      value: statistics?.shippingOrders || 0,
-      icon: <TruckOutlined />,
-      color: '#722ed1',
-      bgColor: '#f9f0ff',
-    },
-    {
       title: 'Hoàn thành',
       value: statistics?.completedOrders || 0,
       icon: <CheckCircleOutlined />,
@@ -65,7 +58,6 @@ const OrderStats = ({ statistics }) => {
     {
       title: 'Tổng doanh thu',
       value: formatCurrency(statistics?.totalRevenue || 0),
-      icon: <DollarOutlined />,
       color: '#52c41a',
       bgColor: '#f6ffed',
       prefix: '',
@@ -76,7 +68,7 @@ const OrderStats = ({ statistics }) => {
     <div className="order-stats">
       <Row gutter={[16, 16]}>
         {statsData.map((stat, index) => (
-          <Col xs={24} sm={12} md={8} lg={6} xl={3} key={index}>
+          <Col xs={24} sm={12} md={8} lg={6} xl={4} key={index}>
             <Card className="stat-card" bordered={false}>
               <div className="stat-content">
                 <div

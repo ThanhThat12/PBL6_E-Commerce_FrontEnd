@@ -10,6 +10,21 @@
   transform: translateY(-2px);
 }
 
+.category-card.selected {
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.category-card.selected .category-icon {
+  background: #e6f7ff;
+}
+
+.category-card.selected .category-name {
+  color: #1890ff;
+  font-weight: 600;
+}
+
 .category-card .ant-card-body {
   padding: 20px;
   display: flex;

@@ -1,4 +1,4 @@
-// src/App.js
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -17,6 +17,16 @@ import OrdersPage from "./pages/Seller/OrdersPage.jsx";
 import AddProductPage from "./pages/Seller/AddProductPage.jsx";
 import MyShopPage from "./pages/Seller/MyShopPage.jsx";
 import StatisticalPage from "./pages/Seller/StatisticalPage.jsx";
+import ProductListPage from "./pages/Seller/ProductListPage.jsx";
+
+// Customer pages
+import HomePage from "./pages/Customer/HomePage.jsx";
+import WishlistPage from "./pages/Customer/WishlistPage.jsx";
+import CartPage from "./pages/Customer/CartPage.jsx";
+import CheckoutPage from "./pages/Customer/CheckoutPage.jsx";
+import ProductByCategoryPage from "./pages/Customer/ProductByCategoryPage.jsx";
+import AccountPage from "./pages/Customer/AccountPage.jsx";
+
 
 function App() {
   return (
@@ -30,6 +40,14 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Customer routes */}
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/products" element={<ProductByCategoryPage />} />
+            <Route path="/profile" element={<AccountPage />} />
           
             {/* Protected Seller routes - Yêu cầu role = 1 (SELLER) */}
             <Route 
@@ -77,6 +95,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRole={1}>
                   <AddProductPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/product-list" 
+              element={
+                <ProtectedRoute requiredRole={1}>
+                  <ProductListPage />
                 </ProtectedRoute>
               } 
             />

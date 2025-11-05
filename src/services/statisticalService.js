@@ -21,11 +21,10 @@ const statisticalService = {
         }));
         
         // Tính toán summary
-        const totalRevenue = data.totalRevenue || 0;
-        const totalOrders = data.totalCompletedOrders || 0;
-        const averageRevenue = monthlyRevenue.length > 0 ? 
-          monthlyRevenue.reduce((sum, item) => sum + item.revenue, 0) / 12 : 0;
-        
+       const totalRevenue = monthlyRevenue.reduce((sum, item) => sum + item.revenue, 0);
+      const totalOrders = monthlyRevenue.reduce((sum, item) => sum + item.orders, 0);
+      const averageRevenue = monthlyRevenue.length > 0 ? 
+        totalRevenue / 12 : 0;
         // Tìm tháng có doanh thu cao nhất và thấp nhất
         const monthsWithRevenue = monthlyRevenue.filter(item => item.revenue > 0);
         const highestMonth = monthsWithRevenue.length > 0 ? 

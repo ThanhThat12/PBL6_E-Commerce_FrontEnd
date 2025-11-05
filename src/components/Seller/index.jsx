@@ -36,6 +36,4 @@ export { default as OrderStats } from './Orders/OrderStats.jsx';
 export { default as ShopHeader } from './Shop/ShopHeader.jsx';
 export { default as ShopFilters } from './Shop/ShopFilters.jsx';
 export { default as ProductGrid } from './Shop/ProductGrid.jsx';
-
-// Common Components
 export { LineChartMini } from './Common/LineChartMini.jsx';

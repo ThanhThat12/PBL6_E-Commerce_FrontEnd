@@ -83,7 +83,6 @@ const OrdersPage = () => {
       totalOrders: filteredData.length,
       pendingOrders: filteredData.filter((o) => o.status === 'Pending').length,
       processingOrders: filteredData.filter((o) => o.status === 'Processing').length,
-      shippingOrders: filteredData.filter((o) => o.status === 'Shipping').length,
       completedOrders: filteredData.filter((o) => o.status === 'Completed').length,
       cancelledOrders: filteredData.filter((o) => o.status === 'Cancelled').length,
       totalRevenue: filteredData
@@ -174,7 +173,6 @@ const OrdersPage = () => {
             <strong>Trạng thái hiện tại:</strong>{' '}
             {selectedOrder?.status === 'Pending' && 'Chờ xử lý'}
             {selectedOrder?.status === 'Processing' && 'Đang xử lý'}
-            {selectedOrder?.status === 'Shipping' && 'Đang giao'}
             {selectedOrder?.status === 'Completed' && 'Hoàn thành'}
             {selectedOrder?.status === 'Cancelled' && 'Đã hủy'}
           </p>
@@ -189,7 +187,6 @@ const OrdersPage = () => {
             >
               <Option value="Pending">Chờ xử lý</Option>
               <Option value="Processing">Đang xử lý</Option>
-              <Option value="Shipping">Đang giao</Option>
               <Option value="Completed">Hoàn thành</Option>
               <Option value="Cancelled">Đã hủy</Option>
             </Select>

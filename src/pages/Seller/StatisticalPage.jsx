@@ -193,30 +193,33 @@ const StatisticalPage = () => {
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="total-row">
-                          <td className="total-label">Tổng cộng</td>
-                          <td className="total-revenue">
-                            {new Intl.NumberFormat('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND',
-                            }).format(revenueData.summary.totalRevenue)}
-                          </td>
-                          <td className="total-orders">
-                            {revenueData.summary.totalOrders} đơn
-                          </td>
-                          <td className="total-average">
-                            {revenueData.summary.totalOrders > 0
-                              ? new Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(
-                                  revenueData.summary.totalRevenue /
-                                    revenueData.summary.totalOrders
-                                )
-                              : '0 ₫'}
-                          </td>
-                        </tr>
-                      </tfoot>
+  <tr className="total-row">
+    <td className="total-label">Tổng cộng {selectedYear}</td>
+    <td className="total-revenue">
+      {new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+      }).format(
+        revenueData.monthlyRevenue.reduce((sum, item) => sum + item.revenue, 0)
+      )}
+    </td>
+    <td className="total-orders">
+      {revenueData.monthlyRevenue.reduce((sum, item) => sum + item.orders, 0)} đơn
+    </td>
+    <td className="total-average">
+      {(() => {
+        const yearTotalRevenue = revenueData.monthlyRevenue.reduce((sum, item) => sum + item.revenue, 0);
+        const yearTotalOrders = revenueData.monthlyRevenue.reduce((sum, item) => sum + item.orders, 0);
+        return yearTotalOrders > 0
+          ? new Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(yearTotalRevenue / yearTotalOrders)
+          : '0 ₫';
+      })()}
+    </td>
+  </tr>
+</tfoot>
                     </table>
                   </div>
                 </Card>

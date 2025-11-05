@@ -4,6 +4,8 @@ import { TrophyOutlined, ShoppingOutlined } from '@ant-design/icons';
 import './TopSpendersCard.css';
 
 export const TopSpendersCard = ({ topSpenders }) => {
+  console.log('🔍 TopSpendersCard received data:', topSpenders);
+  
   return (
     <Card 
       className="top-spenders-card"
@@ -16,7 +18,7 @@ export const TopSpendersCard = ({ topSpenders }) => {
       extra={<Button type="link">View All</Button>}
     >
       <List
-        dataSource={topSpenders}
+        dataSource={topSpenders || []}
         renderItem={(customer, index) => (
           <List.Item className="spender-item">
             <div className="spender-rank">#{index + 1}</div>
