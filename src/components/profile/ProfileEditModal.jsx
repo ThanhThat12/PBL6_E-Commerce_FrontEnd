@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { FiX, FiUser, FiMail, FiPhone } from 'react-icons/fi';
+import { FiX, FiUser, FiPhone } from 'react-icons/fi';
 import { updateProfile } from '../../services/userService';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
@@ -8,13 +8,15 @@ import Loading from '../common/Loading';
 /**
  * ProfileEditModal
  * Modal for editing user profile information
+ * 
+ * Editable fields:
+ * - fullName (required)
+ * - phoneNumber (optional, Vietnamese format)
  */
 const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    phoneNumber: '',
     fullName: '',
+    phoneNumber: '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -23,34 +25,32 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
   useEffect(() => {
     if (currentProfile) {
       setFormData({
-        username: currentProfile.username || '',
-        email: currentProfile.email || '',
-        phoneNumber: currentProfile.phoneNumber || '',
         fullName: currentProfile.fullName || '',
+        phoneNumber: currentProfile.phoneNumber || '',
       });
+      setErrors({});
     }
-  }, [currentProfile]);
+  }, [currentProfile, isOpen]);
 
   // Validate form
   const validateForm = () => {
     const newErrors = {};
 
-    if (formData.username && formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
-    }
-    if (formData.username && formData.username.length > 50) {
-      newErrors.username = 'Username must not exceed 50 characters';
-    }
-
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    // Full Name validation
+    if (!formData.fullName || formData.fullName.trim().length === 0) {
+      newErrors.fullName = 'Họ tên không được để trống';
+    } else if (formData.fullName.length < 2) {
+      newErrors.fullName = 'Họ tên phải từ 2 ký tự trở lên';
+    } else if (formData.fullName.length > 100) {
+      newErrors.fullName = 'Họ tên không được vượt quá 100 ký tự';
     }
 
-    if (formData.phoneNumber && formData.phoneNumber.length < 10) {
-      newErrors.phoneNumber = 'Phone number must be at least 10 digits';
-    }
-    if (formData.phoneNumber && formData.phoneNumber.length > 15) {
-      newErrors.phoneNumber = 'Phone number must not exceed 15 digits';
+    // Phone number validation (Vietnamese format: 0xxxxxxxxx or +84xxxxxxxxx)
+    if (formData.phoneNumber && formData.phoneNumber.trim().length > 0) {
+      const phoneRegex = /^(0|\+84)[3|5|7|8|9][0-9]{8}$/;
+      if (!phoneRegex.test(formData.phoneNumber)) {
+        newErrors.phoneNumber = 'Số điện thoại không hợp lệ. Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx';
+      }
     }
 
     setErrors(newErrors);
@@ -82,33 +82,37 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
     setLoading(true);
 
     try {
-      // Only send fields that have values
-      const updateData = {};
-      Object.keys(formData).forEach(key => {
-        if (formData[key] && formData[key].trim() !== '') {
-          updateData[key] = formData[key].trim();
-        }
-      });
+      // Only send required fields
+      const updateData = {
+        fullName: formData.fullName.trim(),
+        phoneNumber: formData.phoneNumber.trim() || '',
+      };
 
       const response = await updateProfile(updateData);
       
-      if (response.statusCode === 200) {
-        toast.success('Profile updated successfully');
+      if (response && response.statusCode === 200) {
+        toast.success('Cập nhật thông tin thành công');
         onSuccess(response.data);
         onClose();
       } else {
-        toast.error(response.message || 'Failed to update profile');
+        toast.error(response?.message || 'Cập nhật thất bại');
       }
     } catch (error) {
       console.error('Update profile error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
+      const errorMessage = error.response?.data?.error || 'Đã xảy ra lỗi khi cập nhật';
       toast.error(errorMessage);
+      setErrors(prev => ({
+        ...prev,
+        submit: errorMessage
+      }));
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -123,7 +127,7 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
         <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Chỉnh sửa thông tin</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -135,47 +139,25 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username */}
+            {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <FiUser className="inline mr-2" />
-                Username
+                Họ và tên *
               </label>
               <input
                 type="text"
-                name="username"
-                value={formData.username}
+                name="fullName"
+                value={formData.fullName}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.username ? 'border-red-500' : 'border-gray-300'
+                  errors.fullName ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter username"
+                placeholder="Nhập họ và tên"
                 disabled={loading}
               />
-              {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username}</p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                <FiMail className="inline mr-2" />
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter email"
-                disabled={loading}
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
               )}
             </div>
 
@@ -183,7 +165,7 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <FiPhone className="inline mr-2" />
-                Phone Number
+                Số điện thoại
               </label>
               <input
                 type="tel"
@@ -193,57 +175,42 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter phone number"
+                placeholder="0xxxxxxxxx"
                 disabled={loading}
               />
               {errors.phoneNumber && (
                 <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
               )}
+              <p className="mt-1 text-xs text-gray-500">
+                Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx
+              </p>
             </div>
 
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                <FiUser className="inline mr-2" />
-                Full Name
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter full name"
-                disabled={loading}
-              />
-            </div>
+            {/* Submit Error */}
+            {errors.submit && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{errors.submit}</p>
+              </div>
+            )}
 
-            {/* Actions */}
+            {/* Buttons */}
             <div className="flex gap-3 pt-4">
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1"
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cancel
-              </Button>
-              <Button
+                Hủy
+              </button>
+              <button
                 type="submit"
-                variant="primary"
                 disabled={loading}
-                className="flex-1"
+                className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loading size="sm" />
-                    <span>Saving...</span>
-                  </div>
-                ) : (
-                  'Save Changes'
-                )}
-              </Button>
+                {loading && <Loading size="sm" />}
+                Lưu
+              </button>
             </div>
           </form>
         </div>

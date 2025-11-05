@@ -71,33 +71,49 @@ export const setAsPrimary = async (addressId) => {
 
 /**
  * Get full user profile with all fields including metadata
+ * GET /api/profile
  */
 export const getProfile = async () => {
-  const response = await api.get('/user/profile');
+  const response = await api.get('/profile');
   return response;
 };
 
 /**
  * Update user profile information
+ * PUT /api/profile
+ * 
+ * @param {Object} profileData - { fullName, phoneNumber }
  */
 export const updateProfile = async (profileData) => {
-  const response = await api.put('/user/profile', profileData);
+  const response = await api.put('/profile', profileData);
+  return response;
+};
+
+/**
+ * Upload user avatar
+ * POST /api/profile/avatar
+ * 
+ * @param {File} file - Avatar image file
+ */
+export const uploadAvatar = async (file) => {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const response = await api.post('/profile/avatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response;
 };
 
 /**
  * Change user password
+ * PUT /api/profile/password
+ * 
+ * @param {Object} passwordData - { currentPassword, newPassword, confirmPassword }
  */
 export const changePassword = async (passwordData) => {
-  const response = await api.put('/user/change-password', passwordData);
-  return response;
-};
-
-/**
- * Update user avatar URL
- */
-export const updateAvatar = async (avatarUrl) => {
-  const response = await api.put(`/user/avatar?avatarUrl=${encodeURIComponent(avatarUrl)}`);
+  const response = await api.put('/profile/password', passwordData);
   return response;
 };
 
@@ -154,8 +170,8 @@ const userService = {
   setAsPrimary,
   getProfile,
   updateProfile,
+  uploadAvatar,
   changePassword,
-  updateAvatar,
   // GHN APIs
   getProvinces,
   getDistricts,

@@ -44,19 +44,19 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     const newErrors = {};
 
     if (!formData.oldPassword) {
-      newErrors.oldPassword = 'Old password is required';
+      newErrors.oldPassword = 'Mật khẩu hiện tại không được để trống';
     }
 
     if (!formData.newPassword) {
-      newErrors.newPassword = 'New password is required';
+      newErrors.newPassword = 'Mật khẩu mới không được để trống';
     } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = 'New password must be at least 6 characters';
+      newErrors.newPassword = 'Mật khẩu mới phải từ 6 ký tự trở lên';
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your new password';
+      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
     }
 
     setErrors(newErrors);
@@ -96,29 +96,32 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
     try {
       const response = await changePassword({
-        oldPassword: formData.oldPassword,
+        currentPassword: formData.oldPassword,
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
       });
 
-      if (response.statusCode === 200) {
-        toast.success('Password changed successfully');
+      if (response && (response.statusCode === 200 || response.statusCode === 201)) {
+        toast.success('Đổi mật khẩu thành công');
         handleClose();
       } else {
-        toast.error(response.message || 'Failed to change password');
+        toast.error(response?.message || 'Đổi mật khẩu thất bại');
       }
     } catch (error) {
       console.error('Change password error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to change password';
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Đã xảy ra lỗi';
       
       // Handle specific error cases
-      if (errorMessage.includes('incorrect') || errorMessage.includes('wrong')) {
-        setErrors({ oldPassword: 'Old password is incorrect' });
-      } else if (errorMessage.includes('match')) {
-        setErrors({ confirmPassword: 'Passwords do not match' });
+      if (errorMessage.includes('hiện tại') || errorMessage.includes('đúng')) {
+        setErrors({ oldPassword: 'Mật khẩu hiện tại không đúng' });
+        toast.error('Mật khẩu hiện tại không đúng');
+      } else if (errorMessage.includes('khớp') || errorMessage.includes('match')) {
+        setErrors({ confirmPassword: 'Mật khẩu xác nhận không khớp' });
+        toast.error('Mật khẩu xác nhận không khớp');
+      } else {
+        toast.error(errorMessage);
       }
       
-      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
