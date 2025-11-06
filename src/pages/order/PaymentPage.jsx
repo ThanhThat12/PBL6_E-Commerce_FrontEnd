@@ -440,9 +440,6 @@ const PaymentPage = () => {
                         <p className="font-medium text-gray-900">{shippingAddress.toName}</p>
                         <p>{shippingAddress.toPhone}</p>
                         <p>{shippingAddress.toAddress}</p>
-                        {shippingAddress.ward && shippingAddress.district && shippingAddress.province && (
-                          <p>{`${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.province}`}</p>
-                        )}
                       </div>
                     </div>
                   )}
