@@ -37,141 +37,69 @@ apiClient.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
-      window.location.href = '/admin';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
 
-// ============ USER MANAGEMENT APIs ============
+// ============ Customer APIs ============
 
 /**
- * Get all customers (users with role BUYER)
+ * Get all customers (role = BUYER)
+ * Backend endpoint: GET /api/admin/users/customers
+ * Returns: ResponseDTO<List<UserInfoDTO>>
  */
 export const getCustomers = async () => {
   try {
+    console.log('📡 [adminService] Calling GET /admin/users/customers');
     const response = await apiClient.get('/admin/users/customers');
-    return response.data; // Returns ResponseDTO<List<UserInfoDTO>>
+    console.log('✅ [adminService] Customers response:', response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching customers:', error);
+    console.error('❌ [adminService] Error fetching customers:', error);
     throw error;
   }
 };
 
 /**
  * Get customer detail by ID
+ * Backend endpoint: GET /api/admin/users/detail/{userId}
+ * Returns: ResponseDTO<AdminUserDetailDTO>
  */
 export const getCustomerDetail = async (userId) => {
   try {
+    console.log('📡 [adminService] Calling GET /admin/users/detail/' + userId);
     const response = await apiClient.get(`/admin/users/detail/${userId}`);
-    return response.data; // Returns ResponseDTO<AdminUserDetailDTO>
+    console.log('✅ [adminService] Customer detail response:', response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching customer detail:', error);
+    console.error('❌ [adminService] Error fetching customer detail:', error);
     throw error;
   }
 };
 
 /**
- * Get all sellers (users with role SELLER)
+ * Get customer statistics
+ * Backend endpoint: GET /api/admin/users/customers/stats
+ * Returns: ResponseDTO<CustomerStatsDTO>
  */
-export const getSellers = async () => {
+export const getCustomerStats = async () => {
   try {
-    const response = await apiClient.get('/admin/users/sellers');
+    console.log('📡 [adminService] Calling GET /admin/users/customers/stats');
+    const response = await apiClient.get('/admin/users/customers/stats');
+    console.log('✅ [adminService] Customer stats response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching sellers:', error);
+    console.error('❌ [adminService] Error fetching customer stats:', error);
     throw error;
   }
 };
 
-/**
- * Get seller detail by ID
- */
-export const getSellerDetail = async (userId) => {
-  try {
-    const response = await apiClient.get(`/admin/users/detail/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching seller detail:', error);
-    throw error;
-  }
-};
-
-/**
- * Get all admins (users with role ADMIN)
- */
-export const getAdmins = async () => {
-  try {
-    const response = await apiClient.get('/admin/users/admin');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching admins:', error);
-    throw error;
-  }
-};
-
-/**
- * Update user role
- */
-export const updateUserRole = async (userId, role) => {
-  try {
-    const response = await apiClient.patch(`/admin/users/${userId}/role`, { role });
-    return response.data;
-  } catch (error) {
-    console.error('Error updating user role:', error);
-    throw error;
-  }
-};
-
-/**
- * Update user status (activate/deactivate)
- */
-export const updateUserStatus = async (userId, activated) => {
-  try {
-    const response = await apiClient.patch(`/admin/users/${userId}/status`, { activated });
-    return response.data;
-  } catch (error) {
-    console.error('Error updating user status:', error);
-    throw error;
-  }
-};
-
-/**
- * Delete user
- */
-export const deleteUser = async (userId) => {
-  try {
-    const response = await apiClient.delete(`/admin/users/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    throw error;
-  }
-};
-
-// ============ ADMIN LOGIN API ============
-
-/**
- * Admin login
- */
-export const loginAdmin = async (credentials) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/admin/login`, credentials);
-    return response.data;
-  } catch (error) {
-    console.error('Error logging in:', error);
-    throw error;
-  }
-};
+export { apiClient };
 
 export default {
   getCustomers,
   getCustomerDetail,
-  getSellers,
-  getSellerDetail,
-  getAdmins,
-  updateUserRole,
-  updateUserStatus,
-  deleteUser,
-  loginAdmin,
+  getCustomerStats,
 };

@@ -1,4 +1,5 @@
 import React from "react";
+import { Package } from "lucide-react";
 
 const TopProductsTable = ({ products }) => {
   return (
@@ -23,7 +24,13 @@ const TopProductsTable = ({ products }) => {
               <tr key={index}>
                 <td>
                   <div className="product-info">
-                    <img src={product.image} alt={product.name} className="product-image" />
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="product-image" />
+                    ) : (
+                      <div className="product-image product-image-placeholder">
+                        <Package size={20} />
+                      </div>
+                    )}
                     <div>
                       <div className="product-name">{product.name}</div>
                       <div className="product-sku">SKU: {product.sku}</div>

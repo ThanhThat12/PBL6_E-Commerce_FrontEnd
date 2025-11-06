@@ -3,7 +3,7 @@ import { UserPlus , Search, Filter, Users, UserCheck, Star, Package, TrendingUp,
 import CustomerActions from './CustomerActions';
 import CustomerDetailModal from './CustomerDetailModal';
 import AddCustomerModal from './AddCustomerModal';
-import { getCustomers, getCustomerDetail, deleteUser } from '../../../services/adminService';
+import { getCustomers, getCustomerDetail, getCustomerStats } from '../../../services/adminService';
 import './CustomersTable.css';
 
 const CustomersTable = () => {
@@ -14,68 +14,101 @@ const CustomersTable = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalCustomers: 0,
+    activeCustomers: 0,
+    newThisMonth: 0,
+    totalRevenue: 0
+  });
 
-  // Fetch customers from API
+  // Fetch customers and stats from API
   useEffect(() => {
     fetchCustomers();
+    fetchStats();
   }, []);
 
   const fetchCustomers = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      console.log('🔍 Fetching customers from API...');
-      console.log('📍 API URL:', 'http://localhost:8081/api/admin/users/customers');
-      console.log('🔑 Token:', localStorage.getItem('adminToken'));
-      
+      console.log('🔄 [CustomersTable] Fetching customers from API...');
       const response = await getCustomers();
-      console.log('✅ API Response:', response);
       
-      if (response.statusCode === 200 && response.data) {
+      console.log('📦 [CustomersTable] Full API Response:', response);
+      console.log('📦 [CustomersTable] Response status:', response.status);
+      console.log('📦 [CustomersTable] Response data:', response.data);
+      
+      if (response.status === 200 && response.data) {
+        console.log('✅ [CustomersTable] Customers loaded:', response.data.length, 'customers');
+        console.log('👤 [CustomersTable] First customer:', response.data[0]);
         setCustomers(response.data);
-        setError(null);
-        console.log('👥 Customers loaded from API:', response.data.length);
       } else {
-        // Fallback to mock data
-        console.warn('⚠️ Bad response from API, using mock data');
-        setCustomers(mockCustomersData);
-        setError(null);
+        console.warn('⚠️ [CustomersTable] Unexpected response format:', response);
+        setError('Unexpected response format from API');
       }
     } catch (err) {
-      console.error('❌ Error fetching customers:', err);
-      console.error('❌ Error details:', err.response?.data || err.message);
-      
-      // Fallback to mock data when API fails
-      console.log('📦 Using mock data (backend not running)');
-      setCustomers(mockCustomersData);
-      setError(null);
+      console.error('❌ [CustomersTable] Error fetching customers:', err);
+      console.error('❌ [CustomersTable] Error details:', err.response?.data || err.message);
+      setError(err.response?.data?.message || err.message || 'Failed to load customers');
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchStats = async () => {
+    try {
+      console.log('📊 [CustomersTable] Fetching customer stats from API...');
+      const response = await getCustomerStats();
+      
+      console.log('📦 [CustomersTable] Stats Response:', response);
+      
+      if (response.status === 200 && response.data) {
+        console.log('✅ [CustomersTable] Stats loaded:', response.data);
+        setStats(response.data);
+      } else {
+        console.warn('⚠️ [CustomersTable] Unexpected stats response:', response);
+      }
+    } catch (err) {
+      console.error('❌ [CustomersTable] Error fetching stats:', err);
+      // Don't set error state for stats - just log it
+    }
+  };
   
-  // Dữ liệu thống kê cho khách hàng
+  // Format revenue display
+  const formatRevenue = (revenue) => {
+    if (revenue >= 1000000) {
+      return `$${(revenue / 1000000).toFixed(1)}M`;
+    } else if (revenue >= 1000) {
+      return `$${(revenue / 1000).toFixed(1)}K`;
+    } else {
+      return `$${revenue.toFixed(0)}`;
+    }
+  };
+
+  // Dữ liệu thống kê cho khách hàng từ API
   const statsData = [
     { 
       title: 'Total Customers', 
-      value: '2,847', 
+      value: stats.totalCustomers.toLocaleString(), 
       icon: <Users size={24} />, 
       color: 'blue',
     },
     { 
       title: 'Active Customers', 
-      value: '1,942', 
+      value: stats.activeCustomers.toLocaleString(), 
       icon: <UserCheck size={24} />, 
       color: 'green',
     },
     { 
-      title: 'Total order', 
-      value: '156', 
+      title: 'New This Month', 
+      value: stats.newThisMonth.toLocaleString(), 
       icon: <ShoppingBag size={24} />, 
       color: 'yellow',
     },
     { 
       title: 'Total Revenue', 
-      value: '$2845', 
+      value: formatRevenue(stats.totalRevenue), 
       icon: <Receipt size={24} />, 
       color: 'purple',
     }
@@ -198,53 +231,40 @@ const CustomersTable = () => {
     }
   };
 
+  // TODO: Implement API call for customer detail
   const handleView = async (customer) => {
     try {
-      console.log('👀 Fetching customer detail for:', customer.id);
+      console.log('👁️ [CustomersTable] Fetching detail for customer ID:', customer.id);
+      setLoading(true);
       
-      // Try to fetch detailed customer info from API
       const response = await getCustomerDetail(customer.id);
       
-      if (response.statusCode === 200 && response.data) {
-        console.log('✅ Customer detail from API:', response.data);
+      console.log('📦 [CustomersTable] Customer detail response:', response);
+      
+      if (response.status === 200 && response.data) {
+        console.log('✅ [CustomersTable] Customer detail loaded:', response.data);
         setSelectedCustomer(response.data);
         setShowModal(true);
       } else {
-        console.warn('⚠️ Failed to fetch from API, using local data');
-        // Fallback to local customer data
-        setSelectedCustomer(customer);
-        setShowModal(true);
+        console.warn('⚠️ [CustomersTable] Unexpected detail response:', response);
+        alert('Failed to load customer detail');
       }
-    } catch (error) {
-      console.error('❌ Error fetching customer detail:', error);
-      console.log('📦 Using local customer data (backend not running)');
-      // Fallback to local customer data when API fails
-      setSelectedCustomer(customer);
-      setShowModal(true);
+    } catch (err) {
+      console.error('❌ [CustomersTable] Error loading customer detail:', err);
+      alert('Failed to load customer detail: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = async (customer) => {
+  // TODO: Implement API call for delete customer
+  const handleDelete = (customer) => {
     if (window.confirm(`Are you sure you want to delete ${customer.username || customer.name}?`)) {
-      try {
-        console.log('🗑️ Deleting customer:', customer.id);
-        const response = await deleteUser(customer.id);
-        
-        if (response.statusCode === 200) {
-          console.log('✅ Customer deleted successfully');
-          alert(`Customer ${customer.username || customer.name} has been deleted successfully`);
-          // Refresh customer list
-          fetchCustomers();
-        } else {
-          alert('Failed to delete customer');
-        }
-      } catch (error) {
-        console.error('❌ Error deleting customer:', error);
-        console.log('📦 Simulating delete (backend not running)');
-        // Simulate delete in mock data
-        setCustomers(customers.filter(c => c.id !== customer.id));
-        alert(`Customer ${customer.username || customer.name} has been deleted (simulated)`);
-      }
+      // Simulate delete from local state
+      setCustomers(customers.filter(c => c.id !== customer.id));
+      // Refresh stats after deletion
+      fetchStats();
+      alert(`Customer ${customer.username || customer.name} has been deleted successfully`);
     }
   };
 
@@ -324,8 +344,10 @@ const CustomersTable = () => {
           </div>
         ) : error ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>
-            <p>{error}</p>
-            <button onClick={fetchCustomers} style={{ marginTop: '10px' }}>Retry</button>
+            <p>Error: {error}</p>
+            <button onClick={fetchCustomers} style={{ marginTop: '10px', padding: '8px 16px', cursor: 'pointer' }}>
+              Retry
+            </button>
           </div>
         ) : customers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>

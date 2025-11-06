@@ -36,7 +36,7 @@ import ChangePasswordPage from './pages/user/ChangePasswordPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // 🧑‍💼 Admin Pages
-import ProtectedRouteAdmin from "./components/admin/ProtectedRoute";
+import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
 import OrdersPage from "./pages/admin/Orders/OrdersPage";
@@ -145,8 +145,6 @@ function App() {
                 } 
               />
               
-              {/* Catch-all redirect to home */}
-              <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
             
             
             
@@ -162,6 +160,12 @@ function App() {
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
+
+              {/* Catch-all redirect to home - MUST BE LAST */}
+              <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+
+
+            
             </Routes>
             
             {/* React Hot Toast */}

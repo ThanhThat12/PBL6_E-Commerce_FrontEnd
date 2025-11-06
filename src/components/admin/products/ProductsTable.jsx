@@ -65,7 +65,7 @@ const ProductsTable = () => {
       status: 'Active',
       sales: 2847,
       rating: 4.8,
-      image: 'https://via.placeholder.com/50x50',
+      image: null, // TODO: Load from API
       dateAdded: '2024-01-15'
     },
     { 
@@ -80,7 +80,7 @@ const ProductsTable = () => {
       status: 'Active',
       sales: 1596,
       rating: 4.9,
-      image: 'https://via.placeholder.com/50x50',
+      image: null, // TODO: Load from API
       dateAdded: '2024-02-20'
     },
     { 
@@ -95,7 +95,7 @@ const ProductsTable = () => {
       status: 'Out of Stock',
       sales: 834,
       rating: 4.5,
-      image: 'https://via.placeholder.com/50x50',
+      image: null, // TODO: Load from API
       dateAdded: '2024-03-10'
     },
     { 
@@ -110,7 +110,7 @@ const ProductsTable = () => {
       status: 'Inactive',
       sales: 245,
       rating: 4.3,
-      image: 'https://via.placeholder.com/50x50',
+      image: null, // TODO: Load from API
       dateAdded: '2024-04-05'
     },
     { 
@@ -125,7 +125,7 @@ const ProductsTable = () => {
       status: 'Active',
       sales: 1923,
       rating: 4.6,
-      image: 'https://via.placeholder.com/50x50',
+      image: null, // TODO: Load from API
       dateAdded: '2024-05-12'
     }
   ];

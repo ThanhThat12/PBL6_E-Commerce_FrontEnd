@@ -1,4 +1,5 @@
 import React from "react";
+import { User } from "lucide-react";
 
 const RecentOrdersTable = ({ orders }) => {
   return (
@@ -25,7 +26,13 @@ const RecentOrdersTable = ({ orders }) => {
                 <td className="order-id">#{order.id}</td>
                 <td>
                   <div className="customer-info">
-                    <img src={order.customer.avatar} alt={order.customer.name} className="customer-avatar" />
+                    {order.customer.avatar ? (
+                      <img src={order.customer.avatar} alt={order.customer.name} className="customer-avatar" />
+                    ) : (
+                      <div className="customer-avatar customer-avatar-placeholder">
+                        <User size={20} />
+                      </div>
+                    )}
                     <div>
                       <div className="customer-name">{order.customer.name}</div>
                       <div className="customer-email">{order.customer.email}</div>

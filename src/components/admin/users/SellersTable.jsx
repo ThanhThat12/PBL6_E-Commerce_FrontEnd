@@ -22,7 +22,7 @@ const SellersTable = () => {
       sales: '45,230',
       totalSales: 45230.50, 
       rating: 4.8, 
-      avatar: 'https://via.placeholder.com/40',
+      avatar: null, // TODO: Load from API
       category: 'Electronics'
     },
     { 
@@ -36,7 +36,7 @@ const SellersTable = () => {
       sales: '23,890',
       totalSales: 23890.75, 
       rating: 4.5, 
-      avatar: 'https://via.placeholder.com/40',
+      avatar: null, // TODO: Load from API
       category: 'Fashion'
     },
     { 
@@ -50,7 +50,7 @@ const SellersTable = () => {
       sales: '67,450',
       totalSales: 67450.25, 
       rating: 4.9, 
-      avatar: 'https://via.placeholder.com/40',
+      avatar: null, // TODO: Load from API
       category: 'Home & Garden'
     },
     { 
@@ -64,7 +64,7 @@ const SellersTable = () => {
       sales: '12,340',
       totalSales: 12340.00, 
       rating: 3.2, 
-      avatar: 'https://via.placeholder.com/40',
+      avatar: null, // TODO: Load from API
       category: 'Sports'
     },
     { 
@@ -78,7 +78,7 @@ const SellersTable = () => {
       sales: '89,650.80',
       totalSales: 89650.80, 
       rating: 4.7, 
-      avatar: 'https://via.placeholder.com/40',
+      avatar: null, // TODO: Load from API
       category: 'Books'
     }
   ];
