@@ -175,10 +175,9 @@
 
 /* Modal Body */
 .modal-body {
-  padding: 28px;
+  padding: 24px 28px 28px 28px;
   overflow-y: auto;
-  max-height: calc(90vh - 120px); /* Increased from 200px to show more content */
-  padding-bottom: 28px; /* Add bottom padding since footer is removed */
+  max-height: calc(90vh - 100px);
 }
 
 .modal-body::-webkit-scrollbar {
@@ -187,6 +186,7 @@
 
 .modal-body::-webkit-scrollbar-track {
   background: #f1f5f9;
+  border-radius: 3px;
 }
 
 .modal-body::-webkit-scrollbar-thumb {
@@ -264,6 +264,16 @@
   font-size: 15px;
   font-weight: 600;
   color: #1e293b;
+}
+
+/* Address text with word wrap */
+.detail-value.address-text {
+  font-weight: 500;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: normal;
+  color: #475569;
+  max-width: 100%;
 }
 
 /* Status Badge in Modal */
@@ -539,4 +549,63 @@
     font-size: 14px;
     padding: 8px 12px;
   }
+}
+
+/* ===================================
+   ADDRESS SECTION STYLES
+   =================================== */
+
+.address-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border-left: 3px solid #667eea;
+}
+
+.address-label {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.address-line {
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.address-phone {
+  display: flex;
+  align-items: center;
+  color: #475569;
+  font-size: 14px;
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: white;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.address-phone svg {
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* Empty address state */
+.address-empty {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* Purple stat box */
+.stat-icon-box.stat-purple {
+  background: #f3e8ff;
+  color: #9333ea;
 }

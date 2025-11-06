@@ -21,7 +21,7 @@ const AdminsTable = () => {
       permissions: ['All Access'], 
       department: 'IT',
       joinDate: '2024-01-15',
-      avatar: 'https://via.placeholder.com/40'
+      avatar: null // TODO: Load from API
     },
     { 
       id: 'ADM002', 
@@ -34,7 +34,7 @@ const AdminsTable = () => {
       permissions: ['User Management', 'Content Management'], 
       department: 'Operations',
       joinDate: '2024-02-20',
-      avatar: 'https://via.placeholder.com/40'
+      avatar: null // TODO: Load from API
     },
     { 
       id: 'ADM003', 
@@ -47,7 +47,7 @@ const AdminsTable = () => {
       permissions: ['Content Management'], 
       department: 'Content',
       joinDate: '2024-03-10',
-      avatar: 'https://via.placeholder.com/40'
+      avatar: null // TODO: Load from API
     },
     { 
       id: 'ADM004', 
@@ -60,7 +60,7 @@ const AdminsTable = () => {
       permissions: ['Reports', 'Analytics'], 
       department: 'Analytics',
       joinDate: '2024-04-05',
-      avatar: 'https://via.placeholder.com/40'
+      avatar: null // TODO: Load from API
     },
     { 
       id: 'ADM005', 
@@ -73,7 +73,7 @@ const AdminsTable = () => {
       permissions: ['User Support', 'Ticket Management'], 
       department: 'Support',
       joinDate: '2024-05-12',
-      avatar: 'https://via.placeholder.com/40'
+      avatar: null // TODO: Load from API
     }
   ];
 

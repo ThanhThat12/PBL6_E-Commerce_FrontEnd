@@ -70,13 +70,9 @@ const Header = () => {
         <div className="relative">
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-2"
+            className="p-2 text-gray-600 hover:text-gray-800"
           >
-            <img
-              src="https://via.placeholder.com/32"
-              alt="Profile"
-              className="w-8 h-8 rounded-full"
-            />
+            <User size={20} />
           </button>
 
           {/* Profile Dropdown Menu */}

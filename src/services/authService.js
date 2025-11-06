@@ -32,8 +32,16 @@ export const login = async ({ username, password, rememberMe = false }) => {
     if (response.data) {
       const { token, refreshToken, user } = response.data;
       
-      // Save auth data with new token field name
-      saveAuthData({ token, refreshToken, user }, rememberMe);
+      // Check if user is ADMIN
+      if (user && user.role === 'ADMIN') {
+        // Save to adminToken and adminUser for admin panel
+        localStorage.setItem('adminToken', token);
+        localStorage.setItem('adminUser', JSON.stringify(user));
+        console.log('[authService] ADMIN user logged in, saved to adminToken');
+      } else {
+        // Save auth data normally for regular users
+        saveAuthData({ token, refreshToken, user }, rememberMe);
+      }
       
       return { 
         status: 'success', 
