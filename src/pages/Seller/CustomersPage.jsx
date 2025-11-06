@@ -85,14 +85,10 @@ const CustomersPage = () => {
           {/* Page Header - giữ nguyên */}
           <div className="page-header">
             <h1 className="page-title">Customers Management</h1>
-            <Space>
-              <Dropdown menu={moreActionsMenu} trigger={['click']}>
-                <Button icon={<MoreOutlined />}>More Actions</Button>
-              </Dropdown>
-            </Space>
+            
           </div>
 
-          {/* Stats Cards - giữ nguyên */}
+          {/* Stats Cards - giữ nguyên
           <Row gutter={[24, 24]} className="stats-section">
             <Col xs={24} sm={12} lg={6}>
               <CustomerStatsCard
@@ -130,7 +126,7 @@ const CustomersPage = () => {
                 color="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
               />
             </Col>
-          </Row>
+          </Row> */}
 
           {/* Top Spenders & Customer Segments - GIỮ NGUYÊN */}
           <Row gutter={[24, 24]} className="insights-section">
