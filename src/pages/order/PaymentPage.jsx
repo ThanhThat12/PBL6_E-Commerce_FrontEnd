@@ -200,7 +200,8 @@ const PaymentPage = () => {
         shippingFee: shippingFee,
         voucherCode: appliedVoucher?.code || null,
         voucherDiscount: voucherDiscount,
-        notes: orderNotes
+        notes: orderNotes,
+        method: paymentMethod // Thêm trường method để backend nhận được phương thức thanh toán
       };
 
       console.log('📦 Sending order data:', JSON.stringify(orderData, null, 2));
