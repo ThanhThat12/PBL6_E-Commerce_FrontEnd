@@ -113,7 +113,8 @@ const CheckoutPage = () => {
         toAddress: shippingAddress.toAddress,
         weightGrams: weightGrams,
         codAmount: paymentMethod === 'COD' ? calculateTotal() : 0,
-        notes: orderNotes
+        notes: orderNotes,
+        method: paymentMethod // Thêm trường method để backend nhận được phương thức thanh toán
       };
 
       const result = await createOrder(orderData);
