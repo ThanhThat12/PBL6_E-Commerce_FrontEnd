@@ -64,124 +64,93 @@ const shopService = {
     }
   },
 
-  // Lấy danh sách sản phẩm của shop theo shop_id
-  async getShopProducts(shopId, filters = {}) {
+  // ✅ Lấy sản phẩm đã duyệt của shop
+  async getApprovedProducts(filters = {}) {
     try {
-      console.log('🛍️ Fetching shop products with filters:', filters);
+      console.log('🏪 Fetching approved shop products with filters:', filters);
       
-      // Tạo query parameters
       const params = new URLSearchParams();
-      if (filters.page) params.append('page', filters.page - 1); // Backend dùng 0-based indexing
-      if (filters.size) params.append('size', filters.size);
+      if (filters.page) params.append('page', filters.page - 1); // Convert to 0-based
+      if (filters.size) params.append('size', filters.size || 10);
       if (filters.search) params.append('search', filters.search);
-      if (filters.category) params.append('category', filters.category);
-      if (filters.isActive !== undefined) params.append('isActive', filters.isActive);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy || 'id');
+      if (filters.sortDir) params.append('sortDir', filters.sortDir || 'desc');
 
-      const response = await axiosInstance.get(`/products/manage?${params.toString()}`);
-
-      console.log('✅ Shop products response:', response.data);
+      const response = await axiosInstance.get(`/products/my-shop/approved?${params.toString()}`);
+      
+      console.log('✅ Approved products response:', response.data);
       
       if (response.data.status === 200 && response.data.data) {
-        const { content, totalElements, totalPages, number, size } = response.data.data;
+        const { content, page } = response.data.data;
         
-        // Map data từ backend sang frontend format (compatible với ProductGrid hiện tại)
-        const products = content.map(product => ({
-          id: product.id,
-          name: product.name,
-          category: product.categoryName,
-          price: product.basePrice,
-          discount: 0, // Backend chưa có discount, tạm set 0
-          image: product.mainImage || product.image,
-          inStock: product.isActive && product.stock > 0,
-          sold: 0, // Backend chưa có sold count, tạm set 0
-          stock: product.stock,
-          // Thêm các field khác để tương thích
-          description: product.description,
-          basePrice: product.basePrice,
-          isActive: product.isActive,
-          categoryId: product.category?.id,
-          shopName: product.shopName,
-          variants: product.variants || [],
-          images: product.images || [],
-        }));
+
+        const flattenedProducts = [];
         
-        console.log('🛍️ Processed products:', products);
+        content.forEach(product => {
+          if (product.variants && product.variants.length > 0) {
+            // Tạo card riêng cho mỗi variant
+            product.variants.forEach(variant => {
+              // Tìm ảnh cho variant
+              const variantImage = getVariantImage(variant, product.images, product.mainImage || product.image);
+              
+              // Tạo tên variant
+              const variantName = createVariantName(product.name, variant);
+              
+              flattenedProducts.push({
+                id: `${product.id}-${variant.id}`,
+                originalProductId: product.id,
+                variantId: variant.id,
+                name: variantName,
+                price: variant.price,
+                image: variantImage,
+                stock: variant.stock || 0,
+                sku: variant.sku,
+                isVariant: true
+              });
+            });
+          } else {
+            // Sản phẩm không có variant
+            flattenedProducts.push({
+              id: product.id,
+              originalProductId: product.id,
+              variantId: null,
+              name: product.name,
+              price: product.basePrice || product.price,
+              image: product.mainImage || product.image,
+              stock: product.stock || 0,
+              sku: null,
+              isVariant: false
+            });
+          }
+        });
+
+        console.log('🏪 Flattened products:', flattenedProducts);
         
         return {
-          products,
-          total: totalElements,
-          page: number + 1, // Convert to 1-based
-          limit: size,
+          products: flattenedProducts,
+          total: flattenedProducts.length, // Tổng số products + variants
+          totalPages: 1, // Hiển thị tất cả trong 1 trang
+          currentPage: 1,
+          pageSize: flattenedProducts.length,
         };
       }
       
-      throw new Error(response.data.message || 'Không thể lấy danh sách sản phẩm');
+      return {
+        products: [],
+        total: 0,
+        totalPages: 0,
+        currentPage: 1,
+        pageSize: 10,
+      };
     } catch (error) {
-      console.error('❌ Error fetching shop products:', error);
-      console.error('❌ Error response:', error.response?.data);
-      
-      // Xử lý trường hợp không có sản phẩm
-      if (error.response?.status === 200 && 
-          error.response?.data?.status === 200 &&
-          error.response?.data?.data?.content && 
-          Array.isArray(error.response.data.data.content) && 
-          error.response.data.data.content.length === 0) {
-        console.log('🛍️ No products found, returning empty array');
-        return {
-          products: [],
-          total: 0,
-          page: 1,
-          limit: 10,
-        };
-      }
-      
+      console.error('❌ Error fetching approved products:', error);
       throw error;
     }
   },
 
-  // Lấy chi tiết sản phẩm theo ID
-  async getProductDetail(productId) {
-    try {
-      console.log(`🔍 Fetching product detail for ID: ${productId}`);
+  
       
-      const response = await axiosInstance.get(`/products/${productId}`);
-      
-      console.log('✅ Product detail response:', response.data);
-      
-      if (response.data.status === 200 && response.data.data) {
-        const productData = response.data.data;
-        
-        // Map data từ backend sang frontend format
-        const product = {
-          id: productData.id,
-          name: productData.name,
-          description: productData.description,
-          mainImage: productData.mainImage,
-          basePrice: productData.basePrice,
-          price: productData.price,
-          isActive: productData.isActive,
-          stock: productData.stock,
-          image: productData.image,
-          categoryName: productData.categoryName,
-          shopName: productData.shopName,
-          category: productData.category,
-          variants: productData.variants || [],
-          images: productData.images || [],
-          condition: productData.condition,
-        };
-        
-        console.log('🔍 Processed product detail:', product);
-        return product
-      }
-      
-      throw new Error(response.data.message || 'Không thể lấy thông tin sản phẩm');
-    } catch (error) {
-      console.error('❌ Error fetching product detail:', error);
-      console.error('❌ Error response:', error.response?.data);
-      throw error;
-    }
-  },
-
+ 
   // Xóa sản phẩm theo ID
   async deleteProduct(productId) {
     try {
@@ -242,5 +211,38 @@ const shopService = {
   },
 
 };
+
+// ✅ Helper functions để tối ưu xử lý
+function getVariantImage(variant, productImages, mainImage) {
+  if (!productImages || productImages.length === 0) {
+    return mainImage || 'https://via.placeholder.com/200';
+  }
+  
+  // Tìm color attribute
+  const colorValue = variant.variantValues?.find(val => 
+    val.productAttribute.name.toLowerCase().includes('color')
+  )?.value;
+  
+  if (colorValue) {
+    const matchingImage = productImages.find(img => 
+      img.color?.toLowerCase() === colorValue.toLowerCase()
+    );
+    if (matchingImage) return matchingImage.imageUrl;
+  }
+  
+  return mainImage || 'https://via.placeholder.com/200';
+}
+
+function createVariantName(productName, variant) {
+  if (!variant.variantValues || variant.variantValues.length === 0) {
+    return `${productName} - ${variant.sku}`;
+  }
+  
+  const attributes = variant.variantValues
+    .map(val => val.value)
+    .join(', ');
+    
+  return `${productName} - ${attributes}`;
+}
 
 export default shopService;

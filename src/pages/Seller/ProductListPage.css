@@ -98,6 +98,8 @@
 .table-section {
   border-radius: 8px;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .pagination-section {
@@ -105,6 +107,8 @@
   padding: 16px 0;
   border-top: 1px solid #f0f0f0;
   background: #fafafa;
+  position: relative;
+  z-index: 2;
 }
 
 .pagination-controls {
@@ -115,9 +119,24 @@
   flex-wrap: wrap;
 }
 
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pagination-left {
+  flex: 1;
+  min-width: 200px;
+}
+
 .pagination-info {
   flex: 1;
   min-width: 200px;
+  color: #595959;
+  font-size: 14px;
 }
 
 .page-info-text {
@@ -227,6 +246,95 @@
   min-width: 100px;
 }
 
+/* Product Detail Modal Styles */
+.product-detail-content {
+  padding: 8px 0;
+}
+
+.product-images .main-image h4,
+.product-images .variant-images h4,
+.product-info h4 {
+  color: #262626;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #1890ff;
+  padding-bottom: 4px;
+}
+
+.variant-image-item {
+  position: relative;
+}
+
+.variant-image-item:hover img {
+  border-color: #1890ff !important;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+  transform: translateY(-1px);
+  transition: all 0.3s ease;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #595959;
+  min-width: 80px;
+}
+
+.info-value {
+  color: #262626;
+  font-weight: 500;
+}
+
+.info-value.price {
+  color: #1890ff;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.variant-card {
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.variant-card:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+.variant-info-item .variant-label {
+  font-size: 12px;
+  color: #8c8c8c;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.variant-info-item .variant-value {
+  color: #262626;
+  font-weight: 500;
+}
+
+.variant-info-item .variant-value.price {
+  color: #1890ff;
+  font-weight: 600;
+}
+
+.variant-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.variant-attributes .ant-tag {
+  margin: 0;
+  font-size: 11px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .product-list-content {
@@ -268,6 +376,10 @@
     flex: 1;
     max-width: 120px;
   }
+  
+  .product-detail-content .ant-row {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 480px) {
@@ -283,6 +395,14 @@
   
   .current-page-indicator {
     order: -1;
+  }
+  
+  .variant-info-item .variant-label {
+    font-size: 11px;
+  }
+  
+  .variant-info-item .variant-value {
+    font-size: 13px;
   }
 }
 
@@ -302,25 +422,52 @@
   border-color: #40a9ff;
 }
 
-/* Force modal to show on top */
-.ant-modal-root {
+/* ✅ Thêm z-index cho notification */
+.ant-notification {
   z-index: 9999 !important;
 }
 
+.ant-notification-notice {
+  z-index: 9999 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ✅ Force Modal hiển thị trên tất cả element */
+.ant-modal-root {
+  z-index: 10000 !important;
+}
+
 .ant-modal-mask {
-  z-index: 9998 !important;
-  background: rgba(0, 0, 0, 0.45) !important;
+  z-index: 10000 !important;
+  background-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+.ant-modal-wrap {
+  z-index: 10001 !important;
 }
 
 .ant-modal {
-  z-index: 9999 !important;
+  z-index: 10002 !important;
 }
 
-/* Debug: Add red border to modal */
-.ant-modal-content {
-  border: 2px solid red !important;
+.ant-modal-confirm {
+  z-index: 10003 !important;
 }
 
-.ant-modal-mask {
-  border: 2px solid blue !important;
+.ant-modal-confirm .ant-modal-content {
+  z-index: 10004 !important;
 }
+
+.ant-modal-confirm .ant-modal-body {
+  z-index: 10005 !important;
+}
+
+/* ✅ Đảm bảo không có element nào che Modal */
+.product-list-layout,
+.product-list-content,
+.table-section,
+.pagination-section {
+  position: relative;
+  z-index: auto;
+}
+

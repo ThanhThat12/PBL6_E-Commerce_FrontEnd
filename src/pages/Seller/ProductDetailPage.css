@@ -1,0 +1,152 @@
+.product-detail-layout {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.product-detail-content {
+  padding: 24px;
+}
+
+.breadcrumb-section {
+  margin-bottom: 16px;
+}
+
+.product-detail-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.product-images-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.additional-images {
+  margin-top: 16px;
+}
+
+.image-gallery {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.product-info-section {
+  padding-left: 24px;
+}
+
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.basic-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.price-text {
+  font-size: 24px;
+  color: #1890ff;
+  font-weight: 600;
+}
+
+.description-section {
+  margin-top: 16px;
+}
+
+.variants-section {
+  margin-top: 24px;
+}
+
+.variant-detail-card {
+  height: 100%;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.variant-detail-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.variant-detail-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.variant-detail-info {
+  width: 100%;
+}
+
+.variant-attributes {
+  margin: 12px 0;
+}
+
+.attribute-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.variant-pricing {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.variant-price {
+  font-size: 18px;
+  color: #1890ff;
+  font-weight: 600;
+}
+
+.variant-stock {
+  font-size: 14px;
+}
+
+.variant-stock.in-stock {
+  color: #52c41a;
+}
+
+.variant-stock.out-stock {
+  color: #ff4d4f;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-info-section {
+    padding-left: 0;
+    margin-top: 24px;
+  }
+  
+  .product-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .variant-detail-content {
+    flex-direction: row;
+    text-align: left;
+  }
+  
+  .variant-image-section {
+    flex-shrink: 0;
+  }
+}

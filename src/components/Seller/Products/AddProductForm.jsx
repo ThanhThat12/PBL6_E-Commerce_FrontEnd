@@ -17,7 +17,8 @@ import {
 import {
   UploadOutlined,
   PlusOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  MinusCircleOutlined
 } from '@ant-design/icons';
 import productService from '../../../services/productService';
 import shopService from '../../../services/shopService';
@@ -28,12 +29,13 @@ const { TextArea } = Input;
 
 const AddProductForm = () => {
   const [form] = Form.useForm();
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imageList, setImageList] = useState([]);
   const [variants, setVariants] = useState([]);
   const [shopId, setShopId] = useState(null);
+    const [imageUrls, setImageUrls] = useState([]);
+  const [imageFileList, setImageFileList] = useState([]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -54,30 +56,9 @@ const AddProductForm = () => {
     fetchInitialData();
   }, []);
 
-  const handleCategoryChange = async (categoryId) => {
-    try {
-      const category = await productService.getCategoryById(categoryId);
-      setSelectedCategory(category);
-      
-      // Reset form khi đổi category
-      const basicFields = ['name', 'description', 'price', 'stock', 'category'];
-      const formValues = form.getFieldsValue();
-      const resetValues = {};
-      
-      // Giữ lại các field cơ bản
-      basicFields.forEach(field => {
-        if (formValues[field] !== undefined) {
-          resetValues[field] = formValues[field];
-        }
-      });
-      
-      form.resetFields();
-      form.setFieldsValue(resetValues);
-      setVariants([]);
-    } catch (error) {
-      console.error('Error loading category:', error);
-      message.error('Có lỗi khi tải thông tin danh mục');
-    }
+  const handleCategoryChange = (categoryId) => {
+    // Chỉ reset variants khi đổi category
+    setVariants([]);
   };
 
   const handleImageUpload = ({ fileList }) => {
@@ -85,22 +66,14 @@ const AddProductForm = () => {
   };
 
   const addVariant = () => {
-    if (!selectedCategory) {
-      message.warning('Vui lòng chọn hạng mục trước');
-      return;
-    }
-    
     const newVariant = {
       id: Date.now(),
       sku: '',
       price: 0,
       stock: 0,
-      variantValues: selectedCategory.attributes.map(attr => ({
-        id: null, // Will be set by backend
-        productAttributeId: attr.id,
-        name: attr.name,
-        value: ''
-      }))
+      color: '',
+      size: '',
+      material: ''
     };
     
     setVariants([...variants, newVariant]);
@@ -110,178 +83,148 @@ const AddProductForm = () => {
     setVariants(variants.filter(v => v.id !== variantId));
   };
 
-  const updateVariant = (variantId, attributeId, value) => {
+  const updateVariant = (variantId, field, value) => {
     setVariants(variants.map(variant => 
       variant.id === variantId 
-        ? {
-            ...variant, 
-            variantValues: variant.variantValues.map(vv => 
-              vv.productAttributeId === attributeId 
-                ? { ...vv, value: value }
-                : vv
-            )
-          }
+        ? { ...variant, [field]: value }
         : variant
     ));
   };
 
-  const onFinish = async (values) => {
-    setLoading(true);
+  const validateVariants = (variants) => {
+    if (!variants || variants.length === 0) {
+      throw new Error('Vui lòng thêm ít nhất 1 biến thể sản phẩm');
+    }
+
+    const skuSet = new Set();
     
-    try {
-      // Validate variants
-      if (variants.length === 0) {
-        message.warning('Vui lòng thêm ít nhất một biến thể sản phẩm');
-        setLoading(false);
-        return;
+    for (const variant of variants) {
+      // Kiểm tra SKU trùng
+      if (skuSet.has(variant.sku)) {
+        throw new Error(`SKU "${variant.sku}" bị trùng lặp`);
+      }
+      skuSet.add(variant.sku);
+
+      // ✅ Chỉ cần có ít nhất 1 thuộc tính bất kỳ
+      const hasAnyAttribute = variant.color?.trim() || variant.size?.trim() || variant.material?.trim();
+      if (!hasAnyAttribute) {
+        throw new Error(`Biến thể "${variant.sku}" phải có ít nhất 1 thuộc tính (Màu sắc, Kích thước hoặc Chất liệu)`);
       }
 
-      // Validate each variant
-      for (let i = 0; i < variants.length; i++) {
-        const variant = variants[i];
-        if (!variant.price || variant.price <= 0) {
-          message.warning(`Biến thể ${i + 1}: Vui lòng nhập giá hợp lệ`);
-          setLoading(false);
-          return;
-        }
-        if (!variant.stock || variant.stock < 0) {
-          message.warning(`Biến thể ${i + 1}: Vui lòng nhập số lượng tồn kho hợp lệ`);
-          setLoading(false);
-          return;
-        }
-        
-        // Check required attributes
-        const requiredAttrs = selectedCategory.attributes.filter(attr => attr.required);
-        for (const attr of requiredAttrs) {
-          const variantValue = variant.variantValues.find(vv => vv.productAttributeId === attr.id);
-          if (!variantValue || !variantValue.value || variantValue.value.trim() === '') {
-            message.warning(`Biến thể ${i + 1}: Vui lòng nhập ${attr.label.toLowerCase()}`);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-      // Upload images - tạm thời dùng URL placeholder
-      let imageUrls = [];
-      let mainImage = '';
-      
-      if (imageList.length > 0) {
-        // Tạm thời dùng placeholder URLs
-        imageUrls = imageList.map((file, index) => 
-          `https://example.com/product_image_${Date.now()}_${index}.jpg`
-        );
-        mainImage = imageUrls[0];
+      // Kiểm tra price và stock
+      if (!variant.price || variant.price <= 0) {
+        throw new Error(`Giá của biến thể "${variant.sku}" phải lớn hơn 0`);
       }
 
-      // Map variants theo đúng API format
-      const mappedVariants = variants.map(v => ({
-        sku: v.sku || `SKU-${Date.now()}-${Math.random().toString(36).substr(2,4)}`,
-        price: v.price || 0,
-        stock: v.stock || 0,
-        variantValues: v.variantValues
-          .filter(vv => vv.value && vv.value.trim() !== '')
-          .map(vv => ({
-            productAttributeId: vv.productAttributeId,
-            value: vv.value
-          }))
-      }));
-
-      // Prepare product data theo đúng API format
-      const productData = {
-        name: values.name,
-        description: values.description || '',
-        basePrice: variants.length > 0 ? variants[0].price : (values.price || 0),
-        categoryId: selectedCategory?.id,
-        mainImage: mainImage,
-        imageUrls: imageUrls,
-        variants: mappedVariants
-      };
-
-      console.log('🚀 Submitting product data:', productData);
-
-      const result = await productService.createProduct(productData);
-
-      if (result.success) {
-        message.success(result.message || 'Thêm sản phẩm thành công!');
-        console.log('✅ Product created:', result.data);
-        
-        // Reset form
-        form.resetFields();
-        setSelectedCategory(null);
-        setImageList([]);
-        setVariants([]);
+      if (variant.stock < 0) {
+        throw new Error(`Số lượng kho của biến thể "${variant.sku}" không được âm`);
       }
-    } catch (error) {
-      console.error('❌ Submit product failed:', error);
-      message.error(error.message || 'Có lỗi xảy ra khi thêm sản phẩm');
-    } finally {
-      setLoading(false);
     }
   };
 
-  const renderAttributeField = (attribute, variant = null, variantId = null) => {
-    const variantValue = variant ? 
-      variant.variantValues.find(vv => vv.productAttributeId === attribute.id) : 
-      null;
-    const value = variantValue ? variantValue.value : undefined;
-    
-    const onChange = variant 
-      ? (val) => updateVariant(variantId, attribute.id, val)
-      : undefined;
+const onFinish = async (values) => {
+  setLoading(true);
+  
+  try {
+    console.log('📝 Form values:', values);
 
-    switch (attribute.type) {
-      case 'select':
-        return (
-          <Select
-            placeholder={`Chọn ${attribute.label.toLowerCase()}`}
-            value={value}
-            onChange={onChange}
-            style={{ width: '100%' }}
-          >
-            {attribute.options?.map(option => (
-              <Option key={option} value={option}>{option}</Option>
-            ))}
-          </Select>
-        );
+    // ✅ Validation variants
+    validateVariants(values.variants);
+
+    // ✅ Tạo variants array - linh hoạt với attributes
+    const variants = [];
+    
+    values.variants.forEach((variant, index) => {
+      const variantValues = [];
       
-      case 'number':
-        if (attribute.options) {
-          // Number select (like shoe sizes)
-          return (
-            <Select
-              placeholder={`Chọn ${attribute.label.toLowerCase()}`}
-              value={value}
-              onChange={onChange}
-              style={{ width: '100%' }}
-            >
-              {attribute.options.map(option => (
-                <Option key={option} value={option}>{option}</Option>
-              ))}
-            </Select>
-          );
-        } else {
-          return (
-            <InputNumber
-              placeholder={attribute.placeholder || attribute.label}
-              value={value}
-              onChange={onChange}
-              style={{ width: '100%' }}
-              min={0}
-            />
-          );
-        }
+      // ✅ Chỉ thêm attribute nếu có giá trị
+      if (variant.color?.trim()) {
+        variantValues.push({
+          productAttributeId: 1, // Color
+          value: variant.color.trim()
+        });
+      }
       
-      case 'text':
-      default:
-        return (
-          <Input
-            placeholder={attribute.placeholder || attribute.label}
-            value={value}
-            onChange={variant ? (e) => onChange(e.target.value) : undefined}
-          />
-        );
-    }
-  };
+      if (variant.size?.trim()) {
+        variantValues.push({
+          productAttributeId: 2, // Size
+          value: variant.size.trim()
+        });
+      }
+      
+      if (variant.material?.trim()) {
+        variantValues.push({
+          productAttributeId: 3, // Material
+          value: variant.material.trim()
+        });
+      }
+
+      // ✅ Tạo variant với các attributes có sẵn
+      if (variantValues.length > 0) {
+        variants.push({
+          sku: variant.sku,
+          price: parseFloat(variant.price),
+          stock: parseInt(variant.stock),
+          variantValues: variantValues
+        });
+        
+        console.log(`✅ Variant ${index + 1}: ${variantValues.length} attributes`, {
+          sku: variant.sku,
+          attributes: variantValues.map(v => `${v.productAttributeId}:${v.value}`).join(', ')
+        });
+      }
+    });
+
+    // ✅ Tạo images array (nếu có)
+    const images = values.images ? values.images.map(img => ({
+      imageUrl: img.imageUrl,
+      color: img.color
+    })) : [];
+
+    // ✅ Tạo payload
+    const productPayload = {
+      categoryId: values.categoryId,
+      name: values.name.trim(),
+      description: values.description?.trim() || '',
+      basePrice: parseFloat(values.basePrice),
+      mainImage: values.mainImage,
+      variants: variants,
+      images: images
+    };
+
+    console.log('🚀 Final payload:', JSON.stringify(productPayload, null, 2));
+    console.log('📊 Variants summary:', variants.map(v => ({
+      sku: v.sku,
+      attributeCount: v.variantValues.length,
+      attributes: v.variantValues.map(attr => 
+        `${attr.productAttributeId === 1 ? 'Color' : attr.productAttributeId === 2 ? 'Size' : 'Material'}:${attr.value}`
+      ).join(', ')
+    })));
+
+    // ✅ Gọi API
+    const result = await productService.createProduct(productPayload);
+    
+    console.log('✅ Product created:', result);
+    message.success('Tạo sản phẩm thành công! Sản phẩm đang chờ duyệt.');
+    
+    // ✅ Reset form
+    form.resetFields();
+    
+    // ✅ Không redirect - để user tiếp tục thêm sản phẩm
+    setTimeout(() => {
+      message.info({
+        content: 'Bạn có thể tiếp tục thêm sản phẩm mới hoặc vào trang quản lý để kiểm tra.',
+        duration: 4
+      });
+    }, 2000);
+
+  } catch (error) {
+    console.error('❌ Create product error:', error);
+    message.error(error.message || 'Có lỗi xảy ra khi tạo sản phẩm');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="add-product-form">
@@ -312,7 +255,7 @@ const AddProductForm = () => {
                   <Col xs={24} md={12}>
                     <Form.Item
                       label="Hạng mục"
-                      name="category"
+                      name="categoryId" // ✅ Đổi từ "category" thành "categoryId"
                       rules={[{ required: true, message: 'Vui lòng chọn hạng mục' }]}
                     >
                       <Select
@@ -342,30 +285,16 @@ const AddProductForm = () => {
 
                   <Col xs={24} md={8}>
                     <Form.Item
-                      label="Giá (VND)"
-                      name="price"
-                      rules={[{ required: true, message: 'Vui lòng nhập giá sản phẩm' }]}
+                      label="Giá cơ bản (VND)"
+                      name="basePrice" // ✅ Đổi từ "price" thành "basePrice"
+                      rules={[{ required: true, message: 'Vui lòng nhập giá cơ bản' }]}
                     >
                       <InputNumber
-                        placeholder="0"
+                        placeholder="299000"
                         style={{ width: '100%' }}
                         min={0}
                         formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                      />
-                    </Form.Item>
-                  </Col>
-
-                  <Col xs={24} md={8}>
-                    <Form.Item
-                      label="Số lượng tồn kho"
-                      name="stock"
-                      rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
-                    >
-                      <InputNumber
-                        placeholder="0"
-                        style={{ width: '100%' }}
-                        min={0}
                       />
                     </Form.Item>
                   </Col>
@@ -378,151 +307,291 @@ const AddProductForm = () => {
             {/* Hình ảnh sản phẩm */}
             <Col span={24}>
               <Card title="Hình ảnh sản phẩm" size="small" style={{ marginBottom: 16 }}>
-                <Form.Item
-                  label="Tải lên hình ảnh"
-                  extra="Chọn tối đa 5 hình ảnh. Định dạng: JPG, PNG"
-                >
-                  <Upload
-                    listType="picture-card"
-                    fileList={imageList}
-                    onChange={handleImageUpload}
-                    beforeUpload={() => false} // Prevent auto upload
-                    multiple
-                  >
-                    {imageList.length >= 5 ? null : (
-                      <div>
-                        <PlusOutlined />
-                        <div style={{ marginTop: 8 }}>Tải lên</div>
+                {/* ✅ Thêm field mainImage */}
+                <Row gutter={16}>
+                  <Col xs={24} md={12}>
+                    <Form.Item
+                      label="Hình ảnh chính"
+                      name="mainImage"
+                      rules={[{ required: true, message: 'Vui lòng nhập URL hình ảnh chính' }]}
+                    >
+                      <Input 
+                        placeholder="https://example.com/shoes-main.jpg"
+                        onChange={(e) => {
+                          // Preview image
+                          const url = e.target.value;
+                          if (url) {
+                            console.log('Main image URL:', url);
+                          }
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {/* ✅ Danh sách hình ảnh phụ */}
+                <Form.List name="images">
+                  {(fields, { add, remove }) => (
+                    <div>
+                      <div style={{ marginBottom: 16, fontWeight: 'bold' }}>
+                        Hình ảnh phụ theo màu sắc:
                       </div>
-                    )}
-                  </Upload>
-                </Form.Item>
+                      
+                      {fields.map((field, index) => (
+                        <Row key={field.key} gutter={16} style={{ marginBottom: 12 }}>
+                          <Col span={10}>
+                            <Form.Item
+                              {...field}
+                              name={[field.name, 'imageUrl']}
+                              rules={[{ required: true, message: 'Vui lòng nhập URL hình ảnh' }]}
+                            >
+                              <Input placeholder="https://example.com/image.jpg" />
+                            </Form.Item>
+                          </Col>
+                          
+    
+                          <Col span={4}>
+                            <Button 
+                              type="link" 
+                              danger 
+                              icon={<MinusCircleOutlined />}
+                              onClick={() => remove(field.name)}
+                            >
+                              Xóa
+                            </Button>
+                          </Col>
+                        </Row>
+                      ))}
+
+                      <Form.Item>
+                        <Button 
+                          type="dashed" 
+                          onClick={() => add()} 
+                          block 
+                          icon={<PlusOutlined />}
+                        >
+                          Thêm hình ảnh
+                        </Button>
+                      </Form.Item>
+                    </div>
+                  )}
+                </Form.List>
               </Card>
             </Col>
 
-            {/* Thuộc tính theo hạng mục */}
-            {selectedCategory && (
-              <Col span={24}>
-                <Card 
-                  title={`Thuộc tính ${selectedCategory.name}`}
-                  size="small"
-                  style={{ marginBottom: 16 }}
-                  extra={
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={addVariant}
-                      size="small"
-                    >
-                      Thêm biến thể
-                    </Button>
-                  }
+            {/* Biến thể sản phẩm */}
+            <Col span={24}>
+              <Card 
+                title="Biến thể sản phẩm"
+                size="small"
+                style={{ marginBottom: 16 }}
+                
                 >
-                  {variants.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '20px 0', color: '#999' }}>
-                      Chưa có biến thể nào. Nhấn "Thêm biến thể" để tạo biến thể đầu tiên.
-                    </div>
-                  )}
-                  
-                  {variants.map((variant, index) => (
-                    <Card
-                      key={variant.id}
-                      size="small"
-                      title={`Biến thể ${index + 1}`}
-                      extra={
-                        <Button
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeVariant(variant.id)}
-                          size="small"
-                        >
-                          Xóa
-                        </Button>
-                      }
-                      style={{ marginBottom: 16 }}
-                    >
-                      <Row gutter={[16, 16]}>
-                        {/* SKU, Price, Stock */}
-                        <Col xs={24} md={8}>
-                          <div className="attribute-field">
-                            <label className="attribute-label">SKU</label>
-                            <Input
-                              placeholder="Mã SKU (tự động nếu để trống)"
-                              value={variant.sku}
-                              onChange={(e) => {
-                                const newVariants = variants.map(v => 
-                                  v.id === variant.id ? { ...v, sku: e.target.value } : v
-                                );
-                                setVariants(newVariants);
-                              }}
-                            />
-                          </div>
-                        </Col>
-                        
-                        <Col xs={24} md={8}>
-                          <div className="attribute-field">
-                            <label className="attribute-label">Giá (VND) <span style={{ color: '#ff4d4f' }}>*</span></label>
-                            <InputNumber
-                              placeholder="0"
-                              style={{ width: '100%' }}
-                              min={0}
-                              value={variant.price}
-                              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                              parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                              onChange={(value) => {
-                                const newVariants = variants.map(v => 
-                                  v.id === variant.id ? { ...v, price: value || 0 } : v
-                                );
-                                setVariants(newVariants);
-                              }}
-                            />
-                          </div>
-                        </Col>
-                        
-                        <Col xs={24} md={8}>
-                          <div className="attribute-field">
-                            <label className="attribute-label">Tồn kho <span style={{ color: '#ff4d4f' }}>*</span></label>
-                            <InputNumber
-                              placeholder="0"
-                              style={{ width: '100%' }}
-                              min={0}
-                              value={variant.stock}
-                              onChange={(value) => {
-                                const newVariants = variants.map(v => 
-                                  v.id === variant.id ? { ...v, stock: value || 0 } : v
-                                );
-                                setVariants(newVariants);
-                              }}
-                            />
-                          </div>
-                        </Col>
+                  {/* ✅ Sửa validation cho variants */}
+<Form.List name="variants">
+  {(fields, { add, remove }) => (
+    <div>
+      {fields.map((field, index) => (
+        <Card 
+          key={field.key}
+          size="small"
+          title={`Biến thể ${index + 1}`}
+          extra={
+            fields.length > 0 && (
+              <Button 
+                type="link" 
+                danger 
+                icon={<MinusCircleOutlined />}
+                onClick={() => remove(field.name)}
+              >
+                Xóa
+              </Button>
+            )
+          }
+          style={{ marginBottom: 16 }}
+        >
+          <Row gutter={16}>
+            {/* SKU */}
+            <Col span={12}>
+              <Form.Item
+                {...field}
+                name={[field.name, 'sku']}
+                label="Mã SKU"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập SKU' },
+                  { min: 3, message: 'SKU phải có ít nhất 3 ký tự' }
+                ]}
+              >
+                <Input placeholder="VD: SHOE-BLACK-42" />
+              </Form.Item>
+            </Col>
 
-                        {/* Category Attributes */}
-                        {selectedCategory.attributes.map(attribute => (
-                          <Col xs={24} md={12} lg={8} key={attribute.id}>
-                            <div className="attribute-field">
-                              <label className="attribute-label">
-                                {attribute.label}
-                                {attribute.required && <span style={{ color: '#ff4d4f' }}>*</span>}
-                              </label>
-                              {renderAttributeField(attribute, variant, variant.id)}
-                            </div>
-                          </Col>
-                        ))}
-                      </Row>
-                    </Card>
-                  ))}
+            {/* Price */}
+            <Col span={12}>
+              <Form.Item
+                {...field}
+                name={[field.name, 'price']}
+                label="Giá bán"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập giá' },
+                  { 
+                    validator: (_, value) => {
+                      if (value && (isNaN(value) || parseFloat(value) <= 0)) {
+                        return Promise.reject('Giá phải là số dương');
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+              >
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                  placeholder="299000"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+
+            {/* Stock */}
+            <Col span={12}>
+              <Form.Item
+                {...field}
+                name={[field.name, 'stock']}
+                label="Số lượng kho"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập số lượng' },
+                  { 
+                    validator: (_, value) => {
+                      if (value && (isNaN(value) || parseInt(value) < 0)) {
+                        return Promise.reject('Số lượng phải là số không âm');
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+              >
+                <InputNumber 
+                  style={{ width: '100%' }}
+                  placeholder="50"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+
+            {/* Color */}
+            <Col span={8}>
+              <Form.Item
+                {...field}
+                name={[field.name, 'color']}
+                label="Màu sắc"
+                rules={[
+                  { 
+                    validator: (_, value, callback) => {
+                      // ✅ Lấy values của variant hiện tại
+                      const currentVariant = form.getFieldValue(['variants', field.name]);
+                      const hasColor = value?.trim();
+                      const hasSize = currentVariant?.size?.trim();
+                      const hasMaterial = currentVariant?.material?.trim();
+                      
+                      // ✅ Chỉ cần có ít nhất 1 trong 3
+                      if (!hasColor && !hasSize && !hasMaterial) {
+                        return Promise.reject('Phải có ít nhất 1 thuộc tính');
+                      }
+                      
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+              >
+                <Input placeholder="VD: Đỏ, Xanh (tùy chọn)" />
+              </Form.Item>
+            </Col>
+
+            {/* Size */}
+            <Col span={8}>
+              <Form.Item
+                {...field}
+                name={[field.name, 'size']}
+                label="Kích thước"
+                rules={[
+                  { 
+                    validator: (_, value, callback) => {
+                      const currentVariant = form.getFieldValue(['variants', field.name]);
+                      const hasColor = currentVariant?.color?.trim();
+                      const hasSize = value?.trim();
+                      const hasMaterial = currentVariant?.material?.trim();
+                      
+                      if (!hasColor && !hasSize && !hasMaterial) {
+                        return Promise.reject('Phải có ít nhất 1 thuộc tính');
+                      }
+                      
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+              >
+                <Input placeholder="VD: S, M, L, 42 (tùy chọn)" />
+              </Form.Item>
+            </Col>
+
+            {/* Material */}
+            <Col span={8}>
+              <Form.Item
+                {...field}
+                name={[field.name, 'material']}
+                label="Chất liệu"
+                rules={[
+                  { 
+                    validator: (_, value, callback) => {
+                      const currentVariant = form.getFieldValue(['variants', field.name]);
+                      const hasColor = currentVariant?.color?.trim();
+                      const hasSize = currentVariant?.size?.trim();
+                      const hasMaterial = value?.trim();
+                      
+                      if (!hasColor && !hasSize && !hasMaterial) {
+                        return Promise.reject('Phải có ít nhất 1 thuộc tính');
+                      }
+                      
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+              >
+                <Input placeholder="VD: Cotton, Da (tùy chọn)" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+      ))}
+
+      <Form.Item>
+        <Button 
+          type="dashed" 
+          onClick={() => add()} 
+          block 
+          icon={<PlusOutlined />}
+        >
+          Thêm biến thể
+        </Button>
+      </Form.Item>
+    </div>
+  )}
+</Form.List>
                 </Card>
               </Col>
-            )}
 
             {/* Buttons */}
             <Col span={24}>
               <Divider />
               <div style={{ textAlign: 'right' }}>
                 <Space>
-                  <Button onClick={() => form.resetFields()}>
+                  <Button onClick={() => {
+                    form.resetFields();
+                    setImageList([]);
+                    setVariants([]);
+                  }}>
                     Đặt lại
                   </Button>
                   <Button type="primary" htmlType="submit" loading={loading}>

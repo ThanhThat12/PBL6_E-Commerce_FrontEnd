@@ -1,6 +1,6 @@
 import React from 'react';
-import { Table, Button, Space, Tag } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Tag, Tooltip } from 'antd';
 import './CategoryTable.css';
 
 export const CategoryTable = ({ categories, loading, title = "Products" }) => {
@@ -58,17 +58,56 @@ export const CategoryTable = ({ categories, loading, title = "Products" }) => {
         </span>
       ),
     },
-    {
-      title: 'Stock',
-      dataIndex: 'stock',
-      key: 'stock',
-      width: 80,
-      render: (stock) => (
-        <Tag color={stock > 0 ? 'green' : 'red'}>
-          {stock > 0 ? stock : 'Hết hàng'}
-        </Tag>
-      ),
-    },
+    // ✅ Sửa cột Stock để hiển thị thông tin variants
+{
+  title: 'Stock',
+  dataIndex: 'stock',
+  key: 'stock',
+  width: 120,
+  render: (stock, record) => {
+    // ✅ Tạo tooltip content với chi tiết từng variant
+    const tooltipContent = () => {
+      if (!record.variants || record.variants.length === 0) {
+        return <div>Sản phẩm không có biến thể</div>;
+      }
+      
+      return (
+        <div>
+          <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+            Chi tiết tồn kho:
+          </div>
+          {record.variants.map((variant, index) => (
+            <div key={variant.id || index} style={{ marginBottom: '4px' }}>
+              <span style={{ fontWeight: '500' }}>{variant.sku}:</span> {variant.stock || 0}
+            </div>
+          ))}
+          <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '4px', marginTop: '4px', fontWeight: 'bold' }}>
+            Tổng: {stock}
+          </div>
+        </div>
+      );
+    };
+    
+    return (
+      <Tooltip title={tooltipContent()} placement="left">
+        <div style={{ cursor: 'pointer' }}>
+          {/* ✅ Hiển thị tổng stock */}
+          <Tag color={stock > 0 ? 'green' : 'red'} style={{ marginBottom: '4px' }}>
+            {stock > 0 ? `${stock} sản phẩm` : 'Hết hàng'}
+          </Tag>
+          
+          {/* ✅ Hiển thị số variants nếu có */}
+          {record.variantCount > 0 && (
+            <div style={{ fontSize: '11px', color: '#666' }}>
+              {record.variantCount} biến thể
+            </div>
+          )}
+        </div>
+      </Tooltip>
+    );
+  },
+},
+
     {
       title: 'Status',
       dataIndex: 'isActive',
