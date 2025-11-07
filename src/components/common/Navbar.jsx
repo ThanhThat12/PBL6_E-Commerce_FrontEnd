@@ -173,32 +173,35 @@ export default function NavbarNew({ isHomePage = false }) {
               {/* User Menu */}
               <UserMenu user={user} onLogout={handleLogout} />
                             
-              {/* Become Vendor - Nút nổi bật */}
-              <Link
-                to="/become-vendor"
-                className="
-                  hidden
-                  md:flex
-                  items-center
-                  gap-2
-                  px-3
-                  py-2
-                  rounded-lg
-                  bg-secondary-500
-                  text-white
-                  font-semibold
-                  shadow-colored-secondary
-                  hover:bg-secondary-600
-                  transition-colors
-                  group
-                "
-                aria-label="Kênh người bán"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1.5 9h-11L5 11z" />
-                </svg>
-                <span className="hidden lg:inline">Kênh người bán</span>
-              </Link>
+              {/* Seller Channel - Only show for SELLER role */}
+              {user && (user.role === 'SELLER' || user.role === 1) && (
+                <Link
+                  to="/seller/dashboard"
+                  className="
+                    hidden
+                    md:flex
+                    items-center
+                    gap-2
+                    px-3
+                    py-2
+                    rounded-lg
+                    bg-secondary-500
+                    text-white
+                    font-semibold
+                    shadow-colored-secondary
+                    hover:bg-secondary-600
+                    transition-colors
+                    group
+                    no-underline
+                  "
+                  aria-label="Kênh người bán"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1.5 9h-11L5 11z" />
+                  </svg>
+                  <span className="hidden lg:inline">Kênh người bán</span>
+                </Link>
+              )}
               
               {/* Mobile Menu Button */}
               <button
