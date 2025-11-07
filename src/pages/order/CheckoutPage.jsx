@@ -216,6 +216,15 @@ const CheckoutPage = () => {
           {/* Right Column - Order Summary */}
           <div className="lg:col-span-1">
             <div className="sticky top-4">
+              {/* Shipping Address Summary */}
+              {shippingAddress && (
+                <div className="mb-4 p-4 bg-white rounded-lg shadow border border-gray-200">
+                  <h3 className="text-base font-semibold text-gray-900 mb-2">Địa chỉ giao hàng</h3>
+                  <div className="mb-1 font-medium text-gray-800">{shippingAddress.contactName || shippingAddress.toName}</div>
+                  <div className="mb-1 text-gray-700">{shippingAddress.toAddress}</div>
+                  <div className="mb-1 text-gray-700">{shippingAddress.toPhone}</div>
+                </div>
+              )}
               <OrderSummaryCard
                 items={checkoutItems.map(item => ({
                   name: item.productName,

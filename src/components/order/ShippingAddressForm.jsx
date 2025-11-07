@@ -26,7 +26,6 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
   const [loadingWards, setLoadingWards] = useState(false);
 
   const [formData, setFormData] = useState({
-    label: '',
     toName: '',
     toPhone: '',
     toAddress: '',
@@ -265,7 +264,6 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
   // Reset form to empty state
   const resetForm = () => {
     setFormData({
-      label: '',
       toName: '',
       toPhone: '',
       toAddress: '',
@@ -296,9 +294,6 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.label.trim()) {
-      newErrors.label = 'Vui lòng nhập nhãn địa chỉ';
-    }
     if (!formData.toName.trim()) {
       newErrors.toName = 'Vui lòng nhập tên người nhận';
     }
@@ -331,18 +326,10 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       // Ghép full address đúng chuẩn
       const fullAddress = [formData.toAddress, formData.ward, formData.district, formData.province].filter(Boolean).join(', ');
 
-      // Gửi data lên parent component ngay lập tức
-      const submitData = { ...formData, fullAddress };
-      onAddressChange(submitData);
-      setItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS, submitData, true);
-
-      setShowNewAddressForm(false);
-      toast.success('Đã cập nhật địa chỉ giao hàng');
-
       // Lưu địa chỉ vào database
       try {
         const addressToSave = {
-          label: formData.label || 'Địa chỉ mới',
+          label: 'Buyer',
           fullAddress,
           contactName: formData.toName,
           contactPhone: formData.toPhone,
@@ -356,6 +343,7 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
         };
         const response = await userService.createAddress(addressToSave);
         if (response.status === 200) {
+          // Reload addresses list and select the new address
           const addressesResponse = await userService.getAddresses();
           if (addressesResponse.status === 200) {
             setAddresses(addressesResponse.data || []);
@@ -364,9 +352,12 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
               setSelectedAddressId(newAddress.id);
               const persisted = { ...formData, addressId: newAddress.id, fullAddress };
               setItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS, persisted, true);
+              onAddressChange({ ...formData, addressId: newAddress.id, fullAddress });
             }
           }
         }
+        setShowNewAddressForm(false);
+        toast.success('Đã cập nhật địa chỉ giao hàng');
       } catch (error) {
         console.error('Failed to save address:', error);
       }
@@ -379,7 +370,6 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       {addresses.length > 0 && !showNewAddressForm && (
         <div className="space-y-4 mb-4">
           {addresses.map((address) => {
-            // Ghép full address để hiển thị
             const fullAddress = address.fullAddress ||
               [address.toAddress, address.wardName || address.ward, address.districtName || address.district, address.provinceName || address.province]
                 .filter(Boolean).join(', ');
@@ -395,7 +385,8 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
                   onChange={() => handleSelectAddress(address)}
                   className="mr-2"
                 />
-                <span className="font-semibold">{address.label || 'Địa chỉ'}</span>
+                {/* Đổi Địa chỉ thành tên người nhận */}
+                <span className="font-semibold">{address.contactName || address.receiverName || 'Người nhận'}</span>
                 {address.primaryAddress && (
                   <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">Mặc định</span>
                 )}
@@ -432,14 +423,7 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
             Thêm địa chỉ mới
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Nhãn địa chỉ (ví dụ: Nhà, Công ty, ...)*"
-              name="label"
-              value={formData.label}
-              onChange={handleInputChange}
-              error={errors.label}
-              placeholder="Nhà, Công ty, ..."
-            />
+            {/* BỎ input label */}
             <Input
               label="Tên người nhận *"
               name="toName"
