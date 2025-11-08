@@ -327,6 +327,46 @@ const PaymentPage = () => {
             toast.error(errorMsg);
             navigate('/orders');
           }
+        } else if (paymentMethod === 'SPORTYPAY') {
+          try {
+            // Gọi API trừ tiền trong ví
+            console.log('Gửi lên /wallet/withdraw:', {
+              amount: Math.round(finalTotal),
+              description: `Thanh toán đơn hàng #${orderId} qua SportyPay`
+            });
+            const walletResponse = await api.post('/wallet/withdraw', {
+              amount: Math.round(finalTotal),
+              description: `Thanh toán đơn hàng #${orderId} qua SportyPay`
+            });
+
+            console.log('💸 walletResponse:', walletResponse);
+            // Đúng response của backend là status: 200, message: 'Withdrawal successful'
+            // => Cần kiểm tra status === 200 (số), không phải 'SUCCESS' (string)
+            if (walletResponse.status === 200) {
+              toast.success('Thanh toán bằng ví SportyPay thành công!');
+              
+              // Update order status to CONFIRMED after successful payment
+              try {
+                await api.post(`/orders/${orderId}/update-after-payment`, {});
+                console.log('✅ Order updated after wallet payment');
+              } catch (updateError) {
+                console.error('⚠️ Error updating order after payment:', updateError);
+                // Vẫn tiếp tục mặc dù có lỗi update
+              }
+              
+              await clearCart();
+              removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
+              navigate('/orders');
+            } else {
+              toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
+              navigate('/orders');
+            }
+          } catch (walletError) {
+            console.error('❌ SportyPay error:', walletError);
+            toast.error('Lỗi thanh toán bằng ví SportyPay');
+            navigate('/orders');
+          }
+          return;
         } else {
           // COD - xóa cart ngay vì không cần thanh toán online
           console.log('🗑️ Clearing cart for COD payment');
