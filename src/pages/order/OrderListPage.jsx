@@ -36,10 +36,12 @@ const OrderListPage = () => {
     }
   };
 
-  // Filter orders by active tab
-  const filteredOrders = activeTab === 'ALL' 
-    ? orders 
-    : orders.filter(order => order.status === activeTab);
+
+  // Filter and sort orders by createdAt (newest first)
+  const filteredOrders = (activeTab === 'ALL'
+    ? orders
+    : orders.filter(order => order.status === activeTab)
+  ).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return (
     <ProfileLayout>
@@ -86,7 +88,7 @@ const OrderListPage = () => {
       {!loading && filteredOrders.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredOrders.map((order) => (
-            <OrderCard key={order.id} order={order} />
+            <OrderCard key={order.id} order={order} onCancelSuccess={fetchOrders} />
           ))}
         </div>
       )}

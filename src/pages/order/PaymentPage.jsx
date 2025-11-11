@@ -21,7 +21,7 @@ import { removeItem } from '../../utils/storage';
  */
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cartItems, loading: cartLoading, fetchCart, clearCart } = useCart();
+  const { cartItems, loading: cartLoading, fetchCart } = useCart();
   
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [shippingAddress, setShippingAddress] = useState(null);
@@ -83,6 +83,19 @@ const PaymentPage = () => {
   const handleAddressChange = (addressData) => {
     console.log('📬 Address changed:', addressData);
     setShippingAddress(addressData);
+  };
+
+  // Helper function to refresh cart and navigate
+  const refreshCartAndNavigate = async (path) => {
+    try {
+      console.log('🔄 Refreshing cart before navigation...');
+      await fetchCart();
+      console.log('✅ Cart refreshed successfully');
+    } catch (error) {
+      console.error('❌ Error refreshing cart:', error);
+      // Vẫn navigate ngay cả khi có lỗi
+    }
+    navigate(path);
   };
 
   // Handle shipping fee calculated
@@ -233,14 +246,14 @@ const PaymentPage = () => {
         if (!orderId) {
           console.error('❌ OrderId is null or undefined!');
           toast.error('Lỗi: Không nhận được mã đơn hàng từ server');
-          navigate('/orders');
+          await refreshCartAndNavigate('/orders');
           return;
         }
         
         if (isNaN(Number(orderId))) {
           console.error('❌ OrderId is not a valid number:', orderId);
           toast.error('Lỗi: Mã đơn hàng không hợp lệ');
-          navigate('/orders');
+          await refreshCartAndNavigate('/orders');
           return;
         }
         
@@ -307,7 +320,7 @@ const PaymentPage = () => {
             } else {
               console.error('❌ No payUrl in MoMo response');
               toast.error('Không thể tạo link thanh toán MoMo');
-              navigate('/orders');
+              await refreshCartAndNavigate('/orders');
             }
           } catch (momoError) {
             console.error('❌ MoMo payment error:', momoError);
@@ -325,7 +338,7 @@ const PaymentPage = () => {
             }
             
             toast.error(errorMsg);
-            navigate('/orders');
+            await refreshCartAndNavigate('/orders');
           }
         } else if (paymentMethod === 'SPORTYPAY') {
           try {
@@ -354,29 +367,32 @@ const PaymentPage = () => {
                 // Vẫn tiếp tục mặc dù có lỗi update
               }
               
-              await clearCart();
+              // KHÔNG xóa cart ở đây - backend sẽ tự động xóa các sản phẩm đã thanh toán
+              // await clearCart();
+              console.log('✅ Cart will be cleared by backend for purchased items only');
+              
               removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
-              navigate('/orders');
+              await refreshCartAndNavigate('/orders');
             } else {
               toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
-              navigate('/orders');
+              await refreshCartAndNavigate('/orders');
             }
           } catch (walletError) {
             console.error('❌ SportyPay error:', walletError);
             toast.error('Lỗi thanh toán bằng ví SportyPay');
-            navigate('/orders');
+            await refreshCartAndNavigate('/orders');
           }
           return;
         } else {
-          // COD - xóa cart ngay vì không cần thanh toán online
-          console.log('🗑️ Clearing cart for COD payment');
-          await clearCart();
+          // COD - KHÔNG xóa cart ở đây, backend sẽ tự động xóa các sản phẩm đã thanh toán
+          // await clearCart();
+          console.log('✅ Cart will be cleared by backend for purchased items only (COD)');
           
           // COD - chuyển đến trang đơn hàng
           toast.success(response.message || 'Đặt hàng thành công!');
           // Clear persisted shipping address
           removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
-          navigate('/orders');
+          await refreshCartAndNavigate('/orders');
         }
       } else {
         // Show server message if present
@@ -471,9 +487,17 @@ const PaymentPage = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {checkoutItems.map((item) => (
-                      <CartItemCard key={item.id} item={item} />
-                    ))}
+                    {checkoutItems.map((item) => {
+                      // Đảm bảo price, unitPrice, quantity là số
+                      const safeItem = {
+                        ...item,
+                        price: Number(item.price || item.unitPrice || 0),
+                        unitPrice: Number(item.unitPrice || item.price || 0),
+                        quantity: Number(item.quantity || 1),
+                        subTotal: Number(item.quantity || 1) * Number(item.price || item.unitPrice || 0)
+                      };
+                      return <CartItemCard key={item.id || item.productId} item={safeItem} />;
+                    })}
                   </div>
                 )}
               </div>

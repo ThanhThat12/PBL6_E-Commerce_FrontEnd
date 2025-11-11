@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useOrder } from '../../context/OrderContext';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
@@ -201,7 +201,12 @@ const OrderDetailPage = () => {
               </h2>
               <div className="space-y-4">
                 {currentOrder.items?.map((item, index) => (
-                  <div key={index} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0">
+                  <Link
+                    key={index}
+                    to={`/products/${item.productId}`}
+                    className="flex gap-4 pb-4 border-b border-gray-200 last:border-0 hover:bg-gray-50 transition cursor-pointer"
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
                     <img
                       src={item.image || '/placeholder.png'}
                       alt={item.productName}
@@ -211,7 +216,9 @@ const OrderDetailPage = () => {
                       }}
                     />
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.productName}</h3>
+                      <h3 className="font-medium text-gray-900">
+                        {item.productName}
+                      </h3>
                       {item.variantAttributes && (
                         <p className="text-sm text-gray-600 mt-1">{item.variantAttributes}</p>
                       )}
@@ -224,7 +231,7 @@ const OrderDetailPage = () => {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

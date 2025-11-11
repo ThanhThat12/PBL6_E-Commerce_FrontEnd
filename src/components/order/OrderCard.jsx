@@ -1,4 +1,6 @@
 import React from 'react';
+import { toast } from 'react-toastify';
+import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Button from '../common/Button';
 
@@ -26,7 +28,9 @@ const statusLabels = {
  * OrderCard Component
  * Display order summary in list view
  */
-const OrderCard = ({ order }) => {
+
+
+const OrderCard = ({ order, onCancelSuccess }) => {
   const navigate = useNavigate();
 
   const formatDate = (dateString) => {
@@ -51,6 +55,23 @@ const OrderCard = ({ order }) => {
     navigate(`/orders/${order.id}`);
   };
 
+  // Hủy đơn hàng (chỉ cho phép khi trạng thái PENDING)
+  const handleCancelOrder = async () => {
+    if (order.status !== 'PENDING') {
+      toast.error('Chỉ có thể hủy đơn khi đang chờ xác nhận!');
+      return;
+    }
+    try {
+      await api.post(`/orders/${order.id}/cancel`, 'Tôi muốn hủy đơn', {
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      toast.success('Đã hủy đơn hàng thành công!');
+      if (onCancelSuccess) onCancelSuccess();
+    } catch (err) {
+      toast.error('Hủy đơn thất bại!');
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
       {/* Order Header */}
@@ -63,7 +84,6 @@ const OrderCard = ({ order }) => {
             {formatDate(order.createdAt)}
           </p>
         </div>
-        
         {/* Status Badge */}
         <span className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[order.status] || statusColors.PENDING}`}>
           {statusLabels[order.status] || order.status}
@@ -78,7 +98,6 @@ const OrderCard = ({ order }) => {
             {order.method === 'COD' ? 'Thanh toán khi nhận hàng' : order.method}
           </span>
         </div>
-        
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Tổng tiền:</span>
           <span className="font-bold text-lg text-blue-600">
@@ -96,11 +115,11 @@ const OrderCard = ({ order }) => {
         >
           Xem chi tiết
         </Button>
-        
         {order.status === 'PENDING' && (
           <Button
             variant="outline"
             className="flex-1"
+            onClick={handleCancelOrder}
           >
             Hủy đơn
           </Button>
