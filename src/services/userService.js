@@ -58,7 +58,13 @@ export const updateAddress = async (addressId, addressData) => {
  */
 export const deleteAddress = async (addressId) => {
   const response = await api.delete(`me/addresses/${addressId}`);
-  return response.data;
+  // Đảm bảo luôn trả về object có status và message
+  if (response && response.data) {
+    return response.data;
+  } else {
+    // Nếu không có response.data, trả về status 200 để FE không báo lỗi sai
+    return { status: 200, message: 'Xóa địa chỉ thành công', data: null };
+  }
 };
 
 /**

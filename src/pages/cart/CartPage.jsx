@@ -22,20 +22,42 @@ const CartPage = () => {
   const selectedItems = useCartStore((state) => state.selectedItems);
   const selectAllItems = useCartStore((state) => state.selectAllItems);
   const deselectAllItems = useCartStore((state) => state.deselectAllItems);
+  // Đã bỏ location vì không dùng đến
+  // Đã bỏ prevPathRef vì không dùng đến
+  // Theo dõi đường dẫn tiếp theo khi unmount CartPage
+  React.useEffect(() => {
+    let nextPath = null;
+    const handlePush = (e) => {
+      if (e.state && e.state.usr && e.state.usr.pathname) {
+        nextPath = e.state.usr.pathname;
+      } else if (e.target && e.target.location) {
+        nextPath = e.target.location.pathname;
+      }
+    };
+    window.addEventListener('popstate', handlePush);
+    window.addEventListener('pushstate', handlePush);
+    return () => {
+      // Nếu rời khỏi cart sang trang khác không phải payment thì clear
+      const finalPath = nextPath || window.location.pathname;
+      if (finalPath !== '/payment') {
+        deselectAllItems();
+      }
+      window.removeEventListener('popstate', handlePush);
+      window.removeEventListener('pushstate', handlePush);
+    };
+  }, [deselectAllItems]);
   const [showClearModal, setShowClearModal] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   // Cleanup pending MoMo orders when user returns to cart
   usePendingOrderCleanup();
 
-  // Auto-select all items when cart loads for the first time
+  // Khôi phục selectedItems từ localStorage khi vào trang cart, không auto-select all
   useEffect(() => {
-    if (!hasInitialized && cartItems && cartItems.length > 0 && selectedItems.length === 0) {
-      console.log('🎯 Auto-selecting all items on first load');
-      selectAllItems();
+    if (!hasInitialized && cartItems && cartItems.length > 0) {
       setHasInitialized(true);
     }
-  }, [cartItems, selectedItems.length, selectAllItems, hasInitialized]);
+  }, [cartItems, hasInitialized]);
 
   const allSelected = cartItems.length > 0 && selectedItems.length === cartItems.length;
 

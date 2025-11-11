@@ -211,43 +211,82 @@ const PaymentPage = () => {
       const response = await api.post(API_ENDPOINTS.ORDER.CREATE, orderData);
       // NOTE: api interceptor returns ResponseDTO { status, error, message, data }
       console.log('✅ Order response DTO:', response);
+      console.log('🔍 Response structure:', {
+        status: response.status,
+        hasData: !!response.data,
+        dataKeys: response.data ? Object.keys(response.data) : [],
+        orderId: response.data?.orderId,
+        fullData: response.data
+      });
       
       const isOk = response && (response.status === 200 || response.status === 201) && !response.error;
       if (isOk) {
-        const orderId = response.data?.orderId || response.orderId;
+        // Lấy orderId từ response.data
+        const orderId = response.data?.orderId;
         
-        console.log('🎯 Order created successfully! Order ID:', orderId);
+        console.log('🎯 Order created successfully!');
+        console.log('🔍 OrderId value:', orderId);
+        console.log('🔍 OrderId type:', typeof orderId);
         console.log('💳 Current payment method:', paymentMethod);
-        console.log('🔍 Payment method type:', typeof paymentMethod);
-        console.log('🔍 Is MOMO?', paymentMethod === 'MOMO');
+        
+        // Kiểm tra orderId hợp lệ
+        if (!orderId) {
+          console.error('❌ OrderId is null or undefined!');
+          toast.error('Lỗi: Không nhận được mã đơn hàng từ server');
+          navigate('/orders');
+          return;
+        }
+        
+        if (isNaN(Number(orderId))) {
+          console.error('❌ OrderId is not a valid number:', orderId);
+          toast.error('Lỗi: Mã đơn hàng không hợp lệ');
+          navigate('/orders');
+          return;
+        }
         
         // Clear checkout items from sessionStorage
         sessionStorage.removeItem('checkoutItems');
         
         // Nếu chọn MoMo, tạo link thanh toán và chuyển hướng
         if (paymentMethod === 'MOMO') {
-          console.log('💳 Creating MoMo payment for order:', orderId);
-          console.log('💰 Payment amount details:');
-          console.log('  - Subtotal:', subtotal);
-          console.log('  - Shipping Fee:', shippingFee);
-          console.log('  - Voucher Discount:', voucherDiscount);
-          console.log('  - Total:', total);
-          console.log('  - Final Total (to MoMo):', finalTotal);
+          console.log('💳 Processing MoMo payment...');
+          
+          // Convert orderId to number
+          const momoOrderId = Number(orderId);
+          console.log('🔢 Converted orderId to number:', momoOrderId);
+          console.log('🔢 Is valid number?', !isNaN(momoOrderId));
+          console.log('🔢 Original orderId:', orderId);
+          console.log('🔢 Original orderId type:', typeof orderId);
+
+          const momoPayload = {
+            orderId: momoOrderId,
+            amount: Math.round(finalTotal),
+            orderInfo: `Thanh toán đơn hàng #${momoOrderId}`,
+            returnUrl: `${window.location.origin}/payment-result`,
+            notifyUrl: `${window.location.origin}/api/payment/momo/callback`
+          };
+
+          console.log('📤 MoMo payload BEFORE stringify:', momoPayload);
+          console.log('🔍 Payload.orderId:', momoPayload.orderId);
+          console.log('🔍 Payload.orderId type:', typeof momoPayload.orderId);
+          console.log('🔍 Payload.orderId === momoOrderId?', momoPayload.orderId === momoOrderId);
+          console.log('📤 MoMo payload JSON:', JSON.stringify(momoPayload, null, 2));
+
+          // Verify payload one more time before sending
+          console.log('🚨 FINAL CHECK BEFORE API CALL:');
+          console.log('  - orderId:', momoPayload.orderId, 'type:', typeof momoPayload.orderId);
+          console.log('  - amount:', momoPayload.amount, 'type:', typeof momoPayload.amount);
+          console.log('  - orderInfo:', momoPayload.orderInfo);
           
           try {
-            const momoPayload = {
-              orderId: orderId,
-              amount: finalTotal,
-              orderInfo: `Thanh toán đơn hàng #${orderId}`,
-              returnUrl: `${window.location.origin}/payment-result`,
-              notifyUrl: `${window.location.origin}/api/payment/momo/callback`
-            };
-            
-            console.log('📤 Sending MoMo payment request:', momoPayload);
+            console.log('📡 Calling API: payment/momo/create');
+            console.log('📡 With payload:', momoPayload);
             
             const momoResponse = await api.post('payment/momo/create', momoPayload);
             
-            console.log('✅ MoMo payment response:', momoResponse.data);
+            console.log('✅ MoMo payment response:', momoResponse);
+            console.log('✅ MoMo response data:', momoResponse.data);
+            console.log('✅ MoMo response status:', momoResponse.status);
             
             if (momoResponse.data?.payUrl) {
               toast.success('Đang chuyển đến trang thanh toán MoMo...');
@@ -266,14 +305,68 @@ const PaymentPage = () => {
               window.location.href = momoResponse.data.payUrl;
               return;
             } else {
+              console.error('❌ No payUrl in MoMo response');
               toast.error('Không thể tạo link thanh toán MoMo');
               navigate('/orders');
             }
           } catch (momoError) {
-            console.error('❌ MoMo payment error:', momoError.response?.data || momoError.message);
-            toast.error('Lỗi tạo thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
+            console.error('❌ MoMo payment error:', momoError);
+            console.error('❌ MoMo error response:', momoError.response);
+            console.error('❌ MoMo error data:', momoError.response?.data);
+            console.error('❌ MoMo error message:', momoError.message);
+            console.error('❌ MoMo error status:', momoError.response?.status);
+            
+            // Hiển thị thông báo lỗi chi tiết
+            let errorMsg = 'Lỗi tạo thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.';
+            if (momoError.response?.data?.message) {
+              errorMsg = `Lỗi MoMo: ${momoError.response.data.message}`;
+            } else if (momoError.message) {
+              errorMsg = `Lỗi MoMo: ${momoError.message}`;
+            }
+            
+            toast.error(errorMsg);
             navigate('/orders');
           }
+        } else if (paymentMethod === 'SPORTYPAY') {
+          try {
+            // Gọi API trừ tiền trong ví
+            console.log('Gửi lên /wallet/withdraw:', {
+              amount: Math.round(finalTotal),
+              description: `Thanh toán đơn hàng #${orderId} qua SportyPay`
+            });
+            const walletResponse = await api.post('/wallet/withdraw', {
+              amount: Math.round(finalTotal),
+              description: `Thanh toán đơn hàng #${orderId} qua SportyPay`
+            });
+
+            console.log('💸 walletResponse:', walletResponse);
+            // Đúng response của backend là status: 200, message: 'Withdrawal successful'
+            // => Cần kiểm tra status === 200 (số), không phải 'SUCCESS' (string)
+            if (walletResponse.status === 200) {
+              toast.success('Thanh toán bằng ví SportyPay thành công!');
+              
+              // Update order status to CONFIRMED after successful payment
+              try {
+                await api.post(`/orders/${orderId}/update-after-payment`, {});
+                console.log('✅ Order updated after wallet payment');
+              } catch (updateError) {
+                console.error('⚠️ Error updating order after payment:', updateError);
+                // Vẫn tiếp tục mặc dù có lỗi update
+              }
+              
+              await clearCart();
+              removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
+              navigate('/orders');
+            } else {
+              toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
+              navigate('/orders');
+            }
+          } catch (walletError) {
+            console.error('❌ SportyPay error:', walletError);
+            toast.error('Lỗi thanh toán bằng ví SportyPay');
+            navigate('/orders');
+          }
+          return;
         } else {
           // COD - xóa cart ngay vì không cần thanh toán online
           console.log('🗑️ Clearing cart for COD payment');
@@ -440,9 +533,6 @@ const PaymentPage = () => {
                         <p className="font-medium text-gray-900">{shippingAddress.toName}</p>
                         <p>{shippingAddress.toPhone}</p>
                         <p>{shippingAddress.toAddress}</p>
-                        {shippingAddress.ward && shippingAddress.district && shippingAddress.province && (
-                          <p>{`${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.province}`}</p>
-                        )}
                       </div>
                     </div>
                   )}
