@@ -18,6 +18,7 @@ import { handleAuthError, requiresReAuthentication } from '../utils/authErrorHan
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
 import { onAuthChange, SYNC_EVENTS } from '../utils/storageSync';
+import { mapAuthoritiesToRole, getRoleName } from '../utils/jwtUtils';
 
 // Create Auth Context
 export const AuthContext = createContext(null);
@@ -417,23 +418,42 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Check if user has specific role
-   * @param {string} role
+   * Supports both string ("SELLER", "ADMIN", "BUYER") and number (0, 1, 2) format
+   * @param {string|number} role - Role to check (string: "SELLER"/"ADMIN"/"BUYER" or number: 0/1/2)
    * @returns {boolean}
    */
   const hasRole = useCallback((role) => {
-    if (!user || !user.roles) return false;
-    return user.roles.includes(role);
+    if (!user) return false;
+    
+    // Convert number to string if needed
+    let roleToCheck = role;
+    if (typeof role === 'number') {
+      const roleMap = { 0: 'ADMIN', 1: 'SELLER', 2: 'BUYER' };
+      roleToCheck = roleMap[role];
+    }
+    
+    // Check user.role (string format from backend: "ADMIN", "SELLER", "BUYER")
+    if (user.role) {
+      return user.role.toUpperCase() === roleToCheck?.toUpperCase();
+    }
+    
+    // Fallback: check user.roles (array format - if exists)
+    if (user.roles && Array.isArray(user.roles)) {
+      return user.roles.some(r => r.toUpperCase() === roleToCheck?.toUpperCase());
+    }
+    
+    return false;
   }, [user]);
 
   /**
    * Check if user has any of the specified roles
-   * @param {string[]} roles
+   * @param {(string|number)[]} roles - Array of roles to check
    * @returns {boolean}
    */
   const hasAnyRole = useCallback((roles) => {
-    if (!user || !user.roles) return false;
-    return roles.some(role => user.roles.includes(role));
-  }, [user]);
+    if (!user || !roles || !Array.isArray(roles)) return false;
+    return roles.some(role => hasRole(role));
+  }, [user, hasRole]);
 
   // Context value
   const value = {

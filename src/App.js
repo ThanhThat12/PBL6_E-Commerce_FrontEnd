@@ -35,6 +35,23 @@ import ChangePasswordPage from './pages/user/ChangePasswordPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+// 🧑‍💼 Admin Pages
+import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
+
+// 🏪 Seller Pages & Components
+import SellerProtectedRoute from './components/seller/ProtectedRoute';
+import { SellerLayout } from './components/seller/Layout';
+import * as SellerPages from './pages/seller';
+import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
+import ProductsPage from "./pages/admin/Products/ProductsPage"; 
+import OrdersPage from "./pages/admin/Orders/OrdersPage";
+import CategoriesPage from "./pages/admin/Categories/CategoriesPage";
+import Customers from "./pages/admin/Users/Customers";
+import Sellers from "./pages/admin/Users/Sellers";
+import Admins from "./pages/admin/Users/Admins";
+import SettingsPage from "./pages/admin/Settings/SettingsPage";
+import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
+
 function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
@@ -133,8 +150,48 @@ function App() {
                 } 
               />
               
-              {/* Catch-all redirect to home */}
+            
+            
+            
+            {/* ================= ADMIN ROUTES ================= */}
+            <Route path="/admin" element={<ProtectedRouteAdmin><Dashboard /></ProtectedRouteAdmin>} />
+            <Route path="/admin/dashboard" element={<ProtectedRouteAdmin><Dashboard /></ProtectedRouteAdmin >} />
+            <Route path="/admin/products" element={<ProtectedRouteAdmin><ProductsPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/orders" element={<ProtectedRouteAdmin><OrdersPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/categories" element={<ProtectedRouteAdmin><CategoriesPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><Customers /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><Sellers /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
+            <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
+            {/* ================================================= */}
+
+            {/* ================= SELLER ROUTES ================= */}
+            <Route 
+              path="/seller" 
+              element={
+                <SellerProtectedRoute requiredRole="SELLER">
+                  <SellerLayout />
+                </SellerProtectedRoute>
+              }
+            >
+              {/* Nested routes inside SellerLayout */}
+              <Route index element={<SellerPages.Dashboard />} />
+              <Route path="dashboard" element={<SellerPages.Dashboard />} />
+              <Route path="products/list" element={<SellerPages.ProductList />} />
+              <Route path="products/add" element={<SellerPages.AddProduct />} />
+              <Route path="orders" element={<SellerPages.Orders />} />
+              <Route path="my-shop" element={<SellerPages.MyShop />} />
+              <Route path="statistical" element={<SellerPages.Statistical />} />
+              <Route path="customers" element={<SellerPages.Customers />} />
+            </Route>
+            {/* ================================================= */}
+
+              {/* Catch-all redirect to home - MUST BE LAST */}
               <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+
+
+            
             </Routes>
             
             {/* React Hot Toast */}

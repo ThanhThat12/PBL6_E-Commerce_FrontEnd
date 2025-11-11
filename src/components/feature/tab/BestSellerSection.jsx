@@ -1,5 +1,6 @@
 import React from "react";
 import ProductList from "../../common/ProductList";
+import { addToCart } from '../../../services/cartService';
 import colorPattern from "../../../styles/colorPattern";
 import { bestSellerProducts } from '../../../mockDataBestSeller';
 
@@ -7,6 +8,14 @@ const BestSellerSection = ({
   products = bestSellerProducts,
   onViewAll,
 }) => {
+  const handleAddToCart = async (product) => {
+    try {
+      await addToCart(product.id, 1);
+      alert("Đã thêm vào giỏ hàng!");
+    } catch (error) {
+      alert("Thêm vào giỏ hàng thất bại!");
+    }
+  };
   return (
     <section 
       className="rounded-xl shadow p-6 md:p-10 mb-8"
@@ -53,7 +62,7 @@ const BestSellerSection = ({
           View All
         </button>
       </div>
-      <ProductList products={products} />
+  <ProductList products={products} onAddToCart={handleAddToCart} showAddToCart />
     </section>
   );
 };

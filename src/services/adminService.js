@@ -1,73 +1,105 @@
-// src/services/adminService.js
-// Service for admin user management API calls
+import axios from 'axios';
 
-import api from './api';
+const API_BASE_URL = 'http://localhost:8081/api';
+
+// Lấy token từ localStorage
+const getAuthToken = () => {
+  return localStorage.getItem('adminToken');
+};
+
+// Axios instance với interceptor
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to requests
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Handle response errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ============ Customer APIs ============
 
 /**
- * Get admin users list
- * @returns {Promise} List of admin users
+ * Get all customers (role = BUYER)
+ * Backend endpoint: GET /api/admin/users/customers
+ * Returns: ResponseDTO<List<UserInfoDTO>>
  */
-export const getAdminUsers = async () => {
-  const response = await api.get('/admin/users/admin');
-  return response.data;
+export const getCustomers = async () => {
+  try {
+    console.log('📡 [adminService] Calling GET /admin/users/customers');
+    const response = await apiClient.get('/admin/users/customers');
+    console.log('✅ [adminService] Customers response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminService] Error fetching customers:', error);
+    throw error;
+  }
 };
 
 /**
- * Get seller users list
- * @returns {Promise} List of seller users
+ * Get customer detail by ID
+ * Backend endpoint: GET /api/admin/users/detail/{userId}
+ * Returns: ResponseDTO<AdminUserDetailDTO>
  */
-export const getSellerUsers = async () => {
-  const response = await api.get('/admin/users/sellers');
-  return response.data;
+export const getCustomerDetail = async (userId) => {
+  try {
+    console.log('📡 [adminService] Calling GET /admin/users/detail/' + userId);
+    const response = await apiClient.get(`/admin/users/detail/${userId}`);
+    console.log('✅ [adminService] Customer detail response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminService] Error fetching customer detail:', error);
+    throw error;
+  }
 };
 
 /**
- * Get customer users list
- * @returns {Promise} List of customer users
+ * Get customer statistics
+ * Backend endpoint: GET /api/admin/users/customers/stats
+ * Returns: ResponseDTO<CustomerStatsDTO>
  */
-export const getCustomerUsers = async () => {
-  const response = await api.get('/admin/users/customers');
-  return response.data;
+export const getCustomerStats = async () => {
+  try {
+    console.log('📡 [adminService] Calling GET /admin/users/customers/stats');
+    const response = await apiClient.get('/admin/users/customers/stats');
+    console.log('✅ [adminService] Customer stats response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminService] Error fetching customer stats:', error);
+    throw error;
+  }
 };
 
-/**
- * Get user details by ID
- * @param {number} userId - User ID
- * @returns {Promise} User details
- */
-export const getUserDetail = async (userId) => {
-  const response = await api.get(`/admin/users/detail/${userId}`);
-  return response.data;
-};
+export { apiClient };
 
-/**
- * Update user role
- * @param {number} userId - User ID
- * @param {string} role - New role (ADMIN, SELLER, BUYER)
- * @returns {Promise} Success message
- */
-export const updateUserRole = async (userId, role) => {
-  const response = await api.patch(`/admin/users/${userId}/role`, { role });
-  return response.data;
-};
-
-/**
- * Update user status (activate/deactivate)
- * @param {number} userId - User ID
- * @param {boolean} activated - Activation status
- * @returns {Promise} Success message
- */
-export const updateUserStatus = async (userId, activated) => {
-  const response = await api.patch(`/admin/users/${userId}/status`, { activated });
-  return response.data;
-};
-
-/**
- * Delete user
- * @param {number} userId - User ID
- * @returns {Promise} Success message
- */
-export const deleteUser = async (userId) => {
-  const response = await api.delete(`/admin/users/${userId}`);
-  return response.data;
+export default {
+  getCustomers,
+  getCustomerDetail,
+  getCustomerStats,
 };
