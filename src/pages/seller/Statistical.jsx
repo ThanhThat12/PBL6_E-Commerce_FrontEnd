@@ -6,7 +6,9 @@ import {
   getRevenueStats, 
   getSalesStats, 
   getTopProducts,
-  exportReport 
+  exportReport,
+  getShopAnalytics,
+  getTopBuyers,
 } from '../../services/seller/statisticalService';
 import dayjs from 'dayjs';
 
@@ -22,6 +24,10 @@ const Statistical = () => {
   const [revenueData, setRevenueData] = useState([]);
   const [salesData, setSalesData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
+  const [topBuyers, setTopBuyers] = useState([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [analyticsYear, setAnalyticsYear] = useState(dayjs().year());
   const [dateRange, setDateRange] = useState([
     dayjs().subtract(30, 'days'),
     dayjs()
@@ -32,6 +38,16 @@ const Statistical = () => {
     fetchStatistics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange, groupBy]);
+
+  useEffect(() => {
+    fetchShopAnalytics(analyticsYear);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyticsYear]);
+
+  useEffect(() => {
+    fetchTopBuyers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchStatistics = async () => {
     try {
@@ -57,6 +73,38 @@ const Statistical = () => {
       message.error('Không thể tải dữ liệu thống kê');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTopBuyers = async () => {
+    try {
+      const res = await getTopBuyers({ limit: 5 });
+      const payload = res?.data || res || [];
+      // payload could be array or ResponseDTO
+      const list = Array.isArray(payload) ? payload : (payload?.data || payload);
+      setTopBuyers(Array.isArray(list) ? list : []);
+    } catch (error) {
+      console.error('Error fetching top buyers:', error);
+    }
+  };
+
+  const fetchShopAnalytics = async (year) => {
+    try {
+      setAnalyticsLoading(true);
+      const res = await getShopAnalytics(year);
+      // res may be ResponseDTO { status, data: { monthlyRevenue: [...] } } or directly data
+      const payload = res?.data || res || {};
+      const monthly = payload?.monthlyRevenue || payload?.data?.monthlyRevenue || payload;
+      // ensure array of months sorted by month number
+      const months = Array.isArray(monthly) ? monthly.slice() : [];
+      months.sort((a, b) => (a.month || 0) - (b.month || 0));
+      setMonthlyRevenue(months);
+    } catch (error) {
+      console.error('Error fetching shop analytics:', error);
+      message.error('Không thể tải dữ liệu thống kê theo năm');
+      setMonthlyRevenue([]);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -139,28 +187,38 @@ const Statistical = () => {
       {/* Revenue Chart */}
       <Row gutter={[16, 16]} className="mb-6">
         <Col xs={24} lg={12}>
-          <Card title="Biểu đồ doanh thu">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND'
-                  }).format(value)}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  name="Doanh thu"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <Card title={`Doanh thu theo tháng (${analyticsYear})`} extra={
+            <div className="flex items-center gap-2">
+              <Select
+                value={analyticsYear}
+                onChange={(val) => setAnalyticsYear(val)}
+                style={{ width: 120 }}
+              >
+                {Array.from({ length: 6 }).map((_, idx) => {
+                  const y = dayjs().year() - idx;
+                  return (
+                    <Select.Option key={y} value={y}>{y}</Select.Option>
+                  );
+                })}
+              </Select>
+            </div>
+          }>
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center" style={{ height: 300 }}>
+                <Spin />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyRevenue}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="monthName" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)} />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#3b82f6" name="Doanh thu" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </Col>
 
@@ -186,32 +244,58 @@ const Statistical = () => {
       </Row>
 
       {/* Top Products */}
-      <Card title="Top 5 sản phẩm bán chạy">
-        <div className="space-y-3">
-          {topProducts.map((product, index) => (
-            <div 
-              key={product.id} 
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                  {index + 1}
-                </div>
-                <div>
-                  <div className="font-medium">{product.name}</div>
-                  <div className="text-sm text-gray-500">
-                    Đã bán: {product.soldCount} | 
-                    Doanh thu: {new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND'
-                    }).format(product.revenue)}
+      <Row gutter={[16, 16]}> 
+        <Col xs={24} lg={12}>
+          <Card title="Top 5 sản phẩm bán chạy">
+            <div className="space-y-3">
+              {topProducts.map((product, index) => (
+                <div 
+                  key={product.id} 
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-sm text-gray-500">
+                        Đã bán: {product.soldCount} | 
+                        Doanh thu: {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND'
+                        }).format(product.revenue)}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </Card>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card title="Top 5 người mua (Buyers)">
+            <div className="space-y-3">
+              {topBuyers.map((buyer, index) => (
+                <div key={buyer.userId || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">{index + 1}</div>
+                    <div>
+                      <div className="font-medium">{buyer.username}</div>
+                      <div className="text-sm text-gray-500">{buyer.email}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyer.totalAmount)}</div>
+                    <div className="text-sm text-gray-500">{buyer.totalCompletedOrders} đơn</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };

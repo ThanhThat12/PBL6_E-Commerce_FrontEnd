@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Upload, Card, Row, Col, message, Spin } from 'antd';
 import { UploadOutlined, CameraOutlined } from '@ant-design/icons';
 import { getShopProfile, updateShopProfile } from '../../services/seller/shopService';
+import api from '../../services/api';
 
 const { TextArea } = Input;
 
@@ -16,9 +17,11 @@ const MyShop = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [bannerFile, setBannerFile] = useState(null);
   const [shopData, setShopData] = useState(null);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     fetchShopProfile();
+    fetchMyProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -40,6 +43,20 @@ const MyShop = () => {
       message.error('Không thể tải thông tin cửa hàng');
     } finally {
       setFetching(false);
+    }
+  };
+
+  const fetchMyProducts = async () => {
+    try {
+      // API may return a ResponseDTO { status, error, message, data: { content: [...] } }
+      // or directly a page object depending on api wrapper; handle both shapes.
+      const res = await api.get('products/my-products');
+      const payload = res?.data || res || {};
+      const content = payload?.content || payload?.data?.content || payload;
+      const list = Array.isArray(content) ? content : (content?.content || content?.data || []);
+      setProducts(Array.isArray(list) ? list : []);
+    } catch (error) {
+      console.error('Error fetching my products:', error);
     }
   };
 
@@ -100,7 +117,13 @@ const MyShop = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Cửa hàng của tôi</h1>
+      {/* Shop header: show shop name and description from API */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">{shopData?.name || 'Cửa hàng của tôi'}</h1>
+        {shopData?.description && (
+          <p className="text-gray-600 mt-2">{shopData.description}</p>
+        )}
+      </div>
 
       <Row gutter={[16, 16]}>
         {/* Shop Stats */}
@@ -237,6 +260,46 @@ const MyShop = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Products list */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Danh sách sản phẩm</h2>
+        <Row gutter={[16, 16]}>
+          {products && products.length > 0 ? (
+            products.map((p) => (
+              <Col key={p.id} xs={24} sm={12} md={8} lg={6}>
+                <Card
+                  hoverable
+                  cover={
+                    p.image || p.mainImage ? (
+                      <img
+                        alt={p.name}
+                        src={p.image || p.mainImage}
+                        style={{ height: 160, objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{ height: 160, background: '#f3f3f3' }} />
+                    )
+                  }
+                >
+                  <div className="font-semibold mb-1">{p.name}</div>
+                  <div className="text-sm text-gray-600 mb-2">{p.categoryName || p.category?.name}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-lg font-bold">{p.price?.toLocaleString?.() ? p.price.toLocaleString() + ' đ' : (p.basePrice ? p.basePrice.toLocaleString() + ' đ' : '')}</div>
+                    <div className={`text-sm ${p.isActive ? 'text-green-600' : 'text-red-500'}`}>
+                      {p.isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            ))
+          ) : (
+            <Col span={24}>
+              <div className="text-gray-500">Không có sản phẩm nào.</div>
+            </Col>
+          )}
+        </Row>
+      </div>
     </div>
   );
 };

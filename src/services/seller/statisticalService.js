@@ -97,3 +97,33 @@ export const exportReport = async (params = {}) => {
     throw error;
   }
 };
+
+/**
+ * Get shop analytics by year (monthly revenue, totals)
+ * @param {number|string} year - Year e.g. 2024
+ * @returns {Promise<object>} { totalRevenue, totalCompletedOrders, monthlyRevenue: [...] }
+ */
+export const getShopAnalytics = async (year) => {
+  try {
+    const response = await api.get(`/seller/shop/analytics`, { params: { year } });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching shop analytics:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get top buyers for the shop
+ * @param {object} params - optional params { limit }
+ * @returns {Promise<Array>} list of buyers
+ */
+export const getTopBuyers = async (params = {}) => {
+  try {
+    const response = await api.get('/seller/top-buyers', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching top buyers:', error);
+    throw error;
+  }
+};

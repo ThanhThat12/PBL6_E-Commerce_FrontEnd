@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Input, Select, Tag, Space, Popconfirm, message } from 'antd';
 import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { getProducts, deleteProduct, updateProductStatus } from '../../services/seller/productService';
+import productListService from '../../services/seller/productListService';
+import { updateProductStatus } from '../../services/seller/productService';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -33,18 +34,18 @@ const ProductList = () => {
     try {
       setLoading(true);
       const params = {
-        page: pagination.current - 1,
+        page: pagination.current,
         size: pagination.pageSize,
-        keyword: filters.keyword || undefined,
-        status: filters.status || undefined,
+        search: filters.keyword || undefined,
+        // map status to isActive boolean when possible
+        isActive: filters.status === 'ACTIVE' ? true : (filters.status === 'INACTIVE' ? false : undefined),
       };
 
-      const response = await getProducts(params);
-      
-      setProducts(response.content || []);
+      const response = await productListService.getMyShopProducts(params);
+      setProducts(response.products || []);
       setPagination({
         ...pagination,
-        total: response.totalElements || 0,
+        total: response.total || 0,
       });
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -56,7 +57,7 @@ const ProductList = () => {
 
   const handleDelete = async (productId) => {
     try {
-      await deleteProduct(productId);
+      await productListService.deleteProduct(productId);
       message.success('Xóa sản phẩm thành công');
       fetchProducts();
     } catch (error) {
@@ -91,13 +92,23 @@ const ProductList = () => {
       ),
     },
     {
+      title: 'SKU',
+      dataIndex: 'sku',
+      key: 'sku',
+      width: 120,
+      render: (_, record) => (
+        // try to show top-level sku or first variant sku
+        <div className="text-sm text-gray-700">{record.sku || record.variants?.[0]?.sku || '-'}</div>
+      ),
+    },
+    {
       title: 'Tên sản phẩm',
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
         <div>
           <div className="font-medium">{text}</div>
-          <div className="text-xs text-gray-500">SKU: {record.sku}</div>
+          <div className="text-xs text-gray-500">{record.description ? record.description.substring(0, 80) + (record.description.length > 80 ? '...' : '') : ''}</div>
         </div>
       ),
     },
@@ -110,10 +121,10 @@ const ProductList = () => {
       title: 'Giá',
       dataIndex: 'basePrice',
       key: 'basePrice',
-      render: (price) => new Intl.NumberFormat('vi-VN', {
+      render: (price, record) => new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND'
-      }).format(price),
+      }).format(record.price || price || 0),
     },
     {
       title: 'Kho',
@@ -127,11 +138,11 @@ const ProductList = () => {
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
+      dataIndex: 'isActive',
       key: 'status',
-      render: (status, record) => (
+      render: (isActive, record) => (
         <Select
-          value={status}
+          value={isActive ? 'ACTIVE' : 'INACTIVE'}
           style={{ width: 130 }}
           onChange={(value) => handleStatusChange(record.id, value)}
           size="small"
@@ -173,10 +184,10 @@ const ProductList = () => {
               size="small"
             />
           </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+      </Space>
+    ),
+  },
+];
 
   return (
     <div>

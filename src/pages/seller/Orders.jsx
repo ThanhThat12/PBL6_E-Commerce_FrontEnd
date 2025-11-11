@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Tag, Select, Space, Modal, message, Tabs } from 'antd';
+import { Table, Button, Tag, Select, Space, Modal, message, Tabs, Spin } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 import { 
   getOrders, 
   updateOrderStatus, 
+  getOrderDetail,
   ORDER_STATUS, 
   STATUS_LABELS 
 } from '../../services/seller/orderService';
@@ -19,6 +20,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('ALL');
   const [pagination, setPagination] = useState({
     current: 1,
@@ -140,9 +142,19 @@ const Orders = () => {
         <Button
           type="link"
           icon={<EyeOutlined />}
-          onClick={() => {
-            setSelectedOrder(record);
-            setDetailModalVisible(true);
+          onClick={async () => {
+            // fetch full order detail before showing modal
+            try {
+              setDetailLoading(true);
+              const detail = await getOrderDetail(record.id);
+              setSelectedOrder(detail);
+              setDetailModalVisible(true);
+            } catch (err) {
+              console.error('Error fetching order detail:', err);
+              message.error('Không thể tải chi tiết đơn hàng');
+            } finally {
+              setDetailLoading(false);
+            }
           }}
         >
           Chi tiết
@@ -206,7 +218,9 @@ const Orders = () => {
         footer={null}
         width={700}
       >
-        {selectedOrder && (
+        {detailLoading ? (
+          <div className="flex justify-center py-8"><Spin /></div>
+        ) : selectedOrder ? (
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold mb-2">Thông tin khách hàng</h3>
@@ -224,8 +238,26 @@ const Orders = () => {
                 {STATUS_LABELS[selectedOrder.status]}
               </Tag></p>
             </div>
+            <div>
+              <h3 className="font-semibold mb-2">Sản phẩm</h3>
+              <ul>
+                {selectedOrder.items?.map(item => (
+                  <li key={item.id} className="mb-2">
+                    <div className="flex items-center">
+                      {item.productImage && (
+                        <img src={item.productImage} alt={item.productName} className="w-12 h-12 object-cover mr-3" />
+                      )}
+                      <div>
+                        <div className="font-medium">{item.productName}</div>
+                        <div className="text-sm text-gray-500">{item.variantName} × {item.quantity} — {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal)}</div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        )}
+        ) : null}
       </Modal>
     </div>
   );
