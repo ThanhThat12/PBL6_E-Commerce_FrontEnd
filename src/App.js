@@ -37,6 +37,11 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // 🧑‍💼 Admin Pages
 import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
+
+// 🏪 Seller Pages & Components
+import SellerProtectedRoute from './components/seller/ProtectedRoute';
+import { SellerLayout } from './components/seller/Layout';
+import * as SellerPages from './pages/seller';
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
 import OrdersPage from "./pages/admin/Orders/OrdersPage";
@@ -159,6 +164,27 @@ function App() {
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
+            {/* ================================================= */}
+
+            {/* ================= SELLER ROUTES ================= */}
+            <Route 
+              path="/seller" 
+              element={
+                <SellerProtectedRoute requiredRole="SELLER">
+                  <SellerLayout />
+                </SellerProtectedRoute>
+              }
+            >
+              {/* Nested routes inside SellerLayout */}
+              <Route index element={<SellerPages.Dashboard />} />
+              <Route path="dashboard" element={<SellerPages.Dashboard />} />
+              <Route path="products/list" element={<SellerPages.ProductList />} />
+              <Route path="products/add" element={<SellerPages.AddProduct />} />
+              <Route path="orders" element={<SellerPages.Orders />} />
+              <Route path="my-shop" element={<SellerPages.MyShop />} />
+              <Route path="statistical" element={<SellerPages.Statistical />} />
+              <Route path="customers" element={<SellerPages.Customers />} />
+            </Route>
             {/* ================================================= */}
 
               {/* Catch-all redirect to home - MUST BE LAST */}
