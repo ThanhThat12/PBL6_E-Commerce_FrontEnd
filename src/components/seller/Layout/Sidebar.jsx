@@ -51,6 +51,11 @@ const menuItems = [
     icon: <UserOutlined />,
     label: <Link to="/seller/customers">Khách hàng</Link>,
   },
+  {
+    key: '/seller/reviews',
+    icon: <UserOutlined />,
+    label: <Link to="/seller/reviews">Đánh giá</Link>,
+  },
 ];
 
 /**
