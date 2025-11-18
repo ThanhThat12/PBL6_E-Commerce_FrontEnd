@@ -56,6 +56,11 @@ const menuItems = [
     icon: <UserOutlined />,
     label: <Link to="/seller/reviews">Đánh giá</Link>,
   },
+  {
+    key: '/seller/refunds',
+    icon: <ShoppingCartOutlined />,
+    label: <Link to="/seller/refunds">Hoàn tiền</Link>,
+  },
 ];
 
 /**

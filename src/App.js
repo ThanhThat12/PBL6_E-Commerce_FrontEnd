@@ -27,6 +27,7 @@ import CartPage from './pages/cart/CartPage';
 
 // Order Pages
 import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
+import ItemReturnPage from './pages/order/ItemReturnPage';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -115,6 +116,14 @@ function App() {
                 } 
               />
               <Route 
+                path="/return-order-item" 
+                element={
+                  <ProtectedRoute>
+                    <ItemReturnPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/orders/:orderId" 
                 element={
                   <ProtectedRoute>
@@ -184,6 +193,7 @@ function App() {
               <Route path="my-shop" element={<SellerPages.MyShop />} />
               <Route path="statistical" element={<SellerPages.Statistical />} />
               <Route path="customers" element={<SellerPages.Customers />} />
+              <Route path="refunds" element={<SellerPages.Refunds />} />
             </Route>
             {/* ================================================= */}
 

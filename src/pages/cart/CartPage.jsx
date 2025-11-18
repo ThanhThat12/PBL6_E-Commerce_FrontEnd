@@ -61,6 +61,49 @@ const CartPage = () => {
 
   const allSelected = cartItems.length > 0 && selectedItems.length === cartItems.length;
 
+  // Group cart items by shop
+  const itemsByShop = React.useMemo(() => {
+    const grouped = {};
+    cartItems.forEach(item => {
+      const shopId = item.shopId || 'unknown';
+      const shopName = item.shopName || 'Shop không xác định';
+      if (!grouped[shopId]) {
+        grouped[shopId] = {
+          shopId,
+          shopName,
+          items: []
+        };
+      }
+      grouped[shopId].items.push(item);
+    });
+    return Object.values(grouped);
+  }, [cartItems]);
+
+  // Check if all items in a shop are selected
+  const isShopAllSelected = (shopItems) => {
+    return shopItems.every(item => selectedItems.includes(item.id));
+  };
+
+  // Toggle select all items in a shop
+  const handleToggleShopSelect = (shopItems) => {
+    const allSelected = isShopAllSelected(shopItems);
+    if (allSelected) {
+      // Deselect all items in this shop
+      shopItems.forEach(item => {
+        if (selectedItems.includes(item.id)) {
+          useCartStore.getState().toggleItemSelection(item.id);
+        }
+      });
+    } else {
+      // Select all items in this shop
+      shopItems.forEach(item => {
+        if (!selectedItems.includes(item.id)) {
+          useCartStore.getState().toggleItemSelection(item.id);
+        }
+      });
+    }
+  };
+
   const handleToggleSelectAll = () => {
     if (allSelected) {
       deselectAllItems();
@@ -149,9 +192,33 @@ const CartPage = () => {
               </button>
             </div>
 
-            {/* Items List */}
-            {cartItems.map((item) => (
-              <CartItemCard key={item.id} item={item} />
+            {/* Items List - Grouped by Shop */}
+            {itemsByShop.map((shopGroup) => (
+              <div key={shopGroup.shopId} className="bg-white rounded-lg shadow-md mb-4">
+                {/* Shop Header */}
+                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isShopAllSelected(shopGroup.items)}
+                    onChange={() => handleToggleShopSelect(shopGroup.items)}
+                    className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 cursor-pointer"
+                    aria-label={`Chọn tất cả sản phẩm của ${shopGroup.shopName}`}
+                  />
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 flex-1">
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    {shopGroup.shopName}
+                  </h3>
+                </div>
+                
+                {/* Shop Items */}
+                <div className="divide-y divide-gray-100">
+                  {shopGroup.items.map((item) => (
+                    <CartItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 

@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import ProfileLayout from '../../components/layout/ProfileLayout';
 import OrderCard from '../../components/order/OrderCard';
+import ReturnItemCard from '../../components/order/ReturnItemCard';
 import Loading from '../../components/common/Loading';
+import orderService from '../../services/orderService';
+import { toast } from 'react-hot-toast';
 
 /**
  * OrderListPage Component
@@ -11,17 +14,41 @@ import Loading from '../../components/common/Loading';
 const OrderListPage = () => {
   const { orders, loading, fetchOrders, filterOrdersByStatus } = useOrder();
   const [activeTab, setActiveTab] = useState('ALL');
+  const [refundRequests, setRefundRequests] = useState([]);
+  const [refundLoading, setRefundLoading] = useState(false);
 
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Fetch refund requests when "Trả hàng" tab is active
+  useEffect(() => {
+    if (activeTab === 'RETURN') {
+      fetchRefundRequests();
+    }
+  }, [activeTab]);
+
+  const fetchRefundRequests = async () => {
+    setRefundLoading(true);
+    try {
+      const data = await orderService.getMyRefundRequests();
+      setRefundRequests(data);
+    } catch (error) {
+      console.error('Error fetching refund requests:', error);
+      toast.error('Không thể tải danh sách yêu cầu trả hàng');
+    } finally {
+      setRefundLoading(false);
+    }
+  };
 
   // Status tabs
   const tabs = [
     { key: 'ALL', label: 'Tất cả' },
     { key: 'PENDING', label: 'Chờ xác nhận' },
     { key: 'PROCESSING', label: 'Đang xử lý' },
+    { key: 'SHIPPING', label: 'Đang giao' },
     { key: 'COMPLETED', label: 'Hoàn thành' },
+    { key: 'RETURN', label: 'Trả hàng' },
     { key: 'CANCELLED', label: 'Đã hủy' }
   ];
 
@@ -40,6 +67,8 @@ const OrderListPage = () => {
   // Filter and sort orders by createdAt (newest first)
   const filteredOrders = (activeTab === 'ALL'
     ? orders
+    : activeTab === 'RETURN'
+    ? [] // Handled separately via refundRequests state
     : orders.filter(order => order.status === activeTab)
   ).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -78,14 +107,14 @@ const OrderListPage = () => {
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {(loading || refundLoading) && (
         <div className="flex justify-center items-center py-12">
           <Loading />
         </div>
       )}
 
       {/* Orders List */}
-      {!loading && filteredOrders.length > 0 && (
+      {!loading && activeTab !== 'RETURN' && filteredOrders.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredOrders.map((order) => (
             <OrderCard key={order.id} order={order} onCancelSuccess={fetchOrders} />
@@ -93,8 +122,21 @@ const OrderListPage = () => {
         </div>
       )}
 
+      {/* Refund Requests List */}
+      {!refundLoading && activeTab === 'RETURN' && refundRequests.length > 0 && (
+        <div className="space-y-4">
+          {refundRequests.map((refund) => (
+            <ReturnItemCard 
+              key={refund.id} 
+              refund={refund}
+              onUpdate={fetchRefundRequests}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Empty State */}
-      {!loading && filteredOrders.length === 0 && (
+      {!loading && !refundLoading && ((activeTab === 'RETURN' && refundRequests.length === 0) || (activeTab !== 'RETURN' && filteredOrders.length === 0)) && (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <div className="max-w-md mx-auto">
             <svg
