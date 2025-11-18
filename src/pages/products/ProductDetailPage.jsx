@@ -9,7 +9,10 @@ import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import VariantSelector from '../../components/product/VariantSelector';
 import { getProductById } from '../../services/productService';
+import reviewService from '../../services/reviewService';
+import orderService from '../../services/orderService';
 import useCart from '../../hooks/useCart';
+import useAuth from '../../hooks/useAuth';
 
 /**
  * ProductDetailPage
@@ -26,6 +29,16 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [ratingInput, setRatingInput] = useState(5);
+  const [commentInput, setCommentInput] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+  const [uploadingReview, setUploadingReview] = useState(false);
+  const [replyState, setReplyState] = useState({});
+  const { user, isAuthenticated, hasRole } = useAuth();
 
   // Load product
   useEffect(() => {
@@ -68,6 +81,106 @@ const ProductDetailPage = () => {
 
     loadProduct();
   }, [id, navigate]);
+
+  // When product or user changes, load reviews and check if user can review
+  useEffect(() => {
+    if (!product) return;
+
+    const fetchReviews = async () => {
+      setReviewsLoading(true);
+      try {
+        const res = await reviewService.getReviews(product.id, { page: 0, size: 10 });
+        if (res && res.content) {
+          setReviews(res.content);
+        } else if (res && res.data && res.data.content) {
+          setReviews(res.data.content);
+        } else if (Array.isArray(res)) {
+          setReviews(res);
+        } else {
+          setReviews([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch reviews:', err);
+        setReviews([]);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    const checkUserPurchaseEligibility = async () => {
+      try {
+        if (!isAuthenticated) {
+          setCanReview(false);
+          return;
+        }
+
+        const resp = await orderService.getMyOrders();
+        const data = resp?.data || resp;
+        let ordersArray = [];
+        if (Array.isArray(data)) ordersArray = data;
+        else if (data && Array.isArray(data.content)) ordersArray = data.content;
+
+        const purchased = ordersArray.some((ord) => {
+          const items = ord.items || ord.orderItems || [];
+          const status = ord.status || '';
+          if (!items || !Array.isArray(items)) return false;
+          if (String(status).toUpperCase() !== 'COMPLETED') return false;
+          return items.some(it => Number(it.productId || it.product?.id) === Number(product.id));
+        });
+
+        setCanReview(!!purchased);
+      } catch (err) {
+        console.error('Failed to check purchase eligibility:', err);
+        setCanReview(false);
+      }
+    };
+
+    fetchReviews();
+    checkUserPurchaseEligibility();
+  }, [product, isAuthenticated, user]);
+
+  const submitReview = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để đánh giá sản phẩm');
+      return;
+    }
+    if (!canReview) {
+      toast.error('Bạn chỉ có thể đánh giá sản phẩm sau khi hoàn tất đơn hàng');
+      return;
+    }
+    if (!ratingInput || ratingInput < 1) {
+      toast.error('Vui lòng chọn số sao');
+      return;
+    }
+
+    try {
+      setUploadingReview(true);
+      const payload = { rating: Number(ratingInput), comment: commentInput || '' };
+      if (selectedFiles && selectedFiles.length > 0) {
+        payload.images = selectedFiles;
+      }
+      const res = await reviewService.postReview(product.id, payload);
+      if (res && (res.status === 200 || res.status === 201 || res.status === 'success')) {
+        toast.success('Cảm ơn đánh giá của bạn!');
+        setCommentInput('');
+        setRatingInput(5);
+        setSelectedFiles([]);
+        previewUrls.forEach(u => URL.revokeObjectURL(u));
+        setPreviewUrls([]);
+        // refresh
+        const r = await reviewService.getReviews(product.id, { page: 0, size: 10 });
+        if (r && r.content) setReviews(r.content);
+      } else {
+        toast.success(res.message || 'Đã gửi đánh giá');
+      }
+    } catch (err) {
+      console.error('Submit review error:', err);
+      const msg = err.response?.data?.message || err.message || 'Không thể gửi đánh giá';
+      toast.error(msg);
+    } finally {
+      setUploadingReview(false);
+    }
+  };
 
   const handleQuantityChange = (delta) => {
     setQuantity(prev => {
@@ -162,6 +275,100 @@ const ProductDetailPage = () => {
       </div>
     );
   }
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    // Limit to 6 images
+    const limited = files.slice(0, 6);
+    setSelectedFiles(limited);
+
+    // Generate preview URLs
+    const urls = limited.map(f => URL.createObjectURL(f));
+    // Revoke previous urls
+    previewUrls.forEach(u => URL.revokeObjectURL(u));
+    setPreviewUrls(urls);
+  };
+
+  const removePreview = (index) => {
+    const newFiles = [...selectedFiles];
+    const newPreviews = [...previewUrls];
+    if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index]);
+    newFiles.splice(index, 1);
+    newPreviews.splice(index, 1);
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newPreviews);
+  };
+
+  const isProductOwner = () => {
+    if (!user || !product || !hasRole) return false;
+    // Must be seller role
+    if (!hasRole('SELLER')) return false;
+
+    const uid = user.id || user.userId || user._id || user.userId || user.uid;
+    const shop = product.shop || {};
+
+    // Collect many possible owner/shop fields used by different backends
+    const ownerIds = [
+      shop.ownerId,
+      shop.owner?.id,
+      shop.userId,
+      shop.user?.id,
+      shop.sellerId,
+      shop.seller?.id,
+      shop.id,
+      product.sellerId,
+      product.seller?.id,
+      product.shopId,
+    ].filter(Boolean);
+
+    // Also check if user has a shopId that matches
+    const userShopId = user.shopId || user.shop?.id || null;
+
+    const match = ownerIds.some(i => String(i) === String(uid)) || (userShopId && String(userShopId) === String(shop.id || product.shopId || product.shop?.id));
+
+    // Debug logging to help identify why seller cannot reply
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[isProductOwner] uid:', uid, 'userShopId:', userShopId, 'shop:', shop, 'ownerIds:', ownerIds, 'match:', match);
+    }
+
+    return !!match;
+  };
+
+  const handleToggleReply = (reviewId, open = true) => {
+    setReplyState(prev => ({ ...prev, [reviewId]: { ...(prev[reviewId] || {}), open, text: prev[reviewId]?.text || '' } }));
+  };
+
+  const handleReplyChange = (reviewId, text) => {
+    setReplyState(prev => ({ ...prev, [reviewId]: { ...(prev[reviewId] || {}), text } }));
+  };
+
+  const submitReply = async (reviewId) => {
+    const state = replyState[reviewId] || {};
+    const text = (state.text || '').trim();
+    if (!text) {
+      toast.error('Vui lòng nhập nội dung phản hồi');
+      return;
+    }
+    try {
+      setReplyState(prev => ({ ...prev, [reviewId]: { ...(prev[reviewId] || {}), loading: true } }));
+      const payload = { sellerResponse: text };
+      const res = await reviewService.replyReview(reviewId, payload);
+      if (res && (res.status === 200 || res.status === 201 || res.status === 'success')) {
+        toast.success('Đã gửi phản hồi');
+        // refresh reviews
+        const r = await reviewService.getReviews(product.id, { page: 0, size: 10 });
+        if (r && r.content) setReviews(r.content);
+        // close reply box
+        setReplyState(prev => ({ ...prev, [reviewId]: { ...(prev[reviewId] || {}), open: false, loading: false, text: '' } }));
+      } else {
+        toast.success(res.message || 'Đã gửi phản hồi');
+      }
+    } catch (err) {
+      console.error('Reply error:', err);
+      toast.error(err.response?.data?.message || 'Không thể gửi phản hồi');
+      setReplyState(prev => ({ ...prev, [reviewId]: { ...(prev[reviewId] || {}), loading: false } }));
+    }
+  };
 
   const displayPrice = selectedVariant?.price || product.basePrice || 0;
   const isInStock = selectedVariant ? selectedVariant.stock > 0 : false;
@@ -409,6 +616,120 @@ const ProductDetailPage = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+      {/* Reviews Section - full width below product content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white p-6 rounded shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Đánh giá sản phẩm</h3>
+
+          {/* Review input for eligible users */}
+          {canReview ? (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Đánh giá của bạn</label>
+              <div className="flex items-center gap-4 mb-2">
+                <select value={ratingInput} onChange={(e) => setRatingInput(Number(e.target.value))} className="border rounded px-3 py-2">
+                  <option value={5}>5 sao</option>
+                  <option value={4}>4 sao</option>
+                  <option value={3}>3 sao</option>
+                  <option value={2}>2 sao</option>
+                  <option value={1}>1 sao</option>
+                </select>
+                <button onClick={submitReview} disabled={uploadingReview} className={`px-4 py-2 text-white rounded ${uploadingReview ? 'bg-gray-400' : 'bg-primary-600'}`}>
+                  {uploadingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                </button>
+              </div>
+              <textarea
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                className="w-full border rounded p-3"
+                rows={3}
+                placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+              />
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Thêm ảnh (tối đa 6)</label>
+                <input type="file" accept="image/*" multiple onChange={handleFileChange} />
+                {previewUrls && previewUrls.length > 0 && (
+                  <div className="mt-2 grid grid-cols-6 gap-2">
+                    {previewUrls.map((u, i) => (
+                      <div key={i} className="relative">
+                        <img src={u} alt={`preview-${i}`} className="w-24 h-24 object-cover rounded" />
+                        <button type="button" onClick={() => removePreview(i)} className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 -translate-y-1/4 translate-x-1/4">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 mb-4">Chỉ khách hàng đã hoàn tất đơn hàng mới có thể gửi đánh giá.</p>
+          )}
+
+          {/* Reviews list */}
+          {reviewsLoading ? (
+            <div className="py-4">
+              <Loading size="sm" text="Đang tải đánh giá..." />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews && reviews.length > 0 ? (
+                reviews.map(r => (
+                  <div key={r.id} className="bg-gray-50 p-4 rounded">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-semibold">{r.userFullName || r.userName || 'Người dùng'}</div>
+                        <div className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleString()}</div>
+                      </div>
+                      <div className="text-yellow-500 font-semibold">{r.rating}★</div>
+                    </div>
+                    {r.comment && <p className="mt-2 text-gray-700">{r.comment}</p>}
+                    {r.images && r.images.length > 0 && (
+                      <div className="mt-2 grid grid-cols-4 gap-2">
+                        {r.images.map((img, i) => (
+                          // eslint-disable-next-line jsx-a11y/img-redundant-alt
+                          <img key={i} src={img} alt={`review-${i}`} className="w-full h-24 object-cover rounded" />
+                        ))}
+                      </div>
+                    )}
+                        {r.sellerResponse && (
+                          <div className="mt-2 p-2 bg-white border-l-4 border-primary-600 rounded">
+                            <div className="text-sm text-gray-600">Phản hồi từ người bán:</div>
+                            <div className="text-sm text-gray-800">{r.sellerResponse}</div>
+                            <div className="text-xs text-gray-500">{r.sellerResponseDate}</div>
+                          </div>
+                        )}
+
+                        {/* Seller reply UI */}
+                        {!r.sellerResponse && isProductOwner() && (
+                          <div className="mt-2">
+                            {!replyState[r.id]?.open ? (
+                              <button onClick={() => handleToggleReply(r.id, true)} className="text-sm text-primary-600">Phản hồi</button>
+                            ) : (
+                              <div className="mt-2">
+                                <textarea
+                                  value={replyState[r.id]?.text || ''}
+                                  onChange={(e) => handleReplyChange(r.id, e.target.value)}
+                                  className="w-full border rounded p-2"
+                                  rows={2}
+                                  placeholder="Viết phản hồi cho khách hàng..."
+                                />
+                                <div className="flex gap-2 mt-2">
+                                  <button onClick={() => submitReply(r.id)} disabled={replyState[r.id]?.loading} className="px-3 py-1 bg-primary-600 text-white rounded text-sm">
+                                    {replyState[r.id]?.loading ? 'Đang gửi...' : 'Gửi phản hồi'}
+                                  </button>
+                                  <button onClick={() => handleToggleReply(r.id, false)} className="px-3 py-1 border rounded text-sm">Hủy</button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-600">Chưa có đánh giá cho sản phẩm này.</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       </main>
