@@ -190,13 +190,7 @@ const VoucherManagement = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button
-            type="link"
-            icon={<EyeOutlined />}
-            size="small"
-          >
-            Chi tiết
-          </Button>
+          
           {record.isActive && (
             <Popconfirm
               title="Bạn có chắc muốn vô hiệu hóa voucher này?"

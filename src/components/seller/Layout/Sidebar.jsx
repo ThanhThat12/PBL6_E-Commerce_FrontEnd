@@ -60,7 +60,7 @@ const menuItems = [
   },
   {
     key: '/seller/reviews',
-    icon: <StarOutlined />,
+    icon: <UserOutlined />,
     label: <Link to="/seller/reviews">Đánh giá</Link>,
   },
 ];

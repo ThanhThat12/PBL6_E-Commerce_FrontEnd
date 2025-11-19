@@ -24,6 +24,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
     loading
   });
 
+
   // Fetch available vouchers from API
   useEffect(() => {
     const fetchVouchers = async () => {
@@ -81,6 +82,9 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
     if (!voucher.isActive) {
       return { valid: false, message: 'Voucher đã hết hiệu lực' };
     }
+    
+    // Note: backend now allows a user to use the same voucher multiple times,
+    // so we do not block vouchers based on prior usage by the same user.
     
     // Check usage limit
     if (voucher.usedCount >= voucher.usageLimit) {
@@ -182,6 +186,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
     } catch (error) {
       console.error('❌ Error applying voucher:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Không thể áp dụng voucher. Vui lòng thử lại.';
+      
       message.error(errorMessage);
     } finally {
       setIsApplying(false);
@@ -203,6 +208,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
 
   // Xóa voucher
   const handleRemoveVoucher = () => {
+    // Clear applied voucher
     setAppliedVoucher(null);
     onVoucherApply(null);
   };
@@ -213,7 +219,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
       {appliedVoucher && (
         <div className="flex items-center justify-between p-4 bg-green-50 border-2 border-green-500 rounded-lg">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🎁</span>
+            <span className="text-2xl">✅</span>
             <div>
               <p className="font-semibold text-green-900">{appliedVoucher.code}</p>
               <p className="text-xs text-green-600 mb-1">{appliedVoucher.description}</p>
@@ -225,6 +231,9 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
               </p>
               <p className="text-xs text-green-600">
                 Đã dùng: {appliedVoucher.usedCount || 0}/{appliedVoucher.usageLimit}
+              </p>
+              <p className="text-xs text-orange-600 font-medium">
+                Voucher đã được áp dụng cho đơn hàng này
               </p>
             </div>
           </div>
@@ -309,6 +318,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
                     ${isValid 
                       ? 'border-blue-300 bg-white hover:border-blue-500 cursor-pointer' 
                       : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'}
+                    
                   `}
                   onClick={() => isValid && handleApplyVoucher(voucher)}
                 >
@@ -323,6 +333,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
                               ? `${voucher.discountValue}%` 
                               : `${voucher.discountValue.toLocaleString('vi-VN')}₫`}
                           </span>
+                          
                         </div>
                         <p className="text-sm text-gray-600">{voucher.description}</p>
                         <div className="flex items-center gap-4 mt-1">
