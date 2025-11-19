@@ -33,6 +33,21 @@ const PaymentPage = () => {
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
 
+  // Get shopId from checkoutItems (assuming all items are from the same shop)
+  const shopId = useMemo(() => {
+    if (!checkoutItems || checkoutItems.length === 0) return null;
+    // Try to get shopId from first item (could be shopId, sellerId, shop.id, etc.)
+    const firstItem = checkoutItems[0];
+    const id = firstItem?.shopId || 
+               firstItem?.sellerId || 
+               firstItem?.shop?.id ||
+               firstItem?.product?.shopId ||
+               firstItem?.product?.shop?.id ||
+               null;
+    console.log('🏪 PaymentPage - shopId from checkoutItems:', { firstItem, shopId: id });
+    return id;
+  }, [checkoutItems]);
+
   // Load selected items from sessionStorage
   useEffect(() => {
     const storedItems = sessionStorage.getItem('checkoutItems');
@@ -42,6 +57,8 @@ const PaymentPage = () => {
       try {
         const items = JSON.parse(storedItems);
         console.log('✅ Parsed checkout items:', items);
+        console.log('🔍 First item structure:', items[0]);
+        console.log('🔍 First item keys:', items[0] ? Object.keys(items[0]) : 'No items');
         setCheckoutItems(items);
       } catch (error) {
         console.error('❌ Error parsing checkout items:', error);
@@ -393,6 +410,8 @@ const PaymentPage = () => {
                 <VoucherSelector 
                   onVoucherApply={handleVoucherApply}
                   subtotal={subtotal}
+                  shopId={shopId}
+                  cartItems={checkoutItems}
                 />
               </div>
 
