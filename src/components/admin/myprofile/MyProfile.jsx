@@ -1,39 +1,118 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, Shield, Edit2, Save, X, Camera } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { User, Mail, Phone, Shield, Calendar, Edit2, Save, X, Camera, Key, RotateCcw, CheckCircle, XCircle } from 'lucide-react';
 import './MyProfile.css';
+import { getAdminMyProfile, updateAdminMyProfile, changeAdminPassword, updateAdminAvatar } from '../../../services/adminService';
+import Toast from '../common/Toast';
 
 const MyProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [profileData, setProfileData] = useState({
-    username: 'admin_user',
-    fullName: 'John Smith',
-    email: 'john.smith@company.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main Street, New York, NY 10001',
-    role: 'Super Admin',
-    department: 'IT Department',
-    joinDate: '2024-01-15',
-    bio: 'Experienced system administrator with a passion for maintaining secure and efficient systems.',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face'
+    id: '',
+    username: '',
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    activated: false,
+    createdAt: '',
+    avatar: ''
   });
 
   const [editedData, setEditedData] = useState({ ...profileData });
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(profileData.avatar);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getAdminMyProfile();
+      
+      if (response.status === 200 && response.data) {
+        setProfileData(response.data);
+        setAvatarPreview(response.data.avatar || 'https://via.placeholder.com/120');
+        console.log('✅ Profile data loaded:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching profile:', error);
+      setError(error.message || 'Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
     setEditedData({ ...profileData });
+    setAvatarPreview(profileData.avatar);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setEditedData({ ...profileData });
+    setAvatarFile(null);
+    setAvatarPreview(profileData.avatar);
   };
 
-  const handleSave = () => {
-    setProfileData({ ...editedData });
-    setIsEditing(false);
-    console.log('Profile updated:', editedData);
-    // TODO: Implement API call to update profile
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 1. Update avatar if changed
+      if (avatarFile) {
+        // TODO: Upload avatar file to server/cloud storage first
+        // For now, use the preview URL (base64)
+        const avatarResponse = await updateAdminAvatar(avatarPreview);
+        console.log('✅ Avatar updated:', avatarResponse.data);
+      }
+
+      // 2. Update profile data
+      const profileUpdateData = {
+        username: editedData.username,
+        fullName: editedData.fullName,
+        email: editedData.email,
+        phoneNumber: editedData.phoneNumber
+      };
+
+      const response = await updateAdminMyProfile(profileUpdateData);
+      
+      if (response.status === 200 && response.data) {
+        setProfileData(response.data);
+        setAvatarPreview(response.data.avatar || avatarPreview);
+        setIsEditing(false);
+        setAvatarFile(null);
+        setToast({
+          show: true,
+          message: 'Profile updated successfully!',
+          type: 'success'
+        });
+        console.log('✅ Profile updated:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error updating profile:', error);
+      setError(error.message || 'Failed to update profile');
+      setToast({
+        show: true,
+        message: error.message || 'Failed to update profile',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -44,9 +123,116 @@ const MyProfile = () => {
     }));
   };
 
-  const handleAvatarChange = () => {
-    console.log('Change avatar');
-    // TODO: Implement avatar upload
+  const handleAvatarClick = () => {
+    if (isEditing) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('File size must be less than 5MB');
+        return;
+      }
+      
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleChangePasswordSubmit = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setToast({
+        show: true,
+        message: 'New passwords do not match',
+        type: 'error'
+      });
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      setToast({
+        show: true,
+        message: 'New password must be at least 6 characters',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await changeAdminPassword(passwordData);
+      
+      if (response.status === 200) {
+        setToast({
+          show: true,
+          message: 'Password changed successfully!',
+          type: 'success'
+        });
+        console.log('✅ Password changed:', response.data);
+        
+        setPasswordData({
+          oldPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setShowChangePassword(false);
+      }
+    } catch (error) {
+      console.error('❌ Error changing password:', error);
+      setError(error.message || 'Failed to change password');
+      setToast({
+        show: true,
+        message: error.message || 'Failed to change password',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (window.confirm('Are you sure you want to reset your password? A reset link will be sent to your email.')) {
+      // TODO: Implement API call to reset password
+      console.log('Reset password for:', profileData.email);
+      alert('Password reset link has been sent to your email');
+    }
+  };
+
+  // Handle keyboard events
+  const handleKeyDown = (e, action) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (action === 'save') {
+        handleSave();
+      } else if (action === 'password') {
+        handleChangePasswordSubmit();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      if (action === 'save') {
+        handleCancel();
+      } else if (action === 'password') {
+        setShowChangePassword(false);
+        setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      }
+    }
   };
 
   const formatDate = (dateString) => {
@@ -54,22 +240,43 @@ const MyProfile = () => {
     return date.toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'long', 
-      day: 'numeric' 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  const getRoleBadgeClass = (role) => {
-    if (role.includes('Super')) return 'role-super';
-    if (role.includes('Admin')) return 'role-admin';
-    return 'role-default';
-  };
+  if (loading && !profileData.id) {
+    return (
+      <div className="myprofile-container">
+        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+          Loading profile...
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !profileData.id) {
+    return (
+      <div className="myprofile-container">
+        <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>
+          {error}
+          <button 
+            onClick={fetchProfileData}
+            style={{ marginLeft: '10px', padding: '8px 16px', cursor: 'pointer' }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="myprofile-container">
       {/* Header */}
       <div className="myprofile-header">
         <h1 className="myprofile-title">My Profile</h1>
-        <p className="myprofile-subtitle">Manage your personal information and settings</p>
       </div>
 
       <div className="myprofile-content">
@@ -79,22 +286,32 @@ const MyProfile = () => {
           <div className="myprofile-avatar-section">
             <div className="myprofile-avatar-container">
               <img 
-                src={profileData.avatar} 
+                src={avatarPreview} 
                 alt={profileData.fullName}
                 className="myprofile-avatar"
               />
               {isEditing && (
-                <button className="myprofile-avatar-change-btn" onClick={handleAvatarChange}>
+                <button 
+                  className="myprofile-avatar-change-btn" 
+                  onClick={handleAvatarClick}
+                  type="button"
+                >
                   <Camera size={20} />
                 </button>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                style={{ display: 'none' }}
+              />
             </div>
             <div className="myprofile-basic-info">
               <h2 className="myprofile-name">{profileData.fullName}</h2>
-              <p className="myprofile-username">@{profileData.username}</p>
-              <span className={`myprofile-role-badge ${getRoleBadgeClass(profileData.role)}`}>
-                <Shield size={14} />
-                {profileData.role}
+              <span className={`myprofile-status-badge ${profileData.activated ? 'status-active' : 'status-inactive'}`}>
+                {profileData.activated ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                {profileData.activated ? 'Active' : 'Inactive'}
               </span>
             </div>
           </div>
@@ -112,9 +329,13 @@ const MyProfile = () => {
                   <X size={18} />
                   Cancel
                 </button>
-                <button className="myprofile-btn-save" onClick={handleSave}>
+                <button 
+                  className="myprofile-btn-save" 
+                  onClick={handleSave}
+                  disabled={loading}
+                >
                   <Save size={18} />
-                  Save Changes
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             )}
@@ -122,6 +343,46 @@ const MyProfile = () => {
 
           {/* Profile Information */}
           <div className="myprofile-info-grid">
+            {/* User ID (Read-only) */}
+            <div className="myprofile-info-group">
+              <label className="myprofile-info-label">
+                <Shield size={18} />
+                User ID
+              </label>
+              <p className="myprofile-info-value">{profileData.id}</p>
+            </div>
+
+            {/* Account Status (Read-only) */}
+            <div className="myprofile-info-group">
+              <label className="myprofile-info-label">
+                <CheckCircle size={18} />
+                Account Status
+              </label>
+              <p className="myprofile-info-value">
+                {profileData.activated ? 'Active' : 'Inactive'}
+              </p>
+            </div>
+
+            {/* Username */}
+            <div className="myprofile-info-group">
+              <label className="myprofile-info-label">
+                <User size={18} />
+                Username
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="username"
+                  value={editedData.username}
+                  onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, 'save')}
+                  className="myprofile-info-input"
+                />
+              ) : (
+                <p className="myprofile-info-value">{profileData.username}</p>
+              )}
+            </div>
+
             {/* Full Name */}
             <div className="myprofile-info-group">
               <label className="myprofile-info-label">
@@ -134,6 +395,7 @@ const MyProfile = () => {
                   name="fullName"
                   value={editedData.fullName}
                   onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, 'save')}
                   className="myprofile-info-input"
                 />
               ) : (
@@ -153,6 +415,7 @@ const MyProfile = () => {
                   name="email"
                   value={editedData.email}
                   onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, 'save')}
                   className="myprofile-info-input"
                 />
               ) : (
@@ -169,120 +432,148 @@ const MyProfile = () => {
               {isEditing ? (
                 <input
                   type="tel"
-                  name="phone"
-                  value={editedData.phone}
+                  name="phoneNumber"
+                  value={editedData.phoneNumber}
                   onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, 'save')}
                   className="myprofile-info-input"
                 />
               ) : (
-                <p className="myprofile-info-value">{profileData.phone}</p>
+                <p className="myprofile-info-value">{profileData.phoneNumber}</p>
               )}
             </div>
 
-            {/* Department */}
-            <div className="myprofile-info-group">
-              <label className="myprofile-info-label">
-                <Shield size={18} />
-                Department
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="department"
-                  value={editedData.department}
-                  onChange={handleChange}
-                  className="myprofile-info-input"
-                />
-              ) : (
-                <p className="myprofile-info-value">{profileData.department}</p>
-              )}
-            </div>
-
-            {/* Address */}
+            {/* Created At (Read-only) */}
             <div className="myprofile-info-group full-width">
-              <label className="myprofile-info-label">
-                <MapPin size={18} />
-                Address
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="address"
-                  value={editedData.address}
-                  onChange={handleChange}
-                  className="myprofile-info-input"
-                />
-              ) : (
-                <p className="myprofile-info-value">{profileData.address}</p>
-              )}
-            </div>
-
-            {/* Bio */}
-            <div className="myprofile-info-group full-width">
-              <label className="myprofile-info-label">
-                <User size={18} />
-                Bio
-              </label>
-              {isEditing ? (
-                <textarea
-                  name="bio"
-                  value={editedData.bio}
-                  onChange={handleChange}
-                  className="myprofile-info-textarea"
-                  rows="3"
-                />
-              ) : (
-                <p className="myprofile-info-value">{profileData.bio}</p>
-              )}
-            </div>
-
-            {/* Join Date (Read-only) */}
-            <div className="myprofile-info-group">
               <label className="myprofile-info-label">
                 <Calendar size={18} />
-                Member Since
+                Account Created
               </label>
-              <p className="myprofile-info-value">{formatDate(profileData.joinDate)}</p>
+              <p className="myprofile-info-value">{formatDate(profileData.createdAt)}</p>
             </div>
           </div>
-
-          
         </div>
 
-        {/* Additional Stats/Info Card */}
-        <div className="myprofile-stats">
-          <h3 className="myprofile-stats-title">Account Statistics</h3>
-          <div className="myprofile-stats-grid">
-            <div className="myprofile-stat-item">
-              <div className="myprofile-stat-icon blue">
-                <User size={24} />
+        {/* Security Card */}
+        <div className="myprofile-security">
+          <h3 className="myprofile-security-title">Security Settings</h3>
+          
+          {/* Change Password Section */}
+          {!showChangePassword ? (
+            <div className="myprofile-security-actions">
+              <button 
+                className="myprofile-btn-change-password"
+                onClick={() => setShowChangePassword(true)}
+              >
+                <Key size={18} />
+                Change Password
+              </button>
+              <button 
+                className="myprofile-btn-reset-password"
+                onClick={handleResetPassword}
+              >
+                <RotateCcw size={18} />
+                Reset Password
+              </button>
+            </div>
+          ) : (
+            <div className="myprofile-password-form">
+              <div className="myprofile-password-header">
+                <h4 className="myprofile-password-title">Change Password</h4>
+                <button 
+                  className="myprofile-password-close"
+                  onClick={() => {
+                    setShowChangePassword(false);
+                    setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+                  }}
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <div className="myprofile-stat-content">
-                <p className="myprofile-stat-label">Total Logins</p>
-                <p className="myprofile-stat-value">342</p>
+
+              <div className="myprofile-password-inputs">
+                <div className="myprofile-password-group">
+                  <label className="myprofile-password-label">
+                    <Key size={16} />
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    name="oldPassword"
+                    value={passwordData.oldPassword}
+                    onChange={handlePasswordChange}
+                    onKeyDown={(e) => handleKeyDown(e, 'password')}
+                    className="myprofile-password-input"
+                    placeholder="Enter current password"
+                  />
+                </div>
+
+                <div className="myprofile-password-group">
+                  <label className="myprofile-password-label">
+                    <Key size={16} />
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    onKeyDown={(e) => handleKeyDown(e, 'password')}
+                    className="myprofile-password-input"
+                    placeholder="Enter new password"
+                  />
+                </div>
+
+                <div className="myprofile-password-group">
+                  <label className="myprofile-password-label">
+                    <Key size={16} />
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    onKeyDown={(e) => handleKeyDown(e, 'password')}
+                    className="myprofile-password-input"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              </div>
+
+              <div className="myprofile-password-actions">
+                <button 
+                  className="myprofile-btn-password-cancel"
+                  onClick={() => {
+                    setShowChangePassword(false);
+                    setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+                  }}
+                >
+                  <X size={18} />
+                  Cancel
+                </button>
+                <button 
+                  className="myprofile-btn-password-save"
+                  onClick={handleChangePasswordSubmit}
+                  disabled={loading}
+                >
+                  <Save size={18} />
+                  {loading ? 'Updating...' : 'Update Password'}
+                </button>
               </div>
             </div>
-            <div className="myprofile-stat-item">
-              <div className="myprofile-stat-icon green">
-                <Shield size={24} />
-              </div>
-              <div className="myprofile-stat-content">
-                <p className="myprofile-stat-label">Actions Performed</p>
-                <p className="myprofile-stat-value">1,248</p>
-              </div>
-            </div>
-            <div className="myprofile-stat-item">
-              <div className="myprofile-stat-icon purple">
-                <Calendar size={24} />
-              </div>
-              <div className="myprofile-stat-content">
-                <p className="myprofile-stat-label">Days Active</p>
-                <p className="myprofile-stat-value">285</p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={3000}
+      />
     </div>
   );
 };

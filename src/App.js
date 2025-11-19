@@ -46,6 +46,7 @@ import Sellers from "./pages/admin/Users/Sellers";
 import Admins from "./pages/admin/Users/Admins";
 import SettingsPage from "./pages/admin/Settings/SettingsPage";
 import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
+import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
 
 function App() {
   return (
@@ -154,6 +155,7 @@ function App() {
             <Route path="/admin/products" element={<ProtectedRouteAdmin><ProductsPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/orders" element={<ProtectedRouteAdmin><OrdersPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/categories" element={<ProtectedRouteAdmin><CategoriesPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/vouchers" element={<ProtectedRouteAdmin><VouchersPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><Customers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><Sellers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />

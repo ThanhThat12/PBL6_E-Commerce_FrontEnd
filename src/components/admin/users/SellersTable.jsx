@@ -1,138 +1,337 @@
-import React, { useState } from 'react';
-import { Search, TrendingUp, Users, CheckCircle, Clock, XCircle, Eye, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Eye, Trash2, Users, CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import SellerDetailModal from './SellerDetailModal';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import Toast from '../common/Toast';
+import { getSellersPage, getSellerStats, getSellerDetail, getSellersByStatus, deleteUser } from '../../../services/adminService';
 import './SellersTable.css';
 
 const SellersTable = () => {
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  
-  // Mock data cho sellers
-  const sellersData = [
-    { 
-      id: 'SEL001', 
-      name: 'TechStore Inc.', 
-      email: 'contact@techstore.com', 
-      phone: '+1234567890', 
-      status: 'Verified', 
-      joinDate: '2024-01-10', 
-      products: 150, 
-      sales: '45,230',
-      totalSales: 45230.50, 
-      rating: 4.8, 
-      avatar: null, // TODO: Load from API
-      category: 'Electronics'
-    },
-    { 
-      id: 'SEL002', 
-      name: 'Fashion Hub', 
-      email: 'info@fashionhub.com', 
-      phone: '+1234567891', 
-      status: 'Pending', 
-      joinDate: '2024-02-15', 
-      products: 85, 
-      sales: '23,890',
-      totalSales: 23890.75, 
-      rating: 4.5, 
-      avatar: null, // TODO: Load from API
-      category: 'Fashion'
-    },
-    { 
-      id: 'SEL003', 
-      name: 'Home & Garden Co.', 
-      email: 'sales@homegardenco.com', 
-      phone: '+1234567892', 
-      status: 'Verified', 
-      joinDate: '2024-01-25', 
-      products: 200, 
-      sales: '67,450',
-      totalSales: 67450.25, 
-      rating: 4.9, 
-      avatar: null, // TODO: Load from API
-      category: 'Home & Garden'
-    },
-    { 
-      id: 'SEL004', 
-      name: 'Sports World', 
-      email: 'hello@sportsworld.com', 
-      phone: '+1234567893', 
-      status: 'Suspended', 
-      joinDate: '2024-03-05', 
-      products: 45, 
-      sales: '12,340',
-      totalSales: 12340.00, 
-      rating: 3.2, 
-      avatar: null, // TODO: Load from API
-      category: 'Sports'
-    },
-    { 
-      id: 'SEL005', 
-      name: 'Book Paradise', 
-      email: 'contact@bookparadise.com', 
-      phone: '+1234567894', 
-      status: 'Verified', 
-      joinDate: '2024-02-28', 
-      products: 300, 
-      sales: '89,650.80',
-      totalSales: 89650.80, 
-      rating: 4.7, 
-      avatar: null, // TODO: Load from API
-      category: 'Books'
-    }
-  ];
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sellerToDelete, setSellerToDelete] = useState(null);
+  const [sellersData, setSellersData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [statsData, setStatsData] = useState([
+    { title: 'Total Sellers', value: '0', icon: <Users size={24} />, color: 'indigo' },
+    { title: 'Active', value: '0', icon: <CheckCircle size={24} />, color: 'green' },
+    { title: 'Pending', value: '0', icon: <Clock size={24} />, color: 'yellow' },
+    { title: 'Inactive', value: '0', icon: <XCircle size={24} />, color: 'red' }
+  ]);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [pageSize] = useState(10);
 
-  // Stats data
-  const statsData = [
-    { 
-      title: 'Total Sellers', 
-      value: '456', 
-      icon: <Users size={24} />, 
-      color: 'indigo',
-    },
-    { 
-      title: 'Verified', 
-      value: '342', 
-      icon: <CheckCircle size={24} />, 
-      color: 'green',
-    },
-    { 
-      title: 'Pending', 
-      value: '89', 
-      icon: <Clock size={24} />, 
-      color: 'yellow',
-    },
-    { 
-      title: 'Suspended', 
-      value: '25', 
-      icon: <XCircle size={24} />, 
-      color: 'red',
+  // Fetch sellers and stats from API
+  useEffect(() => {
+    fetchSellers();
+    fetchStats();
+  }, [currentPage]); // Re-fetch when page changes
+
+  // Fetch sellers when status filter changes
+  useEffect(() => {
+    setCurrentPage(0); // Reset to first page when filter changes
+    fetchSellers();
+  }, [statusFilter]);
+
+  const fetchStats = async () => {
+    try {
+      console.log('📊 Fetching seller stats...');
+      const response = await getSellerStats();
+      console.log('📊 Stats response:', response);
+      
+      if (response.status === 200 && response.data) {
+        const stats = response.data;
+        console.log('📊 Stats data:', stats);
+        
+        setStatsData([
+          { 
+            title: 'Total Sellers', 
+            value: (stats.totalSellers || 0).toString(), 
+            icon: <Users size={24} />, 
+            color: 'indigo' 
+          },
+          { 
+            title: 'Active', 
+            value: (stats.activeSellers || 0).toString(), 
+            icon: <CheckCircle size={24} />, 
+            color: 'green' 
+          },
+          { 
+            title: 'Pending', 
+            value: (stats.pendingSellers || 0).toString(), 
+            icon: <Clock size={24} />, 
+            color: 'yellow' 
+          },
+          { 
+            title: 'Inactive', 
+            value: (stats.inactiveSellers || 0).toString(), 
+            icon: <XCircle size={24} />, 
+            color: 'red' 
+          }
+        ]);
+        
+        console.log('✅ Stats updated successfully');
+      } else {
+        console.warn('⚠️ Invalid stats response:', response);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching seller stats:', err);
     }
-  ];
+  };
+
+  const fetchSellersByStatus = async (status) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getSellersByStatus(status);
+      
+      if (response.status === 200 && response.data) {
+        const transformedData = response.data.map(seller => ({
+          id: seller.id,
+          name: seller.shopName || 'N/A',
+          email: seller.email || 'N/A',
+          phone: seller.phoneNumber || 'N/A',
+          status: seller.status || 'Pending',
+          joinDate: seller.createdAt || new Date().toISOString(),
+          products: seller.totalProducts || 0,
+          sales: formatCurrency(seller.revenue || 0),
+          totalSales: seller.revenue || 0,
+          rating: 0,
+          avatar: seller.avatar || null,
+          category: 'General'
+        }));
+        
+        setSellersData(transformedData);
+      }
+    } catch (err) {
+      console.error('Error fetching sellers by status:', err);
+      setError('Failed to load sellers. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSellers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log(`📡 [SellersTable] Fetching sellers page ${currentPage}...`);
+      const response = await getSellersPage(currentPage, pageSize);
+      
+      if (response.status === 200 && response.data) {
+        // Response structure: ResponseDTO<Page<ListSellerUserDTO>>
+        const pageData = response.data.data || response.data;
+        
+        console.log('✅ [SellersTable] Page data:', pageData);
+        
+        // Backend trả về structure: {content: [], page: {totalPages, totalElements, size, number}}
+        const paginationInfo = pageData.page || {};
+        setTotalPages(paginationInfo.totalPages || 0);
+        setTotalElements(paginationInfo.totalElements || 0);
+        
+        console.log('🔍 [DEBUG] paginationInfo:', paginationInfo);
+        
+        // Set sellers from content array
+        const sellersList = pageData.content || [];
+        
+        // Map API response to component state
+        const mappedSellers = (Array.isArray(sellersList) ? sellersList : []).map(seller => ({
+          id: seller.id,
+          name: seller.shopName || seller.username || 'N/A',
+          email: seller.email || 'N/A',
+          phone: seller.phoneNumber || 'N/A',
+          avatar: seller.avatar || 'https://via.placeholder.com/40',
+          status: seller.status || 'Pending',
+          products: seller.totalProducts || 0,
+          sales: seller.revenue 
+            ? `${seller.revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })} VND` 
+            : '0 VND',
+          shopName: seller.shopName || 'No Shop',
+          shopId: seller.shopId || null
+        }));
+        
+        setSellersData(mappedSellers);
+        console.log(`📊 [SellersTable] Loaded ${mappedSellers.length} sellers, Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
+      } else {
+        console.warn('⚠️ [SellersTable] Unexpected response format:', response);
+        setSellersData([]);
+      }
+    } catch (err) {
+      console.error('Error fetching sellers:', err);
+      setError('Failed to load sellers. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    if (!amount) return '0';
+    return amount.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  };
 
   const getStatusClass = (status) => {
-    switch(status) {
-      case 'Verified': return 'status-verified';
-      case 'Pending': return 'status-pending';
-      case 'Suspended': return 'status-suspended';
+    const upperStatus = status?.toUpperCase();
+    switch(upperStatus) {
+      case 'ACTIVE': return 'status-verified';
+      case 'PENDING': return 'status-pending';
+      case 'INACTIVE': return 'status-suspended';
       default: return 'status-default';
     }
+  };
+
+  const getStatusDisplay = (status) => {
+    // Convert ACTIVE -> Active, PENDING -> Pending, INACTIVE -> Inactive
+    if (!status) return 'Unknown';
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   };
 
   const getStatusDot = (status) => {
     return '●';
   };
 
-  const handleViewDetails = (seller) => {
-    setSelectedSeller(seller);
-    setShowModal(true);
+  const handleViewDetails = async (seller) => {
+    try {
+      console.log('🔍 Viewing details for seller:', seller);
+      
+      if (!seller.id) {
+        console.error('❌ Seller ID is missing:', seller);
+        alert('Cannot view details: Seller ID is missing');
+        return;
+      }
+      
+      // Fetch detailed seller information from API
+      const response = await getSellerDetail(seller.id);
+      
+      if (response.status === 200 && response.data) {
+        const detailData = response.data;
+        console.log('📊 Seller detail data from API:', detailData);
+        
+        // Transform API data to match modal format
+        const transformedSeller = {
+          id: detailData.id,
+          name: detailData.shopName || seller.name,
+          owner: detailData.fullName || 'N/A',
+          username: detailData.username || 'N/A',
+          email: detailData.email || seller.email,
+          phone: detailData.phoneNumber || seller.phone,
+          address: detailData.shopAddress || 'Not provided',
+          shopDescription: detailData.shopDescription || 'No description available',
+          status: detailData.shopStatus || seller.status,
+          joinDate: detailData.createdAt || seller.joinDate,
+          products: detailData.totalProductsSeller || seller.products,
+          totalSales: detailData.totalRevenue || seller.totalSales,
+          avatar: detailData.avatar || seller.avatar
+        };
+        
+        console.log('✅ Transformed seller detail:', transformedSeller);
+        setSelectedSeller(transformedSeller);
+        setShowModal(true);
+      } else {
+        alert('Failed to load seller details');
+      }
+    } catch (error) {
+      console.error('Error fetching seller details:', error);
+      alert('Failed to load seller details. Please try again.');
+    }
+  };
+
+  const handleUpdateSeller = async (sellerId, updatedData) => {
+    try {
+      console.log('🔄 Refreshing seller data after update...');
+      
+      // Re-fetch sellers list to update table
+      await fetchSellers();
+      
+      // Re-fetch stats to update counts
+      await fetchStats();
+      
+      // Re-fetch seller detail to update modal (but pass via callback, not setState)
+      const detailResponse = await getSellerDetail(sellerId);
+      if (detailResponse.status === 200 && detailResponse.data) {
+        const detailData = detailResponse.data;
+        const transformedSeller = {
+          id: detailData.id,
+          name: detailData.shopName,
+          owner: detailData.fullName || 'N/A',
+          username: detailData.username || 'N/A',
+          email: detailData.email,
+          phone: detailData.phoneNumber,
+          address: detailData.shopAddress || 'Not provided',
+          shopDescription: detailData.shopDescription || 'No description available',
+          status: detailData.shopStatus,
+          joinDate: detailData.createdAt,
+          products: detailData.totalProductsSeller,
+          totalSales: detailData.totalRevenue,
+          avatar: detailData.avatar
+        };
+        
+        // Update selected seller to refresh modal content smoothly
+        setSelectedSeller(prev => ({
+          ...prev,
+          ...transformedSeller
+        }));
+      }
+      
+      console.log('✅ All data refreshed successfully');
+    } catch (error) {
+      console.error('❌ Error refreshing seller data:', error);
+    }
   };
 
   const handleDelete = (seller) => {
-    console.log('Delete seller:', seller);
-    if (window.confirm(`Are you sure you want to delete ${seller.name}?`)) {
-      alert(`${seller.name} has been deleted`);
+    console.log('🗑️ [SellersTable] Opening delete confirmation for seller:', seller);
+    setSellerToDelete(seller);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!sellerToDelete) return;
+    
+    const seller = sellerToDelete;
+    const sellerName = seller.name || `Seller #${seller.id}`;
+    
+    try {
+      setLoading(true);
+      console.log('🗑️ [SellersTable] Calling deleteUser API for seller ID:', seller.id);
+      
+      const response = await deleteUser(seller.id);
+      
+      if (response.status === 200) {
+        console.log('✅ [SellersTable] Seller deleted successfully:', response.message);
+        
+        // Show success toast instead of alert
+        setToast({
+          show: true,
+          message: `Seller "${sellerName}" and all related data have been removed from the system.`,
+          type: 'success'
+        });
+        
+        // Refresh sellers list and stats after successful deletion
+        await fetchSellers();
+        await fetchStats();
+      }
+    } catch (error) {
+      console.error('❌ [SellersTable] Error deleting seller:', error);
+      
+      // Show error toast instead of alert
+      const errorMessage = error.message || 'Failed to delete seller. Please try again.';
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+      setSellerToDelete(null);
     }
   };
 
@@ -140,6 +339,36 @@ const SellersTable = () => {
     setShowModal(false);
     setSelectedSeller(null);
   };
+
+  // Filter sellers based on search and status
+  const filteredSellers = sellersData.filter(seller => {
+    const matchesSearch = seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         seller.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || seller.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading sellers...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">{error}</p>
+        <button onClick={fetchSellers} className="retry-btn">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -161,16 +390,30 @@ const SellersTable = () => {
               className="search-input"
             />
           </div>
+
+          {/* Status Filter */}
+          <div className="filter-container">
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="status-filter"
+            >
+              <option value="All">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="PENDING">Pending</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </div>
           
           <div className="action-buttons">
             <button className="approve-btn">
               <CheckCircle size={18} />
               Approve Pending
             </button>
-            <button className="export-btn">
+            {/* <button className="export-btn">
               <TrendingUp size={18} />
               Export Report
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -195,7 +438,7 @@ const SellersTable = () => {
         <table className="sellers-table">
           <thead>
             <tr>
-              <th>Seller</th>
+              <th>Shop Name</th>
               <th>Contact</th>
               <th>Status</th>
               <th>Products</th>
@@ -204,8 +447,18 @@ const SellersTable = () => {
             </tr>
           </thead>
           <tbody>
-            {sellersData.map((seller, index) => (
-              <tr key={index} className="table-row">
+            {filteredSellers.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="no-results">
+                  <div className="no-results-content">
+                    <p>No sellers found</p>
+                    <span>Try adjusting your search or filter criteria</span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filteredSellers.map((seller, index) => (
+                <tr key={index} className="table-row">
 
                 <td className="seller-info">
                   <div className="seller-avatar-container">
@@ -226,7 +479,7 @@ const SellersTable = () => {
                 <td>
                   <span className={`status-badge ${getStatusClass(seller.status)}`}>
                     <span className="status-dot">{getStatusDot(seller.status)}</span>
-                    {seller.status}
+                    {getStatusDisplay(seller.status)}
                   </span>
                 </td>
                 <td className="seller-products">
@@ -256,31 +509,42 @@ const SellersTable = () => {
                 </td>
                 
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Controls */}
       <div className="pagination-container">
         <div className="pagination-info">
-          <button className="pagination-nav">
+          <button 
+            className="pagination-nav"
+            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+            disabled={currentPage === 0}
+          >
             <span>← Previous</span>
           </button>
         </div>
         
         <div className="pagination-numbers">
-          <button className="page-btn active">1</button>
-          <button className="page-btn">2</button>
-          <button className="page-btn">3</button>
-          <button className="page-btn">4</button>
-          <button className="page-btn">5</button>
-          <span className="pagination-dots">...</span>
-          <button className="page-btn">24</button>
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index}
+              className={`page-btn ${currentPage === index ? 'active' : ''}`}
+              onClick={() => setCurrentPage(index)}
+            >
+              {index + 1}
+            </button>
+          ))}
         </div>
         
         <div className="pagination-info">
-          <button className="pagination-nav">
+          <button 
+            className="pagination-nav"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+            disabled={currentPage >= totalPages - 1}
+          >
             <span>Next →</span>
           </button>
         </div>
@@ -291,8 +555,39 @@ const SellersTable = () => {
         <SellerDetailModal 
           seller={selectedSeller}
           onClose={handleCloseModal}
+          onUpdate={handleUpdateSeller}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSellerToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Seller"
+        userName={sellerToDelete?.name || `Seller #${sellerToDelete?.id}`}
+        userType="seller"
+        deletionDetails={[
+          'Seller account',
+          'Shop information',
+          `All products (${sellerToDelete?.products || 0} products)`,
+          'All shop vouchers',
+          'All addresses',
+          'Verification codes'
+        ]}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={3000}
+      />
     </div>
   );
 };

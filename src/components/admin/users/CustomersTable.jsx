@@ -1,56 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus , Search, Filter, Users, UserCheck, Star, Package, TrendingUp, ShoppingBag, Receipt } from 'lucide-react';
+import { UserPlus , Search, Users, UserCheck, Star, Package, TrendingUp, ShoppingBag, Receipt, ChevronLeft, ChevronRight } from 'lucide-react';
 import CustomerActions from './CustomerActions';
 import CustomerDetailModal from './CustomerDetailModal';
 import AddCustomerModal from './AddCustomerModal';
-import { getCustomers, getCustomerDetail, getCustomerStats } from '../../../services/adminService';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import Toast from '../common/Toast';
+import { getCustomersPage, getCustomerDetail, getCustomerStats, deleteUser } from '../../../services/adminService';
 import './CustomersTable.css';
 
 const CustomersTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [stats, setStats] = useState({
     totalCustomers: 0,
     activeCustomers: 0,
     newThisMonth: 0,
     totalRevenue: 0
   });
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [pageSize] = useState(10);
 
   // Fetch customers and stats from API
   useEffect(() => {
     fetchCustomers();
     fetchStats();
-  }, []);
+  }, [currentPage]); // Re-fetch when page changes
+
+  // Re-fetch when status filter changes
+  useEffect(() => {
+    setCurrentPage(0); // Reset to first page when filter changes
+    fetchCustomers();
+  }, [statusFilter]);
 
   const fetchCustomers = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('🔄 [CustomersTable] Fetching customers from API...');
-      const response = await getCustomers();
-      
-      console.log('📦 [CustomersTable] Full API Response:', response);
-      console.log('📦 [CustomersTable] Response status:', response.status);
-      console.log('📦 [CustomersTable] Response data:', response.data);
+      console.log(`📡 [CustomersTable] Fetching customers page ${currentPage}...`);
+      const response = await getCustomersPage(currentPage, pageSize);
       
       if (response.status === 200 && response.data) {
-        console.log('✅ [CustomersTable] Customers loaded:', response.data.length, 'customers');
-        console.log('👤 [CustomersTable] First customer:', response.data[0]);
-        setCustomers(response.data);
-      } else {
-        console.warn('⚠️ [CustomersTable] Unexpected response format:', response);
-        setError('Unexpected response format from API');
+        // Response structure: ResponseDTO<Page<ListCustomerUserDTO>>
+        const pageData = response.data.data || response.data;
+        
+        console.log('✅ [CustomersTable] Page data:', pageData);
+        
+        // Backend trả về structure: {content: [], page: {totalPages, totalElements, size, number}}
+        const paginationInfo = pageData.page || {};
+        setTotalPages(paginationInfo.totalPages || 0);
+        setTotalElements(paginationInfo.totalElements || 0);
+        
+        console.log('🔍 [DEBUG] paginationInfo:', paginationInfo);
+        console.log('🔍 [DEBUG] totalPages:', paginationInfo.totalPages, 'totalElements:', paginationInfo.totalElements);
+        
+        // Set customers from content array
+        const customersList = pageData.content || [];
+        setCustomers(Array.isArray(customersList) ? customersList : []);
+        
+        console.log(`📊 [CustomersTable] Loaded ${customersList.length} customers, Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
       }
     } catch (err) {
       console.error('❌ [CustomersTable] Error fetching customers:', err);
-      console.error('❌ [CustomersTable] Error details:', err.response?.data || err.message);
-      setError(err.response?.data?.message || err.message || 'Failed to load customers');
+      setError('Failed to load customers. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -257,20 +281,79 @@ const CustomersTable = () => {
     }
   };
 
-  // TODO: Implement API call for delete customer
   const handleDelete = (customer) => {
-    if (window.confirm(`Are you sure you want to delete ${customer.username || customer.name}?`)) {
-      // Simulate delete from local state
-      setCustomers(customers.filter(c => c.id !== customer.id));
-      // Refresh stats after deletion
-      fetchStats();
-      alert(`Customer ${customer.username || customer.name} has been deleted successfully`);
+    console.log('🗑️ [CustomersTable] Opening delete confirmation for customer:', customer);
+    setCustomerToDelete(customer);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!customerToDelete) return;
+    
+    const customer = customerToDelete;
+    const customerName = customer.username || customer.name || `Customer #${customer.id}`;
+    
+    try {
+      setLoading(true);
+      console.log('🗑️ [CustomersTable] Calling deleteUser API for customer ID:', customer.id);
+      
+      const response = await deleteUser(customer.id);
+      
+      if (response.status === 200) {
+        console.log('✅ [CustomersTable] Customer deleted successfully:', response.message);
+        
+        // Show success toast instead of alert
+        setToast({
+          show: true,
+          message: `Customer "${customerName}" has been removed from the system.`,
+          type: 'success'
+        });
+        
+        // Refresh customers list and stats after successful deletion
+        await fetchCustomers();
+        await fetchStats();
+      }
+    } catch (error) {
+      console.error('❌ [CustomersTable] Error deleting customer:', error);
+      
+      // Show error toast instead of alert
+      const errorMessage = error.message || 'Failed to delete customer. Please try again.';
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+      setCustomerToDelete(null);
     }
   };
+
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedCustomer(null);
+  };
+
+  const handleCustomerUpdate = async (updatedCustomer) => {
+    try {
+      console.log('🔄 Refreshing customer data after update...');
+      
+      // Re-fetch customer detail to update modal with latest data from API
+      const detailResponse = await getCustomerDetail(updatedCustomer.id);
+      if (detailResponse.status === 200 && detailResponse.data) {
+        setSelectedCustomer(detailResponse.data);
+      }
+      
+      // Refresh table data and stats
+      await fetchCustomers();
+      await fetchStats();
+      
+      console.log('✅ All customer data refreshed successfully');
+    } catch (error) {
+      console.error('❌ Error refreshing customer data:', error);
+    }
   };
 
   const handleAddCustomer = () => {
@@ -308,15 +391,23 @@ const CustomersTable = () => {
             />
           </div>
           
-          <button className="filter-btn">
-            <Filter size={20} />
-            Filter
-          </button>
+          {/* Status Filter Dropdown */}
+          <div className="filter-container">
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="status-filter"
+            >
+              <option value="All">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
 
-          <button className="add-customer-btn" onClick={handleAddCustomer}>
+          {/* <button className="add-customer-btn" onClick={handleAddCustomer}>
             <UserPlus size={20} />
             Add Customer
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -367,11 +458,20 @@ const CustomersTable = () => {
             </thead>
             <tbody>
               {customers
-                .filter(customer => 
-                  (customer.username || customer.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (customer.phoneNumber || customer.phone)?.toLowerCase().includes(searchTerm.toLowerCase())
-                )
+                .filter(customer => {
+                  // Search filter
+                  const searchMatch = (customer.username || customer.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (customer.phoneNumber || customer.phone)?.toLowerCase().includes(searchTerm.toLowerCase());
+                  
+                  // Status filter
+                  const isActive = customer.activated !== undefined ? customer.activated : customer.status === 'Active';
+                  const statusMatch = statusFilter === 'All' || 
+                    (statusFilter === 'Active' && isActive) ||
+                    (statusFilter === 'Inactive' && !isActive);
+                  
+                  return searchMatch && statusMatch;
+                })
                 .map((customer, index) => (
                   <tr key={customer.id || index} className="table-row">
                     <td className="customer-name">{customer.username || customer.name || 'N/A'}</td>
@@ -399,36 +499,47 @@ const CustomersTable = () => {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Controls */}
       <div className="pagination-container">
         <div className="pagination-info">
-          <button className="pagination-nav">
+          <button 
+            className="pagination-nav"
+            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+            disabled={currentPage === 0}
+          >
             <span>← Previous</span>
           </button>
         </div>
         
         <div className="pagination-numbers">
-          <button className="page-btn active">1</button>
-          <button className="page-btn">2</button>
-          <button className="page-btn">3</button>
-          <button className="page-btn">4</button>
-          <button className="page-btn">5</button>
-          <span className="pagination-dots">...</span>
-          <button className="page-btn">24</button>
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index}
+              className={`page-btn ${currentPage === index ? 'active' : ''}`}
+              onClick={() => setCurrentPage(index)}
+            >
+              {index + 1}
+            </button>
+          ))}
         </div>
         
         <div className="pagination-info">
-          <button className="pagination-nav">
+          <button 
+            className="pagination-nav"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+            disabled={currentPage >= totalPages - 1}
+          >
             <span>Next →</span>
           </button>
         </div>
       </div>
 
       {/* Customer Detail Modal */}
-      {showModal && (
+      {showModal && selectedCustomer && (
         <CustomerDetailModal 
           customer={selectedCustomer}
           onClose={handleCloseModal}
+          onUpdate={handleCustomerUpdate}
         />
       )}
 
@@ -439,6 +550,34 @@ const CustomersTable = () => {
           onSubmit={handleSubmitCustomer}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setCustomerToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Customer"
+        userName={customerToDelete?.username || customerToDelete?.name || `Customer #${customerToDelete?.id}`}
+        userType="customer"
+        deletionDetails={[
+          'Customer account',
+          'Shopping cart and cart items',
+          'All addresses',
+          'Verification codes'
+        ]}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={3000}
+      />
     </div>
   );
 };
