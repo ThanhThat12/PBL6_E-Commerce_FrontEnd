@@ -9,11 +9,11 @@ import Footer from '../../components/layout/footer/Footer';
 import PaymentMethodSelector from '../../components/order/PaymentMethodSelector';
 import ShippingAddressForm from '../../components/order/ShippingAddressForm';
 import VoucherSelector from '../../components/order/VoucherSelector';
-import ShippingFeeCalculator from '../../components/order/ShippingFeeCalculator';
 import CartItemCard from '../../components/cart/CartItemCard';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import { removeItem } from '../../utils/storage';
+import useOrderNotification from '../../hooks/useOrderNotification';
 
 /**
  * PaymentPage Component
@@ -28,20 +28,37 @@ const PaymentPage = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [weightGrams] = useState(500);
-  const [shippingFee, setShippingFee] = useState(0);
+  const [ghnServices, setGhnServices] = useState({}); // Available services by shop
+  const [selectedServices, setSelectedServices] = useState({}); // Selected service for each shop
+  const [shopShippingFees, setShopShippingFees] = useState({}); // Shipping fees by shop
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
+  // Removed stompClient state, handled by hook
+
+  // WebSocket order notification using custom hook
+  useOrderNotification(
+    JSON.parse(localStorage.getItem('user') || '{}').id,
+    (notification) => {
+      if (notification.paymentStatus === 'SUCCESS') {
+        toast.success(`✅ ${notification.message || 'Thanh toán thành công!'}`);
+        setTimeout(() => {
+          navigate(`/order-history/${notification.orderId}`);
+        }, 2000);
+      } else {
+        toast.error(`❌ ${notification.message || 'Thanh toán thất bại'}`);
+      }
+    }
+  );
 
   // Load selected items from sessionStorage
   useEffect(() => {
     const storedItems = sessionStorage.getItem('checkoutItems');
-    console.log('📦 Stored checkout items:', storedItems);
+    // load stored checkout items
     
     if (storedItems) {
       try {
         const items = JSON.parse(storedItems);
-        console.log('✅ Parsed checkout items:', items);
         setCheckoutItems(items);
       } catch (error) {
         console.error('❌ Error parsing checkout items:', error);
@@ -50,7 +67,7 @@ const PaymentPage = () => {
       }
     } else {
       // If no selected items, redirect to cart
-      console.warn('⚠️ No checkout items found in sessionStorage');
+      console.warn('No checkout items found in sessionStorage');
       toast.error('Vui lòng chọn sản phẩm để thanh toán');
       navigate('/cart');
     }
@@ -58,10 +75,10 @@ const PaymentPage = () => {
 
   // Fetch cart on mount
   useEffect(() => {
-    console.log('📱 Fetching cart...');
+    // Fetch cart on mount
     if (fetchCart) {
       fetchCart().then((result) => {
-        console.log('✅ Cart fetch result:', result);
+        // cart fetched
       }).catch((error) => {
         console.error('❌ Cart fetch error:', error);
       });
@@ -99,32 +116,142 @@ const PaymentPage = () => {
 
   // Handle shipping address change
   const handleAddressChange = (addressData) => {
-    console.log('📬 Address changed:', addressData);
     setShippingAddress(addressData);
   };
+
+  // Fetch GHN services when address changes
+  useEffect(() => {
+    const loadServices = async () => {
+      const addressId = shippingAddress?.addressId || shippingAddress?.id;
+      console.log('[GHN Services] shippingAddress:', shippingAddress);
+      console.log('[GHN Services] extracted addressId:', addressId);
+      // GHN service fetch: run only when all required data present
+      if (shippingAddress && addressId && itemsByShop.length > 0) {
+        // Fetch GHN services for each shop
+        for (const shop of itemsByShop) {
+          try {
+            const cartItemIds = shop.items.map(item => item.cartItemId || item.id).filter(Boolean);
+            const requestData = {
+              shopId: parseInt(shop.shopId),
+              addressId: parseInt(addressId),
+              cartItemIds: cartItemIds
+            };
+            // silent request data for GHN
+            const response = await api.post('/checkout/available-services', requestData);
+            console.log('[GHN] Raw response:', response.data);
+            
+            // handle GHN response - backend returns [{buyerAddress, totalWeight, services: [...], shopAddress}]
+            let servicesArray = [];
+            if (response.data) {
+              if (Array.isArray(response.data)) {
+                // Check if it's array of wrapper objects with nested services
+                if (response.data[0]?.services && Array.isArray(response.data[0].services)) {
+                  servicesArray = response.data[0].services;
+                } else if (response.data[0]?.service_id) {
+                  // Direct array of service objects
+                  servicesArray = response.data;
+                }
+              } else if (response.data.services && Array.isArray(response.data.services)) {
+                // Object with nested services array
+                servicesArray = response.data.services;
+              }
+            }
+            
+            console.log('[GHN] Extracted services array:', servicesArray);
+            
+            if (servicesArray.length > 0) {
+              setGhnServices(prev => ({
+                ...prev,
+                [shop.shopId]: servicesArray
+              }));
+              // Fetched GHN services
+              if (!selectedServices[shop.shopId]) {
+                const firstService = servicesArray[0];
+                console.log('[GHN] Auto-selecting first service:', firstService);
+                // Auto-select first service
+                await handleServiceSelect(shop.shopId, firstService);
+              }
+            }
+          } catch (error) {
+            console.error(`[GHN] ❌ Error fetching services for shop ${shop.shopId}:`, error);
+            if (error.response) {
+              console.error('[GHN] Error response:', error.response.data);
+            } else {
+              console.error('[GHN] Error message:', error.message);
+            }
+            toast.error(`Không thể tải dịch vụ vận chuyển cho ${shop.shopName}`);
+          }
+        }
+      } else {
+        // required conditions not met - nothing to fetch
+      }
+      // GHN service fetch finished
+    };
+    loadServices();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shippingAddress, itemsByShop]);
+
+  // Handle service selection for a shop
+  const handleServiceSelect = async (shopId, service) => {
+    console.log('[Service Select] shopId:', shopId, 'service:', service);
+    
+    // Validate service has required fields
+    if (!service || !service.service_id || !service.service_type_id) {
+      console.error('[Service Select] Invalid service object:', service);
+      toast.error('Dịch vụ vận chuyển không hợp lệ');
+      return;
+    }
+    
+    setSelectedServices(prev => ({
+      ...prev,
+      [shopId]: service
+    }));
+    
+    // Calculate shipping fee for this service
+    const addrIdForFee = shippingAddress?.addressId || shippingAddress?.id;
+    if (shippingAddress && addrIdForFee) {
+      const shopGroup = itemsByShop.find(s => s.shopId === shopId);
+      if (shopGroup) {
+        const cartItemIds = shopGroup.items.map(item => item.cartItemId || item.id).filter(Boolean);
+        const fee = await calculateShippingFeeForService(
+          shopId,
+          addrIdForFee,
+          service.service_id,
+          service.service_type_id,
+          cartItemIds
+        );
+        
+        // If fee is 0 (error), the error message is already shown to user
+        // User should try another service or address
+        
+        // Update shipping fee for this shop
+        setShopShippingFees(prev => ({
+          ...prev,
+          [shopId]: fee
+        }));
+      }
+    }
+  };
+
+  // Calculate total shipping fee from all shops
+  const shippingFee = useMemo(() => {
+    return Object.values(shopShippingFees).reduce((sum, fee) => sum + fee, 0);
+  }, [shopShippingFees]);
 
   // Helper function to refresh cart and navigate
   const refreshCartAndNavigate = async (path) => {
     try {
-      console.log('🔄 Refreshing cart before navigation...');
       await fetchCart();
-      console.log('✅ Cart refreshed successfully');
     } catch (error) {
-      console.error('❌ Error refreshing cart:', error);
-      // Vẫn navigate ngay cả khi có lỗi
+      console.error('Error refreshing cart:', error);
+      // Still navigate even if fetch failed
     }
     navigate(path);
   };
 
-  // Handle shipping fee calculated
-  const handleShippingFeeCalculated = (fee, info) => {
-    console.log('💰 Shipping fee calculated:', fee, info);
-    setShippingFee(fee);
-  };
-
   // Handle voucher apply
   const handleVoucherApply = (voucher) => {
-    console.log('🎫 Voucher applied:', voucher);
+    // Apply voucher without noisy logs
     setAppliedVoucher(voucher);
     
     if (voucher) {
@@ -141,12 +268,8 @@ const PaymentPage = () => {
 
   // Calculate totals - sử dụng useMemo để tự động tính lại khi checkoutItems thay đổi
   const { subtotal, total, finalTotal } = useMemo(() => {
-    console.log('🧮 Calculating totals with checkoutItems:', checkoutItems);
-    console.log('🧮 Current shippingFee:', shippingFee);
-    console.log('🧮 Current voucherDiscount:', voucherDiscount);
     
     if (!checkoutItems || checkoutItems.length === 0) {
-      console.log('⚠️ No checkout items, returning 0');
       return { subtotal: 0, shipping: shippingFee, total: shippingFee, finalTotal: shippingFee - voucherDiscount };
     }
     
@@ -156,7 +279,7 @@ const PaymentPage = () => {
       const quantity = parseInt(item.quantity) || 0;
       const itemTotal = price * quantity;
       
-      console.log(`  Item: ${item.productName || item.name}, price: ${price}, qty: ${quantity}, total: ${itemTotal}`);
+      // quiet: don't log every item in production
       
       return sum + itemTotal;
     }, 0);
@@ -164,7 +287,7 @@ const PaymentPage = () => {
     const total = subtotal + shippingFee;
     const finalTotal = total - voucherDiscount;
     
-    console.log(`✅ Subtotal: ${subtotal}, Shipping: ${shippingFee}, Voucher: ${voucherDiscount}, Total: ${total}, Final: ${finalTotal}`);
+    // totals computed
     
     return { subtotal, shipping: shippingFee, total, finalTotal };
   }, [checkoutItems, shippingFee, voucherDiscount]);
@@ -178,10 +301,67 @@ const PaymentPage = () => {
       quantity: item.quantity
     }));
   };
+  // Calculate shipping fee for selected service
+  const calculateShippingFeeForService = async (shopId, addressId, serviceId, serviceTypeId, cartItemIds) => {
+    try {
+      const payload = {
+        shopId: parseInt(shopId),
+        addressId: parseInt(addressId),
+        serviceId: parseInt(serviceId),
+        serviceTypeId: parseInt(serviceTypeId),
+        cartItemIds: cartItemIds.map(id => parseInt(id))
+      };
+      console.log('[Fee Calc] Payload:', payload);
+      const response = await api.post('/checkout/calculate-fee', payload);
+      
+      // calculate fee response (store/handle errors as needed)
+      
+      // GHN API trả về: { code, message, data: { total, service_fee, ... } }
+      // Backend ResponseDTO trả về: { code, message, data: { ... GHN response ... } }
+      let shippingFee = 0;
+      
+      if (response.data) {
+        // Kiểm tra các trường hợp có thể có
+        if (response.data.data && response.data.data.total !== undefined) {
+          // Trường hợp: ResponseDTO.ok(feeResponse) -> data: { data: { total: ... } }
+          shippingFee = response.data.data.total;
+        } else if (response.data.total !== undefined) {
+          // Trường hợp: data: { total: ... }
+          shippingFee = response.data.total;
+        } else if (response.data.shippingFee !== undefined) {
+          // Trường hợp: data: { shippingFee: ... }
+          shippingFee = response.data.shippingFee;
+        }
+      }
+      
+      // shippingFee determined
+      return shippingFee;
+    } catch (error) {
+      console.error(`❌ Error calculating shipping fee for shop ${shopId}:`, error);
+      
+      // Extract detailed error message from backend
+      let errorMessage = 'Không thể tính phí vận chuyển';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Backend returns: { code, message, type, data }
+        if (errorData.message && errorData.message.includes('route not found')) {
+          errorMessage = 'GHN không hỗ trợ vận chuyển đến địa chỉ này cho dịch vụ đã chọn. Vui lòng chọn dịch vụ khác hoặc địa chỉ khác.';
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        
+        console.error('[Fee Calc] Error details:', errorData);
+      }
+      
+      toast.error(errorMessage);
+      return 0;
+    }
+  };
 
-  // Handle place order - tách đơn theo shop
+  // Handle place order - NEW GHN 3-step flow
   const handlePlaceOrder = async () => {
-    console.log('🔍 Starting order placement...');
     
     // Validation
     if (!shippingAddress) {
@@ -194,93 +374,74 @@ const PaymentPage = () => {
       return;
     }
 
+    // Nhóm sản phẩm theo shop
+    const grouped = {};
+    checkoutItems.forEach(item => {
+      const shopId = item.shopId || 'unknown';
+      if (!grouped[shopId]) grouped[shopId] = [];
+      grouped[shopId].push(item);
+    });
+    
+    const shopGroups = Object.entries(grouped);
+    
+    // Validate service selection for each shop
+    for (const [shopId, items] of shopGroups) {
+      if (!selectedServices[shopId]) {
+        const shopName = items[0]?.shopName || `Shop ${shopId}`;
+        toast.error(`Vui lòng chọn dịch vụ vận chuyển cho ${shopName}`);
+        return;
+      }
+    }
+
     setIsProcessing(true);
 
     try {
-      // Nhóm sản phẩm theo shop
-      const grouped = {};
-      checkoutItems.forEach(item => {
-        const shopId = item.shopId || 'unknown';
-        if (!grouped[shopId]) grouped[shopId] = [];
-        grouped[shopId].push(item);
-      });
-      
-      const shopGroups = Object.entries(grouped);
-      console.log(`📦 Creating ${shopGroups.length} orders for ${shopGroups.length} shops`);
-      
-      // Tính tổng tiền toàn bộ đơn hàng
-      const grandTotal = finalTotal;
+      // Creating orders for shops
       
       // Lưu danh sách order đã tạo
       const createdOrders = [];
       let hasError = false;
       
-      // Tạo order cho từng shop
+      // Tạo order cho từng shop using NEW checkout/confirm endpoint
       for (let i = 0; i < shopGroups.length; i++) {
         const [shopId, items] = shopGroups[i];
         const shopName = items[0]?.shopName || `Shop ${shopId}`;
+        const selectedService = selectedServices[shopId];
         
-        console.log(`\n📍 Creating order ${i + 1}/${shopGroups.length} for ${shopName}`);
+        // creating order i+1
         
-        // Tính subtotal cho shop này
-        const shopSubtotal = items.reduce((sum, item) => {
-          const price = parseFloat(item.unitPrice || item.price) || 0;
-          const quantity = parseInt(item.quantity) || 0;
-          return sum + price * quantity;
-        }, 0);
+        // Get cart item IDs
+        const cartItemIds = items.map(item => item.cartItemId || item.id).filter(Boolean);
         
-        // Phân bổ shipping fee và voucher theo tỷ lệ subtotal
-        const shopShippingFee = subtotal > 0 ? Math.round((shopSubtotal / subtotal) * shippingFee) : 0;
-        const shopVoucherDiscount = subtotal > 0 ? Math.round((shopSubtotal / subtotal) * voucherDiscount) : 0;
-        const shopTotal = shopSubtotal + shopShippingFee - shopVoucherDiscount;
-        
-        console.log(`💰 Shop ${shopName}: subtotal=${shopSubtotal}, shipping=${shopShippingFee}, voucher=${shopVoucherDiscount}, total=${shopTotal}`);
-        
-        // Chuẩn bị items cho order
-        const orderItems = items.map(item => ({
-          variantId: item.variantId,
-          quantity: item.quantity
-        }));
-        
-        // Chuẩn bị order data
-        const orderData = {
-          items: orderItems,
-          receiverName: shippingAddress.toName,
-          receiverPhone: shippingAddress.toPhone,
-          receiverAddress: shippingAddress.toAddress,
-          toDistrictId: shippingAddress.toDistrictId ? shippingAddress.toDistrictId.toString() : '',
-          toWardCode: shippingAddress.toWardCode ? shippingAddress.toWardCode.toString() : '',
-          province: shippingAddress.province || '',
-          district: shippingAddress.district || '',
-          ward: shippingAddress.ward || '',
-          weightGrams: weightGrams,
-          codAmount: paymentMethod === 'COD' ? Math.round(shopTotal) : 0,
-          shippingFee: shopShippingFee,
-          voucherCode: appliedVoucher?.code || null,
-          voucherDiscount: shopVoucherDiscount,
-          notes: orderNotes,
-          method: paymentMethod
+        // Prepare checkout confirm request
+        const confirmData = {
+          shopId: parseInt(shopId),
+          addressId: parseInt(shippingAddress?.addressId || shippingAddress?.id),
+          serviceId: parseInt(selectedService.service_id),
+          serviceTypeId: parseInt(selectedService.service_type_id),
+          cartItemIds: cartItemIds.map(id => parseInt(id)),
+          paymentMethod: paymentMethod,
+          note: orderNotes || ''
         };
 
-        console.log(`📤 Sending order data for ${shopName}:`, orderData);
+        // sending confirmData
 
         try {
-          const response = await api.post(API_ENDPOINTS.ORDER.CREATE, orderData);
+          const response = await api.post('/checkout/confirm', confirmData);
           
-          console.log(`✅ Response for ${shopName}:`, response);
+          // log response if needed
           
-          const isOk = response && (response.status === 200 || response.status === 201) && !response.error;
-          
-          if (isOk && response.data?.orderId) {
-            const orderId = response.data.orderId;
-            console.log(`✅ Order created successfully for ${shopName}: Order ID = ${orderId}`);
+          if (response.data?.orderId) {
+            const { orderId, totalAmount, status } = response.data;
+            
+            // order created
             
             createdOrders.push({
               orderId,
               shopId,
               shopName,
-              total: shopTotal,
-              items: orderItems
+              totalAmount,
+              status
             });
           } else {
             console.error(`❌ Failed to create order for ${shopName}:`, response);
@@ -296,8 +457,15 @@ const PaymentPage = () => {
         }
       }
 
-      console.log(`\n📊 Summary: Created ${createdOrders.length}/${shopGroups.length} orders`);
-      console.log('Created orders:', createdOrders);
+      // summary created orders
+
+      // Nếu có lỗi và không tạo được order nào
+      if (createdOrders.length === 0) {
+        toast.error('Không thể tạo đơn hàng. Vui lòng thử lại!');
+        setIsProcessing(false);
+        return;
+      }
+      // final summary
 
       // Nếu có lỗi và không tạo được order nào
       if (createdOrders.length === 0) {
@@ -312,16 +480,16 @@ const PaymentPage = () => {
 
       // Xử lý theo phương thức thanh toán
       if (paymentMethod === 'MOMO') {
-        console.log('💳 Processing MoMo payment for multiple orders...');
+        // processing MoMo payment...
         
-        // Lấy order đầu tiên để tạo payment (hoặc có thể tạo 1 payment cho tất cả)
+        // Lấy order đầu tiên để tạo payment
         const firstOrder = createdOrders[0];
         const momoOrderId = Number(firstOrder.orderId);
         
         // Tính tổng tiền của tất cả đơn hàng đã tạo thành công
-        const totalAmount = createdOrders.reduce((sum, order) => sum + order.total, 0);
+        const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
         
-        console.log(`💰 Total amount for MoMo payment: ${totalAmount}`);
+        // total amount for payment - computed
         
         const momoPayload = {
           orderId: momoOrderId,
@@ -331,7 +499,7 @@ const PaymentPage = () => {
           notifyUrl: `${window.location.origin}/api/payment/momo/callback`
         };
 
-        console.log('📤 MoMo payload:', momoPayload);
+        // MoMo payload prepared
 
         try {
           const momoResponse = await api.post('payment/momo/create', momoPayload);
@@ -341,7 +509,7 @@ const PaymentPage = () => {
             
             // Lưu danh sách orderIds để xử lý sau
             sessionStorage.setItem('pendingMomoOrderIds', JSON.stringify(createdOrders.map(o => o.orderId)));
-            console.log('💾 Saved pending MoMo order IDs:', createdOrders.map(o => o.orderId));
+            // saved pending MoMo order IDs
             
             // Chuyển hướng đến trang thanh toán MoMo
             window.location.href = momoResponse.data.payUrl;
@@ -360,7 +528,7 @@ const PaymentPage = () => {
         console.log('💳 Processing SportyPay payment for multiple orders...');
         
         // Tính tổng tiền của tất cả đơn hàng
-        const totalAmount = createdOrders.reduce((sum, order) => sum + order.total, 0);
+        const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
         
         try {
           const walletResponse = await api.post('/wallet/withdraw', {
@@ -426,14 +594,6 @@ const PaymentPage = () => {
       </div>
     );
   }
-
-  // Debug: Check cart data
-  console.log('🛒 Cart Items:', cartItems);
-  console.log('📊 Subtotal:', subtotal);
-  console.log('� Shipping Fee:', shippingFee);
-  console.log('🎫 Voucher Discount:', voucherDiscount);
-  console.log('�💰 Total:', total);
-  console.log('💳 Final Total:', finalTotal);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -570,9 +730,9 @@ const PaymentPage = () => {
 
                       {/* Shop Summary */}
                       <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200">
-                        <div className="flex flex-col md:flex-row justify-between gap-4">
-                          {/* Left: Message */}
-                          <div className="flex items-center gap-3 flex-1">
+                        <div className="flex flex-col gap-4">
+                          {/* Message Input */}
+                          <div className="flex items-center gap-3">
                             <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Lời nhắn:</label>
                             <input 
                               type="text" 
@@ -581,22 +741,43 @@ const PaymentPage = () => {
                             />
                           </div>
                           
-                          {/* Right: Shipping Info */}
+                          {/* GHN Service Selection */}
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-gray-600">Phương thức vận chuyển:</span>
-                              <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-medium text-xs">
-                                🚚 Nhanh
-                              </span>
+                            <div className="flex items-center gap-2 text-sm flex-1">
+                              <span className="text-gray-600 whitespace-nowrap">Phương thức vận chuyển:</span>
+                              {ghnServices[shopGroup.shopId] && ghnServices[shopGroup.shopId].length > 0 ? (
+                                <select 
+                                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  value={selectedServices[shopGroup.shopId]?.service_id || ''}
+                                  onChange={(e) => {
+                                    const service = ghnServices[shopGroup.shopId].find(s => s.service_id === parseInt(e.target.value));
+                                    if (service) handleServiceSelect(shopGroup.shopId, service);
+                                  }}
+                                >
+                                  <option value="">Chọn dịch vụ vận chuyển</option>
+                                  {ghnServices[shopGroup.shopId].map((service, idx) => (
+                                    <option
+                                      key={service.service_id ? `${service.service_id}-${shopGroup.shopId}` : `${shopGroup.shopId}-${idx}`}
+                                      value={service.service_id}
+                                    >
+                                      {service.short_name}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full font-medium text-xs">
+                                  {shippingAddress ? 'Đang tải...' : 'Vui lòng chọn địa chỉ giao hàng'}
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-gray-600">Phí vận chuyển:</span>
-                              <span className="font-semibold text-gray-900">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-                                  shippingFee / itemsByShop.length
-                                )}
-                              </span>
-                            </div>
+                            {selectedServices[shopGroup.shopId] && shopShippingFees[shopGroup.shopId] !== undefined && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-gray-600">Phí vận chuyển:</span>
+                                <span className="font-semibold text-gray-900">
+                                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shopShippingFees[shopGroup.shopId])}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -687,11 +868,6 @@ const PaymentPage = () => {
                           }).format(shippingFee)}
                         </span>
                       </div>
-                      <ShippingFeeCalculator
-                        shippingAddress={shippingAddress}
-                        weightGrams={weightGrams}
-                        onFeeCalculated={handleShippingFeeCalculated}
-                      />
                     </div>
 
                     {/* Voucher Discount */}

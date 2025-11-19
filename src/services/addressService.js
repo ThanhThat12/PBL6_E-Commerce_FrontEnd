@@ -37,24 +37,15 @@ const addressService = {
    */
   getProvinces: async () => {
     try {
-      console.log('📍 Fetching provinces from primary API...');
       const response = await fetchWithTimeout(`${PRIMARY_API}/p/`);
       const data = await response.json();
-      console.log('✅ Provinces loaded from primary API');
       return data;
     } catch (primaryError) {
-      console.warn('⚠️ Primary API failed, trying fallback:', primaryError.message);
-      
       try {
-        console.log('📍 Fetching provinces from fallback API...');
         const response = await fetchWithTimeout(`${FALLBACK_API}`);
         const data = await response.json();
-        console.log('✅ Provinces loaded from fallback API');
-        
-        // Transform fallback API response to match primary API format
         return data.data || [];
       } catch (fallbackError) {
-        console.error('❌ Both APIs failed:', fallbackError.message);
         throw new Error('Unable to fetch provinces from both APIs');
       }
     }
@@ -67,29 +58,19 @@ const addressService = {
    */
   getDistricts: async (provinceCode) => {
     if (!provinceCode) {
-      console.warn('⚠️ Province code is required');
       return [];
     }
 
     try {
-      console.log(`📍 Fetching districts for province ${provinceCode} from primary API...`);
       const response = await fetchWithTimeout(`${PRIMARY_API}/p/${provinceCode}?depth=2`);
       const data = await response.json();
-      console.log(`✅ Districts loaded from primary API`);
       return data.districts || [];
     } catch (primaryError) {
-      console.warn('⚠️ Primary API failed, trying fallback:', primaryError.message);
-      
       try {
-        console.log(`📍 Fetching districts for province ${provinceCode} from fallback API...`);
         const response = await fetchWithTimeout(`${FALLBACK_API}?id=${provinceCode}`);
         const data = await response.json();
-        console.log(`✅ Districts loaded from fallback API`);
-        
-        // Transform fallback API response
         return data.data?.districts || data.data || [];
       } catch (fallbackError) {
-        console.error('❌ Both APIs failed:', fallbackError.message);
         return [];
       }
     }
@@ -102,29 +83,19 @@ const addressService = {
    */
   getWards: async (districtCode) => {
     if (!districtCode) {
-      console.warn('⚠️ District code is required');
       return [];
     }
 
     try {
-      console.log(`📍 Fetching wards for district ${districtCode} from primary API...`);
       const response = await fetchWithTimeout(`${PRIMARY_API}/d/${districtCode}?depth=2`);
       const data = await response.json();
-      console.log(`✅ Wards loaded from primary API`);
       return data.wards || [];
     } catch (primaryError) {
-      console.warn('⚠️ Primary API failed, trying fallback:', primaryError.message);
-      
       try {
-        console.log(`📍 Fetching wards for district ${districtCode} from fallback API...`);
-        const response = await fetchWithTimeout(`${FALLBACK_API}?id=${districtCode}`);
+        const response = await fetchWithTimeout(`https://vapi.vnappmob.com/api/province/ward/district/${districtCode}`);
         const data = await response.json();
-        console.log(`✅ Wards loaded from fallback API`);
-        
-        // Transform fallback API response
-        return data.data?.wards || data.data || [];
+        return data.data || [];
       } catch (fallbackError) {
-        console.error('❌ Both APIs failed:', fallbackError.message);
         return [];
       }
     }
@@ -139,7 +110,7 @@ const addressService = {
    */
   getFullAddress: async (provinceCode, districtCode, wardCode) => {
     try {
-      console.log('📍 Fetching full address details...');
+      // Fetch full address details
       const [provinces, districtData, wardData] = await Promise.all([
         addressService.getProvinces(),
         addressService.getDistricts(districtCode),
@@ -156,7 +127,7 @@ const addressService = {
         ward: ward?.name || ''
       };
 
-      console.log('✅ Full address loaded:', result);
+      // Full address loaded
       return result;
     } catch (error) {
       console.error('❌ Error getting full address:', error.message);
@@ -201,7 +172,7 @@ const addressService = {
         fee = 20000; // Major cities
       }
 
-      console.log(`💰 Calculated shipping fee: ${fee}₫`);
+      // Shipping fee calculated
 
       return {
         total: fee,

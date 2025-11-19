@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import { useAuth } from '../../context/AuthContext';
-import userService from '../../services/userService';
 import addressService from '../../services/addressService';
+// Use GHN master data for province/district/ward to avoid CORS and to match GHN shipping IDs
+import userService from '../../services/userService';
 import { toast } from 'react-hot-toast';
 import { getItem, setItem } from '../../utils/storage';
 import { STORAGE_KEYS } from '../../utils/constants';
@@ -57,12 +58,17 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load provinces on mount
+  // Load provinces on mount — prefer GHN master data to avoid open-api CORS
   useEffect(() => {
     const loadProvinces = async () => {
       try {
-        const data = await addressService.getProvinces();
-        setProvinces(data);
+        // Use GHN master list from backend proxy (safer with CORS and matches GHN IDs)
+        // Transform GHN response { ProvinceID, ProvinceName } -> { code, name }
+        const ghnProvinces = await userService.getProvinces();
+        const transformed = Array.isArray(ghnProvinces)
+          ? ghnProvinces.map(p => ({ code: p.ProvinceID, name: p.ProvinceName }))
+          : [];
+        setProvinces(transformed);
       } catch (error) {
         console.error('Failed to load provinces:', error);
         toast.error('Không thể tải danh sách tỉnh/thành phố');
@@ -77,10 +83,14 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       if (formData.provinceCode) {
         setLoadingDistricts(true);
         try {
-          const data = await addressService.getDistricts(formData.provinceCode);
+            // GHN expects province_id
+            const districts = await userService.getDistricts(formData.provinceCode);
+            const transformed = Array.isArray(districts)
+              ? districts.map(d => ({ code: d.DistrictID, name: d.DistrictName }))
+              : [];
+            const data = transformed;
           setDistricts(data);
         } catch (error) {
-          console.error('Failed to load districts:', error);
           toast.error('Không thể tải danh sách quận/huyện');
         } finally {
           setLoadingDistricts(false);
@@ -98,10 +108,14 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       if (formData.districtCode) {
         setLoadingWards(true);
         try {
-          const data = await addressService.getWards(formData.districtCode);
+            // GHN expects district_id
+            const wardsData = await userService.getWards(formData.districtCode);
+            const transformedWards = Array.isArray(wardsData)
+              ? wardsData.map(w => ({ code: w.WardCode, name: w.WardName }))
+              : [];
+            const data = transformedWards;
           setWards(data);
         } catch (error) {
-          console.error('Failed to load wards:', error);
           toast.error('Không thể tải danh sách phường/xã');
         } finally {
           setLoadingWards(false);
