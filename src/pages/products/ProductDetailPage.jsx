@@ -628,10 +628,10 @@ const ProductDetailPage = () => {
                     <dt className="text-gray-600">SKU:</dt>
                     <dd className="font-mono font-semibold">{selectedVariant.sku}</dd>
                   </div>
-                  {product.shop && (
+                  {(product.shopName || product.shop?.name) && (
                     <div className="flex justify-between">
                       <dt className="text-gray-600">Shop:</dt>
-                      <dd className="font-semibold">{product.shop.name}</dd>
+                      <dd className="font-semibold">{product.shopName || product.shop?.name}</dd>
                     </div>
                   )}
                 </dl>

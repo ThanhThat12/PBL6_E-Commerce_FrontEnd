@@ -88,6 +88,21 @@ const voucherService = {
       console.error('Error fetching available vouchers:', error);
       throw error;
     }
+  },
+
+  /**
+   * Apply a voucher (User/Buyer)
+   * @param {object} applyData - { voucherCode, productIds, cartTotal }
+   * @returns {Promise}
+   */
+  applyVoucher: async (applyData) => {
+    try {
+      const response = await api.post(`${BASE_URL}/apply`, applyData);
+      return response;
+    } catch (error) {
+      console.error('Error applying voucher:', error);
+      throw error;
+    }
   }
 };
 

@@ -46,15 +46,25 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
         });
         
         console.log('🎫 VoucherSelector - API Response:', response);
+        console.log('🎫 VoucherSelector - Response status:', response?.status || response?.code);
+        console.log('🎫 VoucherSelector - Response data:', response?.data);
         
         const vouchers = response?.data || response || [];
         console.log('🎫 VoucherSelector - Parsed vouchers:', vouchers);
         
         setAvailableVouchers(Array.isArray(vouchers) ? vouchers : []);
+        
+        if (!vouchers || vouchers.length === 0) {
+          console.warn('⚠️ No vouchers available for this shop');
+        }
       } catch (error) {
         console.error('❌ Error fetching vouchers:', error);
+        console.error('Error response:', error.response);
         console.error('Error details:', error.response?.data || error.message);
-        // Don't show error to user, just log it
+        // Show error if it's not a 404 (no vouchers)
+        if (error.response?.status !== 404) {
+          message.warning('Không thể tải voucher. Vui lòng thử lại sau.');
+        }
       } finally {
         setLoading(false);
       }
@@ -126,25 +136,56 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
   };
 
   // Áp dụng voucher
-  const handleApplyVoucher = (voucher) => {
+  const handleApplyVoucher = async (voucher) => {
     setIsApplying(true);
     
-    setTimeout(() => {
-      const validation = validateVoucher(voucher);
+    try {
+      const productIds = cartItems.map(item => item.productId);
+      const applyData = {
+        voucherCode: voucher.code,
+        productIds,
+        cartTotal: subtotal
+      };
       
-      if (validation.valid) {
-        const discount = calculateDiscount(voucher);
-        setAppliedVoucher({ ...voucher, discount });
-        onVoucherApply({ ...voucher, discount });
-        setShowVoucherInput(false);
-        setVoucherCode('');
-        message.success('Áp dụng voucher thành công!');
-      } else {
-        message.error(validation.message);
-      }
+      console.log('🎫 Applying voucher:', applyData);
       
+      const response = await voucherService.applyVoucher(applyData);
+      
+      console.log('🎫 Voucher applied successfully:', response);
+      
+      const result = response.data;
+      
+      // Set applied voucher with discount from API response
+      const appliedVoucherData = {
+        ...voucher,
+        discount: result.discountAmount || calculateDiscount(voucher),
+        usedCount: (voucher.usedCount || 0) + 1 // Increment usage count
+      };
+      
+      setAppliedVoucher(appliedVoucherData);
+      onVoucherApply(appliedVoucherData);
+      setShowVoucherInput(false);
+      setVoucherCode('');
+      
+      message.success('Áp dụng voucher thành công!');
+      
+      // Refresh available vouchers to update usage counts
+      const refreshResponse = await voucherService.getAvailableVouchers({
+        shopId,
+        productIds,
+        cartTotal: subtotal
+      });
+      
+      const refreshedVouchers = refreshResponse?.data || refreshResponse || [];
+      setAvailableVouchers(Array.isArray(refreshedVouchers) ? refreshedVouchers : []);
+      
+    } catch (error) {
+      console.error('❌ Error applying voucher:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể áp dụng voucher. Vui lòng thử lại.';
+      message.error(errorMessage);
+    } finally {
       setIsApplying(false);
-    }, 500);
+    }
   };
 
   // Nhập mã voucher
@@ -181,6 +222,9 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
                   style: 'currency',
                   currency: 'VND'
                 }).format(appliedVoucher.discount)}
+              </p>
+              <p className="text-xs text-green-600">
+                Đã dùng: {appliedVoucher.usedCount || 0}/{appliedVoucher.usageLimit}
               </p>
             </div>
           </div>
@@ -246,7 +290,12 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
             {loading ? (
               <div className="text-center py-4 text-gray-500">Đang tải voucher...</div>
             ) : availableVouchers.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">Không có voucher khả dụng</div>
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-2">Không có voucher khả dụng cho đơn hàng này</p>
+                <p className="text-xs text-gray-400">
+                  Shop chưa tạo voucher hoặc các voucher không áp dụng cho sản phẩm/giá trị đơn hàng này
+                </p>
+              </div>
             ) : (
               availableVouchers.map((voucher) => {
               const validation = validateVoucher(voucher);
@@ -276,11 +325,16 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
                           </span>
                         </div>
                         <p className="text-sm text-gray-600">{voucher.description}</p>
-                        {voucher.previewDiscount && isValid && (
-                          <p className="text-xs text-green-600 mt-1">
-                            Giảm {voucher.previewDiscount.discountAmount.toLocaleString('vi-VN')}₫
+                        <div className="flex items-center gap-4 mt-1">
+                          {voucher.previewDiscount && isValid && (
+                            <p className="text-xs text-green-600">
+                              Giảm {voucher.previewDiscount.discountAmount.toLocaleString('vi-VN')}₫
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            Đã dùng: {voucher.usedCount || 0}/{voucher.usageLimit}
                           </p>
-                        )}
+                        </div>
                         {!isValid && (
                           <p className="text-xs text-red-600 mt-1">{validation.message}</p>
                         )}
