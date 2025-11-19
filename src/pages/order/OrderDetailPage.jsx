@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useOrder } from '../../context/OrderContext';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 import OrderTimeline from '../../components/order/OrderTimeline';
+import { RefundRequestForm } from '../../components/order';
 import Loading from '../../components/common/Loading';
 import Button from '../../components/common/Button';
 import { toast } from 'react-hot-toast';
@@ -23,9 +24,17 @@ const OrderDetailPage = () => {
   const fromCheckout = location.state?.fromCheckout;
 
   useEffect(() => {
-    if (orderId) {
-      fetchOrderDetail(parseInt(orderId));
+    // Skip if orderId is not numeric (prevent conflict with /orders/return-item route)
+    if (!orderId || orderId === 'undefined') {
+      return;
     }
+    
+    const orderIdNum = parseInt(orderId, 10);
+    if (isNaN(orderIdNum)) {
+      return; // Silently skip - this means we're on a non-numeric route like /orders/return-item
+    }
+    
+    fetchOrderDetail(orderIdNum);
   }, [orderId, fetchOrderDetail]);
 
   const formatPrice = (price) => {
@@ -51,7 +60,10 @@ const OrderDetailPage = () => {
       await cancelOrder(currentOrder.id);
       setShowCancelConfirm(false);
       // Refresh order detail
-      await fetchOrderDetail(parseInt(orderId));
+      const orderIdNum = parseInt(orderId, 10);
+      if (!isNaN(orderIdNum)) {
+        await fetchOrderDetail(orderIdNum);
+      }
     } catch (error) {
       console.error('Failed to cancel order:', error);
     }
@@ -94,8 +106,6 @@ const OrderDetailPage = () => {
     );
   }
 
-  console.log('===[DEBUG] currentOrder:', currentOrder);
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Navbar */}
@@ -114,24 +124,19 @@ const OrderDetailPage = () => {
             <span>{fromCheckout ? 'Về trang chủ' : 'Quay lại'}</span>
           </button>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Chi tiết đơn hàng #{currentOrder.id}
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Đặt hàng lúc: {formatDate(currentOrder.createdAt)}
-              </p>
-            </div>
-
-            {currentOrder.status === 'PENDING' && (
-              <Button
-                onClick={() => setShowCancelConfirm(true)}
-                variant="outline"
-                className="border-red-500 text-red-500 hover:bg-red-50"
-              >
-                Hủy đơn hàng
-              </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Chi tiết đơn hàng #{currentOrder.id}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Đặt hàng lúc: {formatDate(currentOrder.createdAt)}
+            </p>
+            {currentOrder.refundStatus && (
+              <div className="mt-2">
+                <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-300">
+                  Hoàn tiền: {currentOrder.refundStatus === 'REQUESTED' ? 'Đang chờ seller duyệt' : currentOrder.refundStatus === 'APPROVED' ? 'Đã duyệt, đang hoàn tiền' : currentOrder.refundStatus === 'REJECTED' ? 'Bị từ chối' : currentOrder.refundStatus === 'COMPLETED' ? 'Đã hoàn thành' : currentOrder.refundStatus}
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -160,6 +165,13 @@ const OrderDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Order Timeline & Details */}
           <div className="lg:col-span-2 space-y-6">
+                        {/* Refund Request Form (Buyer) */}
+                        {currentOrder.status === 'COMPLETED' && (
+                          <div className="bg-white rounded-lg shadow-md p-6">
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Yêu cầu hoàn tiền</h2>
+                            <RefundRequestForm orderId={currentOrder.id} onSuccess={() => toast.success('Đã gửi yêu cầu hoàn tiền!')} />
+                          </div>
+                        )}
             {/* Order Timeline */}
             <OrderTimeline
               status={currentOrder.status}
@@ -201,29 +213,67 @@ const OrderDetailPage = () => {
               </h2>
               <div className="space-y-4">
                 {currentOrder.items?.map((item, index) => (
-                  <div key={index} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0">
-                    <img
-                      src={item.image || '/placeholder.png'}
-                      alt={item.productName}
-                      className="w-20 h-20 object-cover rounded-lg"
-                      onError={(e) => {
-                        e.target.src = '/placeholder.png';
-                      }}
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.productName}</h3>
-                      {item.variantAttributes && (
-                        <p className="text-sm text-gray-600 mt-1">{item.variantAttributes}</p>
-                      )}
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-sm text-gray-600">
-                          Số lượng: {item.quantity}
-                        </span>
-                        <span className="font-semibold text-gray-900">
-                          {formatPrice(item.price * item.quantity)}
-                        </span>
+                  <div key={index} className="pb-4 border-b border-gray-200 last:border-0">
+                    <Link
+                      to={`/products/${item.productId}`}
+                      className="flex gap-4 hover:bg-gray-50 transition cursor-pointer"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <img
+                        src={item.image || '/placeholder.png'}
+                        alt={item.productName}
+                        className="w-20 h-20 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.target.src = '/placeholder.png';
+                        }}
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          {item.productName}
+                        </h3>
+                        {item.variantAttributes && (
+                          <p className="text-sm text-gray-600 mt-1">{item.variantAttributes}</p>
+                        )}
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm text-gray-600">
+                            Số lượng: {item.quantity}
+                          </span>
+                          <span className="font-semibold text-gray-900">
+                            {formatPrice(item.price * item.quantity)}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    </Link>
+                    
+                    {/* Return Button - Only show for COMPLETED orders */}
+                    {currentOrder.status === 'COMPLETED' && (
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!item.id}
+                          onClick={() => {
+                            console.log('===[OrderDetailPage] Trả hàng clicked for item:', item);
+                            if (!item.id) {
+                              toast.error('Không thể yêu cầu trả hàng cho sản phẩm này');
+                              return;
+                            }
+                            const stateData = {
+                              orderItemId: item.id,
+                              productName: item.productName,
+                              variantName: item.variantName || item.variantAttributes,
+                              price: item.price,
+                              maxQuantity: item.quantity,
+                              productImage: item.image
+                            };
+                            console.log('===[OrderDetailPage] Navigating to /return-order-item with state:', stateData);
+                            navigate('/return-order-item', { state: stateData });
+                          }}
+                        >
+                          Trả hàng
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -259,10 +309,21 @@ const OrderDetailPage = () => {
                 </span>
               </div>
 
+              {/* Cancel Order Button - Only for PENDING status */}
+              {currentOrder.status === 'PENDING' && (
+                <Button
+                  onClick={() => setShowCancelConfirm(true)}
+                  variant="outline"
+                  className="w-full mt-6 border-red-500 text-red-500 hover:bg-red-50"
+                >
+                  Hủy đơn hàng
+                </Button>
+              )}
+
               {/* Support Button */}
               <Button
                 variant="outline"
-                className="w-full mt-6"
+                className="w-full mt-4"
                 onClick={() => toast.info('Tính năng hỗ trợ đang được phát triển')}
               >
                 Liên hệ hỗ trợ

@@ -21,7 +21,7 @@ import { removeItem } from '../../utils/storage';
  */
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cartItems, loading: cartLoading, fetchCart, clearCart } = useCart();
+  const { cartItems, loading: cartLoading, fetchCart } = useCart();
   
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [shippingAddress, setShippingAddress] = useState(null);
@@ -79,10 +79,41 @@ const PaymentPage = () => {
     }
   }, [checkoutItems, cartLoading, navigate]);
 
+  // Group checkout items by shop
+  const itemsByShop = useMemo(() => {
+    const grouped = {};
+    checkoutItems.forEach(item => {
+      const shopId = item.shopId || 'unknown';
+      const shopName = item.shopName || 'Shop không xác định';
+      if (!grouped[shopId]) {
+        grouped[shopId] = {
+          shopId,
+          shopName,
+          items: []
+        };
+      }
+      grouped[shopId].items.push(item);
+    });
+    return Object.values(grouped);
+  }, [checkoutItems]);
+
   // Handle shipping address change
   const handleAddressChange = (addressData) => {
     console.log('📬 Address changed:', addressData);
     setShippingAddress(addressData);
+  };
+
+  // Helper function to refresh cart and navigate
+  const refreshCartAndNavigate = async (path) => {
+    try {
+      console.log('🔄 Refreshing cart before navigation...');
+      await fetchCart();
+      console.log('✅ Cart refreshed successfully');
+    } catch (error) {
+      console.error('❌ Error refreshing cart:', error);
+      // Vẫn navigate ngay cả khi có lỗi
+    }
+    navigate(path);
   };
 
   // Handle shipping fee calculated
@@ -233,14 +264,14 @@ const PaymentPage = () => {
         if (!orderId) {
           console.error('❌ OrderId is null or undefined!');
           toast.error('Lỗi: Không nhận được mã đơn hàng từ server');
-          navigate('/orders');
+          await refreshCartAndNavigate('/orders');
           return;
         }
         
         if (isNaN(Number(orderId))) {
           console.error('❌ OrderId is not a valid number:', orderId);
           toast.error('Lỗi: Mã đơn hàng không hợp lệ');
-          navigate('/orders');
+          await refreshCartAndNavigate('/orders');
           return;
         }
         
@@ -307,7 +338,7 @@ const PaymentPage = () => {
             } else {
               console.error('❌ No payUrl in MoMo response');
               toast.error('Không thể tạo link thanh toán MoMo');
-              navigate('/orders');
+              await refreshCartAndNavigate('/orders');
             }
           } catch (momoError) {
             console.error('❌ MoMo payment error:', momoError);
@@ -325,7 +356,7 @@ const PaymentPage = () => {
             }
             
             toast.error(errorMsg);
-            navigate('/orders');
+            await refreshCartAndNavigate('/orders');
           }
         } else if (paymentMethod === 'SPORTYPAY') {
           try {
@@ -354,29 +385,32 @@ const PaymentPage = () => {
                 // Vẫn tiếp tục mặc dù có lỗi update
               }
               
-              await clearCart();
+              // KHÔNG xóa cart ở đây - backend sẽ tự động xóa các sản phẩm đã thanh toán
+              // await clearCart();
+              console.log('✅ Cart will be cleared by backend for purchased items only');
+              
               removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
-              navigate('/orders');
+              await refreshCartAndNavigate('/orders');
             } else {
               toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
-              navigate('/orders');
+              await refreshCartAndNavigate('/orders');
             }
           } catch (walletError) {
             console.error('❌ SportyPay error:', walletError);
             toast.error('Lỗi thanh toán bằng ví SportyPay');
-            navigate('/orders');
+            await refreshCartAndNavigate('/orders');
           }
           return;
         } else {
-          // COD - xóa cart ngay vì không cần thanh toán online
-          console.log('🗑️ Clearing cart for COD payment');
-          await clearCart();
+          // COD - KHÔNG xóa cart ở đây, backend sẽ tự động xóa các sản phẩm đã thanh toán
+          // await clearCart();
+          console.log('✅ Cart will be cleared by backend for purchased items only (COD)');
           
           // COD - chuyển đến trang đơn hàng
           toast.success(response.message || 'Đặt hàng thành công!');
           // Clear persisted shipping address
           removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
-          navigate('/orders');
+          await refreshCartAndNavigate('/orders');
         }
       } else {
         // Show server message if present
@@ -459,22 +493,146 @@ const PaymentPage = () => {
                 />
               </div>
 
-              {/* Order Items Section */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Chi tiết đơn hàng
-                </h2>
+              {/* Products by Shop */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+                  <h2 className="text-xl font-bold text-gray-900">Sản phẩm</h2>
+                </div>
                 
                 {!checkoutItems || checkoutItems.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Không có sản phẩm được chọn</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <p className="text-lg font-medium">Không có sản phẩm được chọn</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {checkoutItems.map((item) => (
-                      <CartItemCard key={item.id} item={item} />
-                    ))}
-                  </div>
+                  itemsByShop.map((shopGroup, index) => (
+                    <div key={shopGroup.shopId} className={index > 0 ? 'border-t-4 border-gray-100' : ''}>
+                      {/* Shop Header */}
+                      <div className="px-6 py-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 bg-white rounded-full shadow-sm">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-gray-900 text-base">{shopGroup.shopName}</span>
+                        <button className="ml-auto flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-full transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          Chat ngay
+                        </button>
+                      </div>
+
+                      {/* Table Header */}
+                      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-600">
+                        <div className="col-span-6">Sản phẩm</div>
+                        <div className="col-span-2 text-center">Đơn giá</div>
+                        <div className="col-span-2 text-center">Số lượng</div>
+                        <div className="col-span-2 text-right">Thành tiền</div>
+                      </div>
+
+                      {/* Shop Items */}
+                      <div className="divide-y divide-gray-100">
+                        {shopGroup.items.map((item) => {
+                          const safeItem = {
+                            ...item,
+                            price: Number(item.price || item.unitPrice || 0),
+                            unitPrice: Number(item.unitPrice || item.price || 0),
+                            quantity: Number(item.quantity || 1),
+                            subTotal: Number(item.quantity || 1) * Number(item.price || item.unitPrice || 0)
+                          };
+                          return (
+                            <div key={item.id || item.productId} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                              <div className="grid grid-cols-12 gap-4 items-center">
+                                {/* Product Info - Col 6 */}
+                                <div className="col-span-12 md:col-span-6 flex gap-4">
+                                  <div className="relative flex-shrink-0">
+                                    <img 
+                                      src={safeItem.productImage || '/placeholder.png'} 
+                                      alt={safeItem.productName}
+                                      className="w-20 h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1.5">{safeItem.productName}</h3>
+                                    {(safeItem.variantAttributes && safeItem.variantAttributes.length > 0) || safeItem.sku ? (
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        {safeItem.variantAttributes && safeItem.variantAttributes.length > 0 ? (
+                                          safeItem.variantAttributes.map((attr, idx) => (
+                                            <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                              {attr.name}
+                                            </span>
+                                          ))
+                                        ) : (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                            {safeItem.sku}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+
+                                {/* Price - Col 2 */}
+                                <div className="col-span-4 md:col-span-2 text-left md:text-center">
+                                  <div className="text-sm md:text-base font-medium text-gray-900">
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(safeItem.unitPrice)}
+                                  </div>
+                                </div>
+
+                                {/* Quantity - Col 2 */}
+                                <div className="col-span-4 md:col-span-2 text-center">
+                                  <span className="text-sm md:text-base text-gray-700">x{safeItem.quantity}</span>
+                                </div>
+
+                                {/* Subtotal - Col 2 */}
+                                <div className="col-span-4 md:col-span-2 text-right">
+                                  <div className="text-sm md:text-base font-semibold text-red-600">
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(safeItem.subTotal)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Shop Summary */}
+                      <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200">
+                        <div className="flex flex-col md:flex-row justify-between gap-4">
+                          {/* Left: Message */}
+                          <div className="flex items-center gap-3 flex-1">
+                            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Lời nhắn:</label>
+                            <input 
+                              type="text" 
+                              placeholder="Lưu ý cho Người bán..." 
+                              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                          </div>
+                          
+                          {/* Right: Shipping Info */}
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-600">Phương thức vận chuyển:</span>
+                              <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-medium text-xs">
+                                🚚 Nhanh
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-600">Phí vận chuyển:</span>
+                              <span className="font-semibold text-gray-900">
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                                  shippingFee / itemsByShop.length
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
 
