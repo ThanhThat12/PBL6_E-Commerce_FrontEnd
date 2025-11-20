@@ -93,12 +93,7 @@ const Orders = () => {
       dataIndex: 'customerName',
       key: 'customerName',
     },
-    {
-      title: 'Sản phẩm',
-      dataIndex: 'itemCount',
-      key: 'itemCount',
-      render: (count) => `${count} sản phẩm`,
-    },
+   
     {
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',

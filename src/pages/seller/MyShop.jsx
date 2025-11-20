@@ -114,36 +114,57 @@ const MyShop = () => {
       </div>
     );
   }
-
   return (
-    <div>
-      {/* Shop header: show shop name and description from API */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">{shopData?.name || 'Cửa hàng của tôi'}</h1>
-        {shopData?.description && (
-          <p className="text-gray-600 mt-2">{shopData.description}</p>
-        )}
+    <div className="space-y-8">
+      {/* Shop Header with banner + logo */}
+      <div className="relative rounded-lg overflow-hidden shadow-md">
+        <div
+          className="w-full h-48 bg-gray-200"
+          style={{
+            backgroundImage: `url(${shopData?.banner || '/placeholder.png'})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+        />
+
+        <div className="absolute left-6 bottom-4 flex items-center gap-4">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
+            <img
+              src={shopData?.logo || '/placeholder.png'}
+              alt="Shop logo"
+              className="w-full h-full object-cover"
+              onError={(e) => { e.target.src = '/placeholder.png'; }}
+            />
+          </div>
+          <div className="text-white drop-shadow-md">
+            <h1 className="text-2xl font-bold leading-tight">{shopData?.name || 'Cửa hàng của tôi'}</h1>
+            {shopData?.description && (
+              <p className="text-sm opacity-90 mt-1 max-w-lg">{shopData.description}</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <Row gutter={[16, 16]}>
         {/* Shop Stats */}
         <Col xs={24} lg={8}>
-          <Card title="Thống kê cửa hàng">
-            <div className="space-y-4">
+          <Card className="shadow-sm" bodyStyle={{ padding: 16 }}>
+            <h3 className="text-lg font-semibold mb-4">Thống kê cửa hàng</h3>
+            <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Đánh giá:</span>
+                <span className="text-gray-600">Đánh giá</span>
                 <span className="font-semibold">{shopData?.rating || 0} ⭐</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Người theo dõi:</span>
+                <span className="text-gray-600">Người theo dõi</span>
                 <span className="font-semibold">{shopData?.followers || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Sản phẩm:</span>
+                <span className="text-gray-600">Sản phẩm</span>
                 <span className="font-semibold">{shopData?.productCount || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Tỷ lệ phản hồi:</span>
+                <span className="text-gray-600">Tỷ lệ phản hồi</span>
                 <span className="font-semibold">{shopData?.responseRate || 0}%</span>
               </div>
             </div>
@@ -152,12 +173,9 @@ const MyShop = () => {
 
         {/* Shop Profile Form */}
         <Col xs={24} lg={16}>
-          <Card title="Thông tin cửa hàng">
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-            >
+          <Card className="shadow-sm" bodyStyle={{ padding: 18 }}>
+            <h3 className="text-lg font-semibold mb-4">Thông tin cửa hàng</h3>
+            <Form form={form} layout="vertical" onFinish={onFinish}>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
                   <Form.Item
@@ -170,28 +188,19 @@ const MyShop = () => {
                 </Col>
 
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Số điện thoại"
-                    name="phone"
-                  >
+                  <Form.Item label="Số điện thoại" name="phone">
                     <Input placeholder="0123456789" />
                   </Form.Item>
                 </Col>
 
                 <Col span={24}>
-                  <Form.Item
-                    label="Mô tả cửa hàng"
-                    name="description"
-                  >
+                  <Form.Item label="Mô tả cửa hàng" name="description">
                     <TextArea rows={4} placeholder="Giới thiệu về cửa hàng của bạn..." />
                   </Form.Item>
                 </Col>
 
                 <Col span={24}>
-                  <Form.Item
-                    label="Địa chỉ"
-                    name="address"
-                  >
+                  <Form.Item label="Địa chỉ" name="address">
                     <Input placeholder="123 Đường ABC, Quận XYZ, TP.HCM" />
                   </Form.Item>
                 </Col>
@@ -214,11 +223,13 @@ const MyShop = () => {
                       )}
                     </Upload>
                     {shopData?.logo && !logoFile && (
-                      <img 
-                        src={shopData.logo} 
-                        alt="Current logo" 
-                        className="mt-2 w-20 h-20 object-cover rounded"
-                      />
+                      <div className="mt-2">
+                        <img
+                          src={shopData.logo}
+                          alt="Current logo"
+                          className="w-24 h-24 object-cover rounded-full border"
+                        />
+                      </div>
                     )}
                   </Form.Item>
                 </Col>
@@ -241,17 +252,17 @@ const MyShop = () => {
                       )}
                     </Upload>
                     {shopData?.banner && !bannerFile && (
-                      <img 
-                        src={shopData.banner} 
-                        alt="Current banner" 
-                        className="mt-2 w-full h-20 object-cover rounded"
+                      <img
+                        src={shopData.banner}
+                        alt="Current banner"
+                        className="mt-2 w-full h-28 object-cover rounded"
                       />
                     )}
                   </Form.Item>
                 </Col>
               </Row>
 
-              <div className="text-right">
+              <div className="text-right mt-2">
                 <Button type="primary" htmlType="submit" loading={loading}>
                   Cập nhật thông tin
                 </Button>
@@ -263,31 +274,36 @@ const MyShop = () => {
 
       {/* Products list */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Danh sách sản phẩm</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Danh sách sản phẩm</h2>
+          <div className="text-sm text-gray-500">Tổng: {products?.length || 0} sản phẩm</div>
+        </div>
+
         <Row gutter={[16, 16]}>
           {products && products.length > 0 ? (
             products.map((p) => (
               <Col key={p.id} xs={24} sm={12} md={8} lg={6}>
-                <Card
-                  hoverable
-                  cover={
-                    p.image || p.mainImage ? (
+                <Card hoverable className="overflow-hidden" bodyStyle={{ padding: 12 }}>
+                  <div className="relative">
+                    {p.image || p.mainImage ? (
                       <img
                         alt={p.name}
                         src={p.image || p.mainImage}
-                        style={{ height: 160, objectFit: 'cover' }}
+                        className="w-full h-40 object-cover rounded-md"
                       />
                     ) : (
-                      <div style={{ height: 160, background: '#f3f3f3' }} />
-                    )
-                  }
-                >
-                  <div className="font-semibold mb-1">{p.name}</div>
-                  <div className="text-sm text-gray-600 mb-2">{p.categoryName || p.category?.name}</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-lg font-bold">{p.price?.toLocaleString?.() ? p.price.toLocaleString() + ' đ' : (p.basePrice ? p.basePrice.toLocaleString() + ' đ' : '')}</div>
-                    <div className={`text-sm ${p.isActive ? 'text-green-600' : 'text-red-500'}`}>
-                      {p.isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
+                      <div className="w-full h-40 bg-gray-100 rounded-md" />
+                    )}
+                    <div className={`absolute top-2 left-2 text-xs font-semibold px-2 py-1 rounded ${p.isActive ? 'bg-green-600 text-white' : 'bg-red-500 text-white'}`}>
+                      {p.isActive ? 'Hoạt động' : 'Chờ duyệt'}
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="font-semibold mb-1 truncate">{p.name}</div>
+                    <div className="text-sm text-gray-500 mb-2">{p.categoryName || p.category?.name}</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-lg font-bold text-gray-900">{p.price?.toLocaleString?.() ? p.price.toLocaleString() + ' đ' : (p.basePrice ? p.basePrice.toLocaleString() + ' đ' : '')}</div>
                     </div>
                   </div>
                 </Card>

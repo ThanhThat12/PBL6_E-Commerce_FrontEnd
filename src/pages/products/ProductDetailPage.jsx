@@ -653,7 +653,7 @@ const ProductDetailPage = () => {
                 variant="outline"
                 className="text-sm"
               >
-                Sửa đánh giá (chỉ được sửa 1 lần)
+                Sửa đánh giá 
               </Button>
             </div>
           )}
