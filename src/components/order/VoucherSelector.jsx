@@ -77,10 +77,17 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
   // Kiểm tra voucher có hợp lệ không
   const validateVoucher = (voucher) => {
     if (!voucher) return { valid: false, message: 'Mã voucher không tồn tại' };
-    
-    // Check if voucher is active
-    if (!voucher.isActive) {
-      return { valid: false, message: 'Voucher đã hết hiệu lực' };
+    // Check voucher status enum (backend provides Status: UPCOMING, ACTIVE, EXPIRED)
+    if (voucher.status) {
+      if (voucher.status === 'UPCOMING') {
+        return { valid: false, message: 'Voucher chưa có hiệu lực' };
+      }
+      if (voucher.status === 'EXPIRED') {
+        return { valid: false, message: 'Voucher đã hết hạn' };
+      }
+      if (voucher.status !== 'ACTIVE') {
+        return { valid: false, message: 'Voucher không khả dụng' };
+      }
     }
     
     // Note: backend now allows a user to use the same voucher multiple times,
@@ -91,16 +98,16 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
       return { valid: false, message: 'Voucher đã hết lượt sử dụng' };
     }
     
-    // Check date validity
+    // Date checks are kept as a fallback in case status is not provided
     const now = new Date();
-    const startDate = new Date(voucher.startDate);
-    const endDate = new Date(voucher.endDate);
-    
-    if (now < startDate) {
+    const startDate = voucher.startDate ? new Date(voucher.startDate) : null;
+    const endDate = voucher.endDate ? new Date(voucher.endDate) : null;
+
+    if (startDate && now < startDate) {
       return { valid: false, message: 'Voucher chưa có hiệu lực' };
     }
-    
-    if (now > endDate) {
+
+    if (endDate && now > endDate) {
       return { valid: false, message: 'Voucher đã hết hạn' };
     }
     
