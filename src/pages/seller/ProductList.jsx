@@ -140,23 +140,10 @@ const ProductList = () => {
       title: 'Trạng thái',
       dataIndex: 'isActive',
       key: 'status',
-      render: (isActive, record) => (
-        <Select
-          value={isActive ? 'ACTIVE' : 'INACTIVE'}
-          style={{ width: 130 }}
-          onChange={(value) => handleStatusChange(record.id, value)}
-          size="small"
-        >
-          <Option value="ACTIVE">
-            <Tag color="green">Hoạt động</Tag>
-          </Option>
-          <Option value="INACTIVE">
-            <Tag color="orange">Tạm ngưng</Tag>
-          </Option>
-          <Option value="OUT_OF_STOCK">
-            <Tag color="red">Hết hàng</Tag>
-          </Option>
-        </Select>
+      render: (isActive) => (
+        <Tag color={isActive ? 'green' : 'orange'}>
+          {isActive ? 'Hoạt động' : 'Chờ duyệt'}
+        </Tag>
       ),
     },
     {

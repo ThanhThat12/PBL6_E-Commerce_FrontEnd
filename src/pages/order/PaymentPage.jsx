@@ -4,16 +4,17 @@ import { useCart } from '../../context/CartContext';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../../utils/constants';
+import { getProductById } from '../../services/productService';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 import PaymentMethodSelector from '../../components/order/PaymentMethodSelector';
 import ShippingAddressForm from '../../components/order/ShippingAddressForm';
 import VoucherSelector from '../../components/order/VoucherSelector';
-import ShippingFeeCalculator from '../../components/order/ShippingFeeCalculator';
 import CartItemCard from '../../components/cart/CartItemCard';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import { removeItem } from '../../utils/storage';
+import useOrderNotification from '../../hooks/useOrderNotification';
 
 /**
  * PaymentPage Component
@@ -21,28 +22,100 @@ import { removeItem } from '../../utils/storage';
  */
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cartItems, loading: cartLoading, fetchCart, clearCart } = useCart();
+  const { cartItems, loading: cartLoading, fetchCart } = useCart();
   
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [shippingAddress, setShippingAddress] = useState(null);
   const [orderNotes, setOrderNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [weightGrams] = useState(500);
-  const [shippingFee, setShippingFee] = useState(0);
+  const [ghnServices, setGhnServices] = useState({}); // Available services by shop
+  const [selectedServices, setSelectedServices] = useState({}); // Selected service for each shop
+  const [shopShippingFees, setShopShippingFees] = useState({}); // Shipping fees by shop
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
+  const [detectedShopId, setDetectedShopId] = useState(null);
+
+  // Get shopId from checkoutItems (assuming all items are from the same shop)
+  const shopId = useMemo(() => {
+    // Use detected shopId if available
+    if (detectedShopId) return detectedShopId;
+    
+    if (!checkoutItems || checkoutItems.length === 0) return null;
+    // Try to get shopId from first item
+    const firstItem = checkoutItems[0];
+    
+    // Priority order: direct shopId > product.shopId > shop.id > sellerId
+    const id = firstItem?.shopId || 
+               firstItem?.product?.shopId || 
+               firstItem?.product?.shop?.id ||
+               firstItem?.shop?.id ||
+               firstItem?.sellerId || 
+               null;
+    
+    console.log('🏪 PaymentPage - shopId from checkoutItems:', { 
+      firstItem, 
+      shopId: id,
+      detectedShopId,
+      availableFields: Object.keys(firstItem || {})
+    });
+    return id;
+  }, [checkoutItems, detectedShopId]);
+
+  // Fetch shopId from product API if not available in cart
+  const fetchShopIdFromProduct = async (productId) => {
+    try {
+      const response = await getProductById(productId);
+      const shopId = response?.data?.shopId || response?.shopId;
+      console.log('🏪 Fetched shopId from product API:', shopId);
+      if (shopId) {
+        setDetectedShopId(shopId);
+      }
+    } catch (error) {
+      console.error('Error fetching shopId from product:', error);
+    }
+  };
+  // Removed stompClient state, handled by hook
+
+  // WebSocket order notification using custom hook
+  useOrderNotification(
+    JSON.parse(localStorage.getItem('user') || '{}').id,
+    (notification) => {
+      if (notification.paymentStatus === 'SUCCESS') {
+        toast.success(`✅ ${notification.message || 'Thanh toán thành công!'}`);
+        setTimeout(() => {
+          navigate(`/order-history/${notification.orderId}`);
+        }, 2000);
+      } else {
+        toast.error(`❌ ${notification.message || 'Thanh toán thất bại'}`);
+      }
+    }
+  );
 
   // Load selected items from sessionStorage
   useEffect(() => {
     const storedItems = sessionStorage.getItem('checkoutItems');
-    console.log('📦 Stored checkout items:', storedItems);
+    // load stored checkout items
     
     if (storedItems) {
       try {
         const items = JSON.parse(storedItems);
         console.log('✅ Parsed checkout items:', items);
+        console.log('🔍 First item structure:', items[0]);
+        console.log('🔍 First item keys:', items[0] ? Object.keys(items[0]) : 'No items');
         setCheckoutItems(items);
+        
+        // If no shopId found in cart items, fetch from product API
+        const firstItem = items[0];
+        const hasShopId = firstItem?.shopId || 
+                         firstItem?.product?.shopId || 
+                         firstItem?.shop?.id;
+        
+        if (!hasShopId && firstItem?.productId) {
+          console.log('🔍 No shopId in cart item, fetching from product API...');
+          fetchShopIdFromProduct(firstItem.productId);
+        }
       } catch (error) {
         console.error('❌ Error parsing checkout items:', error);
         toast.error('Lỗi tải thông tin đơn hàng');
@@ -50,7 +123,7 @@ const PaymentPage = () => {
       }
     } else {
       // If no selected items, redirect to cart
-      console.warn('⚠️ No checkout items found in sessionStorage');
+      console.warn('No checkout items found in sessionStorage');
       toast.error('Vui lòng chọn sản phẩm để thanh toán');
       navigate('/cart');
     }
@@ -58,10 +131,10 @@ const PaymentPage = () => {
 
   // Fetch cart on mount
   useEffect(() => {
-    console.log('📱 Fetching cart...');
+    // Fetch cart on mount
     if (fetchCart) {
       fetchCart().then((result) => {
-        console.log('✅ Cart fetch result:', result);
+        // cart fetched
       }).catch((error) => {
         console.error('❌ Cart fetch error:', error);
       });
@@ -79,21 +152,162 @@ const PaymentPage = () => {
     }
   }, [checkoutItems, cartLoading, navigate]);
 
+  // Group checkout items by shop
+  const itemsByShop = useMemo(() => {
+    const grouped = {};
+    checkoutItems.forEach(item => {
+      const shopId = item.shopId || 'unknown';
+      const shopName = item.shopName || 'Shop không xác định';
+      if (!grouped[shopId]) {
+        grouped[shopId] = {
+          shopId,
+          shopName,
+          items: []
+        };
+      }
+      grouped[shopId].items.push(item);
+    });
+    return Object.values(grouped);
+  }, [checkoutItems]);
+
   // Handle shipping address change
   const handleAddressChange = (addressData) => {
-    console.log('📬 Address changed:', addressData);
     setShippingAddress(addressData);
   };
 
-  // Handle shipping fee calculated
-  const handleShippingFeeCalculated = (fee, info) => {
-    console.log('💰 Shipping fee calculated:', fee, info);
-    setShippingFee(fee);
+  // Fetch GHN services when address changes
+  useEffect(() => {
+    const loadServices = async () => {
+      const addressId = shippingAddress?.addressId || shippingAddress?.id;
+      console.log('[GHN Services] shippingAddress:', shippingAddress);
+      console.log('[GHN Services] extracted addressId:', addressId);
+      // GHN service fetch: run only when all required data present
+      if (shippingAddress && addressId && itemsByShop.length > 0) {
+        // Fetch GHN services for each shop
+        for (const shop of itemsByShop) {
+          try {
+            const cartItemIds = shop.items.map(item => item.cartItemId || item.id).filter(Boolean);
+            const requestData = {
+              shopId: parseInt(shop.shopId),
+              addressId: parseInt(addressId),
+              cartItemIds: cartItemIds
+            };
+            // silent request data for GHN
+            const response = await api.post('/checkout/available-services', requestData);
+            console.log('[GHN] Raw response:', response.data);
+            
+            // handle GHN response - backend returns [{buyerAddress, totalWeight, services: [...], shopAddress}]
+            let servicesArray = [];
+            if (response.data) {
+              if (Array.isArray(response.data)) {
+                // Check if it's array of wrapper objects with nested services
+                if (response.data[0]?.services && Array.isArray(response.data[0].services)) {
+                  servicesArray = response.data[0].services;
+                } else if (response.data[0]?.service_id) {
+                  // Direct array of service objects
+                  servicesArray = response.data;
+                }
+              } else if (response.data.services && Array.isArray(response.data.services)) {
+                // Object with nested services array
+                servicesArray = response.data.services;
+              }
+            }
+            
+            console.log('[GHN] Extracted services array:', servicesArray);
+            
+            if (servicesArray.length > 0) {
+              setGhnServices(prev => ({
+                ...prev,
+                [shop.shopId]: servicesArray
+              }));
+              // Fetched GHN services
+              if (!selectedServices[shop.shopId]) {
+                const firstService = servicesArray[0];
+                console.log('[GHN] Auto-selecting first service:', firstService);
+                // Auto-select first service
+                await handleServiceSelect(shop.shopId, firstService);
+              }
+            }
+          } catch (error) {
+            console.error(`[GHN] ❌ Error fetching services for shop ${shop.shopId}:`, error);
+            if (error.response) {
+              console.error('[GHN] Error response:', error.response.data);
+            } else {
+              console.error('[GHN] Error message:', error.message);
+            }
+            toast.error(`Không thể tải dịch vụ vận chuyển cho ${shop.shopName}`);
+          }
+        }
+      } else {
+        // required conditions not met - nothing to fetch
+      }
+      // GHN service fetch finished
+    };
+    loadServices();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shippingAddress, itemsByShop]);
+
+  // Handle service selection for a shop
+  const handleServiceSelect = async (shopId, service) => {
+    console.log('[Service Select] shopId:', shopId, 'service:', service);
+    
+    // Validate service has required fields
+    if (!service || !service.service_id || !service.service_type_id) {
+      console.error('[Service Select] Invalid service object:', service);
+      toast.error('Dịch vụ vận chuyển không hợp lệ');
+      return;
+    }
+    
+    setSelectedServices(prev => ({
+      ...prev,
+      [shopId]: service
+    }));
+    
+    // Calculate shipping fee for this service
+    const addrIdForFee = shippingAddress?.addressId || shippingAddress?.id;
+    if (shippingAddress && addrIdForFee) {
+      const shopGroup = itemsByShop.find(s => s.shopId === shopId);
+      if (shopGroup) {
+        const cartItemIds = shopGroup.items.map(item => item.cartItemId || item.id).filter(Boolean);
+        const fee = await calculateShippingFeeForService(
+          shopId,
+          addrIdForFee,
+          service.service_id,
+          service.service_type_id,
+          cartItemIds
+        );
+        
+        // If fee is 0 (error), the error message is already shown to user
+        // User should try another service or address
+        
+        // Update shipping fee for this shop
+        setShopShippingFees(prev => ({
+          ...prev,
+          [shopId]: fee
+        }));
+      }
+    }
+  };
+
+  // Calculate total shipping fee from all shops
+  const shippingFee = useMemo(() => {
+    return Object.values(shopShippingFees).reduce((sum, fee) => sum + fee, 0);
+  }, [shopShippingFees]);
+
+  // Helper function to refresh cart and navigate
+  const refreshCartAndNavigate = async (path) => {
+    try {
+      await fetchCart();
+    } catch (error) {
+      console.error('Error refreshing cart:', error);
+      // Still navigate even if fetch failed
+    }
+    navigate(path);
   };
 
   // Handle voucher apply
   const handleVoucherApply = (voucher) => {
-    console.log('🎫 Voucher applied:', voucher);
+    // Apply voucher without noisy logs
     setAppliedVoucher(voucher);
     
     if (voucher) {
@@ -110,12 +324,8 @@ const PaymentPage = () => {
 
   // Calculate totals - sử dụng useMemo để tự động tính lại khi checkoutItems thay đổi
   const { subtotal, total, finalTotal } = useMemo(() => {
-    console.log('🧮 Calculating totals with checkoutItems:', checkoutItems);
-    console.log('🧮 Current shippingFee:', shippingFee);
-    console.log('🧮 Current voucherDiscount:', voucherDiscount);
     
     if (!checkoutItems || checkoutItems.length === 0) {
-      console.log('⚠️ No checkout items, returning 0');
       return { subtotal: 0, shipping: shippingFee, total: shippingFee, finalTotal: shippingFee - voucherDiscount };
     }
     
@@ -125,7 +335,7 @@ const PaymentPage = () => {
       const quantity = parseInt(item.quantity) || 0;
       const itemTotal = price * quantity;
       
-      console.log(`  Item: ${item.productName || item.name}, price: ${price}, qty: ${quantity}, total: ${itemTotal}`);
+      // quiet: don't log every item in production
       
       return sum + itemTotal;
     }, 0);
@@ -133,7 +343,7 @@ const PaymentPage = () => {
     const total = subtotal + shippingFee;
     const finalTotal = total - voucherDiscount;
     
-    console.log(`✅ Subtotal: ${subtotal}, Shipping: ${shippingFee}, Voucher: ${voucherDiscount}, Total: ${total}, Final: ${finalTotal}`);
+    // totals computed
     
     return { subtotal, shipping: shippingFee, total, finalTotal };
   }, [checkoutItems, shippingFee, voucherDiscount]);
@@ -147,174 +357,284 @@ const PaymentPage = () => {
       quantity: item.quantity
     }));
   };
+  // Calculate shipping fee for selected service
+  const calculateShippingFeeForService = async (shopId, addressId, serviceId, serviceTypeId, cartItemIds) => {
+    try {
+      const payload = {
+        shopId: parseInt(shopId),
+        addressId: parseInt(addressId),
+        serviceId: parseInt(serviceId),
+        serviceTypeId: parseInt(serviceTypeId),
+        cartItemIds: cartItemIds.map(id => parseInt(id))
+      };
+      console.log('[Fee Calc] Payload:', payload);
+      const response = await api.post('/checkout/calculate-fee', payload);
+      
+      // calculate fee response (store/handle errors as needed)
+      
+      // GHN API trả về: { code, message, data: { total, service_fee, ... } }
+      // Backend ResponseDTO trả về: { code, message, data: { ... GHN response ... } }
+      let shippingFee = 0;
+      
+      if (response.data) {
+        // Kiểm tra các trường hợp có thể có
+        if (response.data.data && response.data.data.total !== undefined) {
+          // Trường hợp: ResponseDTO.ok(feeResponse) -> data: { data: { total: ... } }
+          shippingFee = response.data.data.total;
+        } else if (response.data.total !== undefined) {
+          // Trường hợp: data: { total: ... }
+          shippingFee = response.data.total;
+        } else if (response.data.shippingFee !== undefined) {
+          // Trường hợp: data: { shippingFee: ... }
+          shippingFee = response.data.shippingFee;
+        }
+      }
+      
+      // shippingFee determined
+      return shippingFee;
+    } catch (error) {
+      console.error(`❌ Error calculating shipping fee for shop ${shopId}:`, error);
+      
+      // Extract detailed error message from backend
+      let errorMessage = 'Không thể tính phí vận chuyển';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Backend returns: { code, message, type, data }
+        if (errorData.message && errorData.message.includes('route not found')) {
+          errorMessage = 'GHN không hỗ trợ vận chuyển đến địa chỉ này cho dịch vụ đã chọn. Vui lòng chọn dịch vụ khác hoặc địa chỉ khác.';
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        
+        console.error('[Fee Calc] Error details:', errorData);
+      }
+      
+      toast.error(errorMessage);
+      return 0;
+    }
+  };
 
-  // Handle place order
+  // Handle place order - NEW GHN 3-step flow
   const handlePlaceOrder = async () => {
-    console.log('🔍 Validating shipping address:', shippingAddress);
     
     // Validation
     if (!shippingAddress) {
       toast.error('Vui lòng chọn hoặc nhập địa chỉ giao hàng');
       return;
     }
-
-    console.log('✓ Checking fields:', {
-      toName: shippingAddress.toName,
-      toPhone: shippingAddress.toPhone,
-      toAddress: shippingAddress.toAddress
-    });
-
+    
     if (!shippingAddress.toName || !shippingAddress.toPhone || !shippingAddress.toAddress) {
-      console.log('❌ Missing fields!');
       toast.error('Vui lòng điền đầy đủ thông tin giao hàng');
       return;
     }
 
-    console.log('✅ Validation passed!');
+    // Nhóm sản phẩm theo shop
+    const grouped = {};
+    checkoutItems.forEach(item => {
+      const shopId = item.shopId || 'unknown';
+      if (!grouped[shopId]) grouped[shopId] = [];
+      grouped[shopId].push(item);
+    });
+    
+    const shopGroups = Object.entries(grouped);
+    
+    // Validate service selection for each shop
+    for (const [shopId, items] of shopGroups) {
+      if (!selectedServices[shopId]) {
+        const shopName = items[0]?.shopName || `Shop ${shopId}`;
+        toast.error(`Vui lòng chọn dịch vụ vận chuyển cho ${shopName}`);
+        return;
+      }
+    }
+
     setIsProcessing(true);
 
     try {
-      // Prepare order items
-      const items = prepareOrderItems();
+      // Creating orders for shops
       
-      console.log('📦 Prepared items:', items);
+      // Lưu danh sách order đã tạo
+      const createdOrders = [];
+      let hasError = false;
       
-      // Convert IDs to numbers if needed
-      const toDistrictId = shippingAddress.toDistrictId ? 
-        shippingAddress.toDistrictId.toString() : '';
-      const toWardCode = shippingAddress.toWardCode ? 
-        shippingAddress.toWardCode.toString() : '';
-      
-      const orderData = {
-        items: items,
-        receiverName: shippingAddress.toName,
-        receiverPhone: shippingAddress.toPhone,
-        receiverAddress: shippingAddress.toAddress,
-        toDistrictId: toDistrictId,
-        toWardCode: toWardCode,
-        province: shippingAddress.province || '',
-        district: shippingAddress.district || '',
-        ward: shippingAddress.ward || '',
-        weightGrams: weightGrams,
-        codAmount: paymentMethod === 'COD' ? Math.round(finalTotal) : 0,
-        shippingFee: shippingFee,
-        voucherCode: appliedVoucher?.code || null,
-        voucherDiscount: voucherDiscount,
-        notes: orderNotes,
-        method: paymentMethod // Thêm trường method để backend nhận được phương thức thanh toán
-      };
+      // Tạo order cho từng shop using NEW checkout/confirm endpoint
+      for (let i = 0; i < shopGroups.length; i++) {
+        const [shopId, items] = shopGroups[i];
+        const shopName = items[0]?.shopName || `Shop ${shopId}`;
+        const selectedService = selectedServices[shopId];
+        
+        // creating order i+1
+        
+        // Get cart item IDs
+        const cartItemIds = items.map(item => item.cartItemId || item.id).filter(Boolean);
+        
+        // Prepare checkout confirm request
+        const confirmData = {
+          shopId: parseInt(shopId),
+          addressId: parseInt(shippingAddress?.addressId || shippingAddress?.id),
+          serviceId: parseInt(selectedService.service_id),
+          serviceTypeId: parseInt(selectedService.service_type_id),
+          cartItemIds: cartItemIds.map(id => parseInt(id)),
+          paymentMethod: paymentMethod,
+          note: orderNotes || ''
+        };
 
-      console.log('📦 Sending order data:', JSON.stringify(orderData, null, 2));
+        // sending confirmData
 
-      // Call API to create order using constants
-      // API sẽ tự lấy userId từ JWT token
-      const response = await api.post(API_ENDPOINTS.ORDER.CREATE, orderData);
-      // NOTE: api interceptor returns ResponseDTO { status, error, message, data }
-      console.log('✅ Order response DTO:', response);
-      
-      const isOk = response && (response.status === 200 || response.status === 201) && !response.error;
-      if (isOk) {
-        const orderId = response.data?.orderId || response.orderId;
-        
-        console.log('🎯 Order created successfully! Order ID:', orderId);
-        console.log('💳 Current payment method:', paymentMethod);
-        console.log('🔍 Payment method type:', typeof paymentMethod);
-        console.log('🔍 Is MOMO?', paymentMethod === 'MOMO');
-        
-        // Clear checkout items from sessionStorage
-        sessionStorage.removeItem('checkoutItems');
-        
-        // Nếu chọn MoMo, tạo link thanh toán và chuyển hướng
-        if (paymentMethod === 'MOMO') {
-          console.log('💳 Creating MoMo payment for order:', orderId);
-          console.log('💰 Payment amount details:');
-          console.log('  - Subtotal:', subtotal);
-          console.log('  - Shipping Fee:', shippingFee);
-          console.log('  - Voucher Discount:', voucherDiscount);
-          console.log('  - Total:', total);
-          console.log('  - Final Total (to MoMo):', finalTotal);
+        try {
+          const response = await api.post('/checkout/confirm', confirmData);
           
-          try {
-            const momoPayload = {
-              orderId: orderId,
-              amount: finalTotal,
-              orderInfo: `Thanh toán đơn hàng #${orderId}`,
-              returnUrl: `${window.location.origin}/payment-result`,
-              notifyUrl: `${window.location.origin}/api/payment/momo/callback`
-            };
+          // log response if needed
+          
+          if (response.data?.orderId) {
+            const { orderId, totalAmount, status } = response.data;
             
-            console.log('📤 Sending MoMo payment request:', momoPayload);
+            // order created
             
-            const momoResponse = await api.post('payment/momo/create', momoPayload);
-            
-            console.log('✅ MoMo payment response:', momoResponse.data);
-            
-            if (momoResponse.data?.payUrl) {
-              toast.success('Đang chuyển đến trang thanh toán MoMo...');
-              // Clear persisted shipping address after order is created
-              removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
-              
-              // LƯU Ý: KHÔNG xóa cart ở đây cho MoMo
-              // Cart sẽ được xóa sau khi thanh toán MoMo thành công (trong PaymentResultPage)
-              console.log('⚠️ Cart will be cleared after MoMo payment success');
-              
-              // Lưu orderId vào sessionStorage để xóa nếu thanh toán thất bại
-              sessionStorage.setItem('pendingMomoOrderId', orderId);
-              console.log('💾 Saved pending MoMo order ID:', orderId);
-              
-              // Chuyển hướng đến trang thanh toán MoMo
-              window.location.href = momoResponse.data.payUrl;
-              return;
-            } else {
-              toast.error('Không thể tạo link thanh toán MoMo');
-              navigate('/orders');
-            }
-          } catch (momoError) {
-            console.error('❌ MoMo payment error:', momoError.response?.data || momoError.message);
-            toast.error('Lỗi tạo thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
-            navigate('/orders');
+            createdOrders.push({
+              orderId,
+              shopId,
+              shopName,
+              totalAmount,
+              status
+            });
+          } else {
+            console.error(`❌ Failed to create order for ${shopName}:`, response);
+            hasError = true;
+            toast.error(`Lỗi đặt hàng cho ${shopName}: ${response?.message || 'Không xác định'}`);
           }
-        } else {
-          // COD - xóa cart ngay vì không cần thanh toán online
-          console.log('🗑️ Clearing cart for COD payment');
-          await clearCart();
+        } catch (error) {
+          console.error(`❌ Error creating order for ${shopName}:`, error);
+          hasError = true;
           
-          // COD - chuyển đến trang đơn hàng
-          toast.success(response.message || 'Đặt hàng thành công!');
-          // Clear persisted shipping address
-          removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
-          navigate('/orders');
+          let errorMsg = error?.response?.data?.message || error?.message || 'Không xác định';
+          toast.error(`Lỗi đặt hàng cho ${shopName}: ${errorMsg}`);
+        }
+      }
+
+      // summary created orders
+
+      // Nếu có lỗi và không tạo được order nào
+      if (createdOrders.length === 0) {
+        toast.error('Không thể tạo đơn hàng. Vui lòng thử lại!');
+        setIsProcessing(false);
+        return;
+      }
+      // final summary
+
+      // Nếu có lỗi và không tạo được order nào
+      if (createdOrders.length === 0) {
+        toast.error('Không thể tạo đơn hàng. Vui lòng thử lại!');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Clear checkout items và shipping address
+      sessionStorage.removeItem('checkoutItems');
+      removeItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
+
+      // Xử lý theo phương thức thanh toán
+      if (paymentMethod === 'MOMO') {
+        // processing MoMo payment...
+        
+        // Lấy order đầu tiên để tạo payment
+        const firstOrder = createdOrders[0];
+        const momoOrderId = Number(firstOrder.orderId);
+        
+        // Tính tổng tiền của tất cả đơn hàng đã tạo thành công
+        const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+        
+        // total amount for payment - computed
+        
+        const momoPayload = {
+          orderId: momoOrderId,
+          amount: Math.round(totalAmount),
+          orderInfo: `Thanh toán ${createdOrders.length} đơn hàng`,
+          returnUrl: `${window.location.origin}/payment-result`,
+          notifyUrl: `${window.location.origin}/api/payment/momo/callback`
+        };
+
+        // MoMo payload prepared
+
+        try {
+          const momoResponse = await api.post('payment/momo/create', momoPayload);
+          
+          if (momoResponse.data?.payUrl) {
+            toast.success('Đang chuyển đến trang thanh toán MoMo...');
+            
+            // Lưu danh sách orderIds để xử lý sau
+            sessionStorage.setItem('pendingMomoOrderIds', JSON.stringify(createdOrders.map(o => o.orderId)));
+            // saved pending MoMo order IDs
+            
+            // Chuyển hướng đến trang thanh toán MoMo
+            window.location.href = momoResponse.data.payUrl;
+            return;
+          } else {
+            console.error('❌ No payUrl in MoMo response');
+            toast.error('Không thể tạo link thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
+            await refreshCartAndNavigate('/orders');
+          }
+        } catch (momoError) {
+          console.error('❌ MoMo payment error:', momoError);
+          toast.error('Lỗi tạo thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
+          await refreshCartAndNavigate('/orders');
+        }
+      } else if (paymentMethod === 'SPORTYPAY') {
+        console.log('💳 Processing SportyPay payment for multiple orders...');
+        
+        // Tính tổng tiền của tất cả đơn hàng
+        const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+        
+        try {
+          const walletResponse = await api.post('/wallet/withdraw', {
+            amount: Math.round(totalAmount),
+            description: `Thanh toán ${createdOrders.length} đơn hàng qua SportyPay`
+          });
+
+          console.log('💸 Wallet response:', walletResponse);
+
+          if (walletResponse.status === 200) {
+            toast.success('Thanh toán bằng ví SportyPay thành công!');
+            
+            // Update tất cả order status sau khi thanh toán thành công
+            for (const order of createdOrders) {
+              try {
+                await api.post(`/orders/${order.orderId}/update-after-payment`, {});
+                console.log(`✅ Order ${order.orderId} updated after wallet payment`);
+              } catch (updateError) {
+                console.error(`⚠️ Error updating order ${order.orderId}:`, updateError);
+              }
+            }
+            
+            console.log('✅ Cart will be cleared by backend for purchased items');
+            await refreshCartAndNavigate('/orders');
+          } else {
+            toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
+            await refreshCartAndNavigate('/orders');
+          }
+        } catch (walletError) {
+          console.error('❌ SportyPay error:', walletError);
+          toast.error('Lỗi thanh toán bằng ví SportyPay');
+          await refreshCartAndNavigate('/orders');
         }
       } else {
-        // Show server message if present
-        toast.error(response?.message || 'Lỗi đặt hàng');
+        // COD - Đơn hàng đã được tạo, chuyển đến trang đơn hàng
+        console.log('✅ COD orders created successfully');
+        
+        if (hasError) {
+          toast.warning(`Đã tạo ${createdOrders.length}/${shopGroups.length} đơn hàng thành công. Một số đơn hàng không thể tạo.`);
+        } else {
+          toast.success(`Đặt hàng thành công ${createdOrders.length} đơn hàng!`);
+        }
+        
+        console.log('✅ Cart will be cleared by backend for purchased items (COD)');
+        await refreshCartAndNavigate('/orders');
       }
       
     } catch (error) {
-      console.error('❌ Error placing order:', error);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error data:', error.response?.data);
-      
-      // Hiển thị chi tiết lỗi
-      let errorMessage = 'Lỗi đặt hàng. Vui lòng thử lại!';
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data) {
-        // Nếu có nhiều lỗi validation
-        if (typeof error.response.data === 'object') {
-          const errors = Object.values(error.response.data).join(', ');
-          errorMessage = errors || errorMessage;
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      console.error('❌ Final error message:', errorMessage);
-      toast.error(errorMessage);
-    } finally {
+      console.error('❌ Error placing orders:', error);
+      toast.error('Lỗi đặt hàng. Vui lòng thử lại!');
       setIsProcessing(false);
     }
   };
@@ -330,14 +650,6 @@ const PaymentPage = () => {
       </div>
     );
   }
-
-  // Debug: Check cart data
-  console.log('🛒 Cart Items:', cartItems);
-  console.log('📊 Subtotal:', subtotal);
-  console.log('� Shipping Fee:', shippingFee);
-  console.log('🎫 Voucher Discount:', voucherDiscount);
-  console.log('�💰 Total:', total);
-  console.log('💳 Final Total:', finalTotal);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -366,22 +678,167 @@ const PaymentPage = () => {
                 />
               </div>
 
-              {/* Order Items Section */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Chi tiết đơn hàng
-                </h2>
+              {/* Products by Shop */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+                  <h2 className="text-xl font-bold text-gray-900">Sản phẩm</h2>
+                </div>
                 
                 {!checkoutItems || checkoutItems.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Không có sản phẩm được chọn</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <p className="text-lg font-medium">Không có sản phẩm được chọn</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {checkoutItems.map((item) => (
-                      <CartItemCard key={item.id} item={item} />
-                    ))}
-                  </div>
+                  itemsByShop.map((shopGroup, index) => (
+                    <div key={shopGroup.shopId} className={index > 0 ? 'border-t-4 border-gray-100' : ''}>
+                      {/* Shop Header */}
+                      <div className="px-6 py-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 bg-white rounded-full shadow-sm">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-gray-900 text-base">{shopGroup.shopName}</span>
+                        <button className="ml-auto flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-full transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          Chat ngay
+                        </button>
+                      </div>
+
+                      {/* Table Header */}
+                      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-600">
+                        <div className="col-span-6">Sản phẩm</div>
+                        <div className="col-span-2 text-center">Đơn giá</div>
+                        <div className="col-span-2 text-center">Số lượng</div>
+                        <div className="col-span-2 text-right">Thành tiền</div>
+                      </div>
+
+                      {/* Shop Items */}
+                      <div className="divide-y divide-gray-100">
+                        {shopGroup.items.map((item) => {
+                          const safeItem = {
+                            ...item,
+                            price: Number(item.price || item.unitPrice || 0),
+                            unitPrice: Number(item.unitPrice || item.price || 0),
+                            quantity: Number(item.quantity || 1),
+                            subTotal: Number(item.quantity || 1) * Number(item.price || item.unitPrice || 0)
+                          };
+                          return (
+                            <div key={item.id || item.productId} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                              <div className="grid grid-cols-12 gap-4 items-center">
+                                {/* Product Info - Col 6 */}
+                                <div className="col-span-12 md:col-span-6 flex gap-4">
+                                  <div className="relative flex-shrink-0">
+                                    <img 
+                                      src={safeItem.productImage || '/placeholder.png'} 
+                                      alt={safeItem.productName}
+                                      className="w-20 h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1.5">{safeItem.productName}</h3>
+                                    {(safeItem.variantAttributes && safeItem.variantAttributes.length > 0) || safeItem.sku ? (
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        {safeItem.variantAttributes && safeItem.variantAttributes.length > 0 ? (
+                                          safeItem.variantAttributes.map((attr, idx) => (
+                                            <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                              {attr.name}
+                                            </span>
+                                          ))
+                                        ) : (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                            {safeItem.sku}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+
+                                {/* Price - Col 2 */}
+                                <div className="col-span-4 md:col-span-2 text-left md:text-center">
+                                  <div className="text-sm md:text-base font-medium text-gray-900">
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(safeItem.unitPrice)}
+                                  </div>
+                                </div>
+
+                                {/* Quantity - Col 2 */}
+                                <div className="col-span-4 md:col-span-2 text-center">
+                                  <span className="text-sm md:text-base text-gray-700">x{safeItem.quantity}</span>
+                                </div>
+
+                                {/* Subtotal - Col 2 */}
+                                <div className="col-span-4 md:col-span-2 text-right">
+                                  <div className="text-sm md:text-base font-semibold text-red-600">
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(safeItem.subTotal)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Shop Summary */}
+                      <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200">
+                        <div className="flex flex-col gap-4">
+                          {/* Message Input */}
+                          <div className="flex items-center gap-3">
+                            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Lời nhắn:</label>
+                            <input 
+                              type="text" 
+                              placeholder="Lưu ý cho Người bán..." 
+                              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            />
+                          </div>
+                          
+                          {/* GHN Service Selection */}
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
+                            <div className="flex items-center gap-2 text-sm flex-1">
+                              <span className="text-gray-600 whitespace-nowrap">Phương thức vận chuyển:</span>
+                              {ghnServices[shopGroup.shopId] && ghnServices[shopGroup.shopId].length > 0 ? (
+                                <select 
+                                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                  value={selectedServices[shopGroup.shopId]?.service_id || ''}
+                                  onChange={(e) => {
+                                    const service = ghnServices[shopGroup.shopId].find(s => s.service_id === parseInt(e.target.value));
+                                    if (service) handleServiceSelect(shopGroup.shopId, service);
+                                  }}
+                                >
+                                  <option value="">Chọn dịch vụ vận chuyển</option>
+                                  {ghnServices[shopGroup.shopId].map((service, idx) => (
+                                    <option
+                                      key={service.service_id ? `${service.service_id}-${shopGroup.shopId}` : `${shopGroup.shopId}-${idx}`}
+                                      value={service.service_id}
+                                    >
+                                      {service.short_name}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full font-medium text-xs">
+                                  {shippingAddress ? 'Đang tải...' : 'Vui lòng chọn địa chỉ giao hàng'}
+                                </span>
+                              )}
+                            </div>
+                            {selectedServices[shopGroup.shopId] && shopShippingFees[shopGroup.shopId] !== undefined && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-gray-600">Phí vận chuyển:</span>
+                                <span className="font-semibold text-gray-900">
+                                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shopShippingFees[shopGroup.shopId])}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
 
@@ -393,6 +850,8 @@ const PaymentPage = () => {
                 <VoucherSelector 
                   onVoucherApply={handleVoucherApply}
                   subtotal={subtotal}
+                  shopId={shopId}
+                  cartItems={checkoutItems}
                 />
               </div>
 
@@ -440,9 +899,6 @@ const PaymentPage = () => {
                         <p className="font-medium text-gray-900">{shippingAddress.toName}</p>
                         <p>{shippingAddress.toPhone}</p>
                         <p>{shippingAddress.toAddress}</p>
-                        {shippingAddress.ward && shippingAddress.district && shippingAddress.province && (
-                          <p>{`${shippingAddress.ward}, ${shippingAddress.district}, ${shippingAddress.province}`}</p>
-                        )}
                       </div>
                     </div>
                   )}
@@ -470,11 +926,6 @@ const PaymentPage = () => {
                           }).format(shippingFee)}
                         </span>
                       </div>
-                      <ShippingFeeCalculator
-                        shippingAddress={shippingAddress}
-                        weightGrams={weightGrams}
-                        onFeeCalculated={handleShippingFeeCalculated}
-                      />
                     </div>
 
                     {/* Voucher Discount */}

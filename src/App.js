@@ -27,6 +27,7 @@ import CartPage from './pages/cart/CartPage';
 
 // Order Pages
 import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
+import ItemReturnPage from './pages/order/ItemReturnPage';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -42,6 +43,7 @@ import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 import SellerProtectedRoute from './components/seller/ProtectedRoute';
 import { SellerLayout } from './components/seller/Layout';
 import * as SellerPages from './pages/seller';
+import ReviewsPage from './pages/seller/Review';
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
 import OrdersPage from "./pages/admin/Orders/OrdersPage";
@@ -51,6 +53,7 @@ import Sellers from "./pages/admin/Users/Sellers";
 import Admins from "./pages/admin/Users/Admins";
 import SettingsPage from "./pages/admin/Settings/SettingsPage";
 import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
+import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
 
 function App() {
   return (
@@ -115,6 +118,14 @@ function App() {
                 } 
               />
               <Route 
+                path="/return-order-item" 
+                element={
+                  <ProtectedRoute>
+                    <ItemReturnPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/orders/:orderId" 
                 element={
                   <ProtectedRoute>
@@ -159,6 +170,7 @@ function App() {
             <Route path="/admin/products" element={<ProtectedRouteAdmin><ProductsPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/orders" element={<ProtectedRouteAdmin><OrdersPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/categories" element={<ProtectedRouteAdmin><CategoriesPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/vouchers" element={<ProtectedRouteAdmin><VouchersPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><Customers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><Sellers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
@@ -181,9 +193,12 @@ function App() {
               <Route path="products/list" element={<SellerPages.ProductList />} />
               <Route path="products/add" element={<SellerPages.AddProduct />} />
               <Route path="orders" element={<SellerPages.Orders />} />
+              <Route path="reviews" element={<ReviewsPage />} />
               <Route path="my-shop" element={<SellerPages.MyShop />} />
               <Route path="statistical" element={<SellerPages.Statistical />} />
               <Route path="customers" element={<SellerPages.Customers />} />
+              <Route path="vouchers" element={<SellerPages.VoucherManagement />} />
+              <Route path="refunds" element={<SellerPages.Refunds />} />
             </Route>
             {/* ================================================= */}
 

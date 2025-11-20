@@ -215,14 +215,36 @@ export const useAddressMaster = () => {
    * Select province and trigger fetch districts
    */
   const selectProvince = (provinceId) => {
-    setSelectedProvinceId(provinceId);
+    if (!provinceId) {
+      console.warn('selectProvince: provinceId is null or undefined');
+      setSelectedProvinceId(null);
+      return;
+    }
+    const id = Number(provinceId);
+    if (isNaN(id)) {
+      console.error('selectProvince: provinceId is not a valid number:', provinceId);
+      return;
+    }
+    console.log('selectProvince called with:', id);
+    setSelectedProvinceId(id);
   };
 
   /**
    * Select district and trigger fetch wards
    */
   const selectDistrict = (districtId) => {
-    setSelectedDistrictId(districtId);
+    if (!districtId) {
+      console.warn('selectDistrict: districtId is null or undefined');
+      setSelectedDistrictId(null);
+      return;
+    }
+    const id = Number(districtId);
+    if (isNaN(id)) {
+      console.error('selectDistrict: districtId is not a valid number:', districtId);
+      return;
+    }
+    console.log('selectDistrict called with:', id);
+    setSelectedDistrictId(id);
   };
 
   return {

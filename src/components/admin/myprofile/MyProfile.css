@@ -100,7 +100,7 @@
   margin: 0 0 12px 0;
 }
 
-.myprofile-role-badge {
+.myprofile-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -112,19 +112,14 @@
   letter-spacing: 0.5px;
 }
 
-.myprofile-role-badge.role-super {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+.myprofile-status-badge.status-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
 }
 
-.myprofile-role-badge.role-admin {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.myprofile-status-badge.status-inactive {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
-}
-
-.myprofile-role-badge.role-default {
-  background: #e2e8f0;
-  color: #64748b;
 }
 
 /* Profile Actions */
@@ -262,8 +257,8 @@
   min-height: 80px;
 }
 
-/* Profile Stats */
-.myprofile-stats {
+/* Profile Stats -> Security Card */
+.myprofile-security {
   background: white;
   border-radius: 16px;
   padding: 24px;
@@ -272,71 +267,183 @@
   height: fit-content;
 }
 
-.myprofile-stats-title {
+.myprofile-security-title {
   font-size: 18px;
   font-weight: 700;
   color: #1e293b;
   margin: 0 0 20px 0;
 }
 
-.myprofile-stats-grid {
+.myprofile-security-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.myprofile-btn-change-password,
+.myprofile-btn-reset-password {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.myprofile-btn-change-password {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.myprofile-btn-change-password:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.myprofile-btn-reset-password {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.myprofile-btn-reset-password:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Password Form */
+.myprofile-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.myprofile-password-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.myprofile-password-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.myprofile-password-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.myprofile-password-close:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.myprofile-password-inputs {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.myprofile-stat-item {
+.myprofile-password-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.myprofile-password-label {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 12px;
+  gap: 8px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.myprofile-password-label svg {
+  color: #667eea;
+}
+
+.myprofile-password-input {
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1e293b;
   transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
 }
 
-.myprofile-stat-item:hover {
-  background: #f1f5f9;
-  transform: translateX(4px);
+.myprofile-password-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.myprofile-stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.myprofile-password-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.myprofile-btn-password-cancel,
+.myprofile-btn-password-save {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.myprofile-stat-icon.blue {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-}
-
-.myprofile-stat-icon.green {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.myprofile-stat-icon.purple {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-}
-
-.myprofile-stat-content {
-  flex: 1;
-}
-
-.myprofile-stat-label {
-  font-size: 13px;
+.myprofile-btn-password-cancel {
+  background: white;
+  border: 1px solid #e2e8f0;
   color: #64748b;
-  margin: 0 0 4px 0;
 }
 
-.myprofile-stat-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
+.myprofile-btn-password-cancel:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.myprofile-btn-password-save {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.myprofile-btn-password-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 /* Responsive */

@@ -12,7 +12,7 @@ const useCartStore = create(
       cartCount: 0,
       loading: false,
       error: null,
-      selectedItems: [], // Danh sách ID các item được chọn để thanh toán
+  selectedItems: [], // Không khôi phục từ localStorage nữa
 
       // Actions
       /**
@@ -240,7 +240,8 @@ const useCartStore = create(
           : [...selectedItems, normalizedItemId];
         
         console.log('✅ New selected items:', newSelectedItems);
-        set({ selectedItems: newSelectedItems });
+  set({ selectedItems: newSelectedItems });
+  set({ selectedItems: newSelectedItems });
       },
 
       /**
@@ -249,14 +250,16 @@ const useCartStore = create(
       selectAllItems: () => {
         const { cart } = get();
         const allItemIds = cart?.items?.map(item => item.id) || [];
-        set({ selectedItems: allItemIds });
+  set({ selectedItems: allItemIds });
+  set({ selectedItems: allItemIds });
       },
 
       /**
        * Deselect all items
        */
       deselectAllItems: () => {
-        set({ selectedItems: [] });
+  set({ selectedItems: [] });
+  set({ selectedItems: [] });
       },
 
       /**

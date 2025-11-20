@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, DatePicker, Select, Button, Spin, message } from 'antd';
+import { Card, Row, Col, DatePicker, Select, Button, Spin, message, Radio } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
   getRevenueStats, 
   getSalesStats, 
-  getTopProducts,
   exportReport,
   getShopAnalytics,
   getTopBuyers,
+  getCompletedOrdersMonthly,
+  getCancelledOrdersMonthly,
+  getTopSellingProducts,
 } from '../../services/seller/statisticalService';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
+
+const MONTH_NAMES = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 
+                     'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 
 /**
  * Statistical Page
@@ -33,6 +38,12 @@ const Statistical = () => {
     dayjs()
   ]);
   const [groupBy, setGroupBy] = useState('day');
+  
+  // Order statistics
+  const [orderStatsLoading, setOrderStatsLoading] = useState(false);
+  const [orderStatsYear, setOrderStatsYear] = useState(dayjs().year());
+  const [orderStatsType, setOrderStatsType] = useState('completed'); // 'completed' or 'cancelled'
+  const [monthlyOrderStats, setMonthlyOrderStats] = useState([]);
 
   useEffect(() => {
     fetchStatistics();
@@ -46,8 +57,14 @@ const Statistical = () => {
 
   useEffect(() => {
     fetchTopBuyers();
+    fetchTopSellingProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    fetchOrderStats(orderStatsYear, orderStatsType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderStatsYear, orderStatsType]);
 
   const fetchStatistics = async () => {
     try {
@@ -59,15 +76,13 @@ const Statistical = () => {
         groupBy: groupBy,
       };
 
-      const [revenue, sales, products] = await Promise.all([
+      const [revenue, sales] = await Promise.all([
         getRevenueStats(params),
         getSalesStats(params),
-        getTopProducts({ ...params, limit: 5 }),
       ]);
 
       setRevenueData(revenue || []);
       setSalesData(sales || []);
-      setTopProducts(products || []);
     } catch (error) {
       console.error('Error fetching statistics:', error);
       message.error('Không thể tải dữ liệu thống kê');
@@ -80,7 +95,6 @@ const Statistical = () => {
     try {
       const res = await getTopBuyers({ limit: 5 });
       const payload = res?.data || res || [];
-      // payload could be array or ResponseDTO
       const list = Array.isArray(payload) ? payload : (payload?.data || payload);
       setTopBuyers(Array.isArray(list) ? list : []);
     } catch (error) {
@@ -88,14 +102,24 @@ const Statistical = () => {
     }
   };
 
+  const fetchTopSellingProducts = async () => {
+    try {
+      const res = await getTopSellingProducts();
+      const payload = res?.data || res || [];
+      const list = Array.isArray(payload) ? payload : (payload?.data || payload);
+      setTopProducts(Array.isArray(list) ? list : []);
+    } catch (error) {
+      console.error('Error fetching top selling products:', error);
+      message.error('Không thể tải danh sách sản phẩm bán chạy');
+    }
+  };
+
   const fetchShopAnalytics = async (year) => {
     try {
       setAnalyticsLoading(true);
       const res = await getShopAnalytics(year);
-      // res may be ResponseDTO { status, data: { monthlyRevenue: [...] } } or directly data
       const payload = res?.data || res || {};
       const monthly = payload?.monthlyRevenue || payload?.data?.monthlyRevenue || payload;
-      // ensure array of months sorted by month number
       const months = Array.isArray(monthly) ? monthly.slice() : [];
       months.sort((a, b) => (a.month || 0) - (b.month || 0));
       setMonthlyRevenue(months);
@@ -105,6 +129,43 @@ const Statistical = () => {
       setMonthlyRevenue([]);
     } finally {
       setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchOrderStats = async (year, type) => {
+    try {
+      setOrderStatsLoading(true);
+      
+      let res;
+      if (type === 'completed') {
+        res = await getCompletedOrdersMonthly();
+      } else {
+        res = await getCancelledOrdersMonthly();
+      }
+      
+      const payload = res?.data || res || [];
+      const data = Array.isArray(payload) ? payload : (payload?.data || []);
+      
+      // Filter by year and transform data
+      const filteredData = data.filter(item => item.year === year);
+      
+      // Create array for all 12 months with 0 counts
+      const monthlyData = Array.from({ length: 12 }, (_, i) => {
+        const monthData = filteredData.find(d => d.month === i + 1);
+        return {
+          month: i + 1,
+          monthName: MONTH_NAMES[i],
+          orderCount: monthData ? monthData.orderCount : 0,
+        };
+      });
+      
+      setMonthlyOrderStats(monthlyData);
+    } catch (error) {
+      console.error('Error fetching order stats:', error);
+      message.error('Không thể tải dữ liệu đơn hàng');
+      setMonthlyOrderStats([]);
+    } finally {
+      setOrderStatsLoading(false);
     }
   };
 
@@ -184,7 +245,7 @@ const Statistical = () => {
         </Row>
       </Card>
 
-      {/* Revenue Chart */}
+      {/* Revenue and Order Charts */}
       <Row gutter={[16, 16]} className="mb-6">
         <Col xs={24} lg={12}>
           <Card title={`Doanh thu theo tháng (${analyticsYear})`} extra={
@@ -222,77 +283,135 @@ const Statistical = () => {
           </Card>
         </Col>
 
-        {/* Sales Chart */}
+        {/* Order Statistics Chart */}
         <Col xs={24} lg={12}>
-          <Card title="Biểu đồ đơn hàng">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar 
-                  dataKey="sales" 
-                  fill="#10b981" 
-                  name="Số đơn hàng"
-                />
-              </BarChart>
-            </ResponsiveContainer>
+          <Card 
+            title={`Biểu đồ đơn hàng ${orderStatsType === 'completed' ? 'hoàn thành' : 'bị hủy'} (${orderStatsYear})`}
+            extra={
+              <div className="flex items-center gap-2">
+                <Select
+                  value={orderStatsYear}
+                  onChange={(val) => setOrderStatsYear(val)}
+                  style={{ width: 120 }}
+                >
+                  {Array.from({ length: 6 }).map((_, idx) => {
+                    const y = dayjs().year() - idx;
+                    return (
+                      <Select.Option key={y} value={y}>{y}</Select.Option>
+                    );
+                  })}
+                </Select>
+              </div>
+            }
+          >
+            <div className="mb-4">
+              <Radio.Group 
+                value={orderStatsType} 
+                onChange={(e) => setOrderStatsType(e.target.value)}
+                buttonStyle="solid"
+              >
+                <Radio.Button value="completed">Đơn hoàn thành</Radio.Button>
+                <Radio.Button value="cancelled">Đơn bị hủy</Radio.Button>
+              </Radio.Group>
+            </div>
+            
+            {orderStatsLoading ? (
+              <div className="flex items-center justify-center" style={{ height: 300 }}>
+                <Spin />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyOrderStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="monthName" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar 
+                    dataKey="orderCount" 
+                    fill={orderStatsType === 'completed' ? '#10b981' : '#ef4444'} 
+                    name={orderStatsType === 'completed' ? 'Đơn hoàn thành' : 'Đơn bị hủy'}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </Col>
       </Row>
 
-      {/* Top Products */}
+      {/* Top Products and Buyers */}
       <Row gutter={[16, 16]}> 
         <Col xs={24} lg={12}>
           <Card title="Top 5 sản phẩm bán chạy">
-            <div className="space-y-3">
-              {topProducts.map((product, index) => (
-                <div 
-                  key={product.id} 
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-medium">{product.name}</div>
-                      <div className="text-sm text-gray-500">
-                        Đã bán: {product.soldCount} | 
-                        Doanh thu: {new Intl.NumberFormat('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND'
-                        }).format(product.revenue)}
+            {topProducts.length > 0 ? (
+              <div className="space-y-3">
+                {topProducts.map((product, index) => (
+                  <div 
+                    key={product.productId} 
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      
+                      {product.mainImage && (
+                        <img 
+                          src={product.mainImage} 
+                          alt={product.productName}
+                          className="w-12 h-12 object-cover rounded"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      
+                      <div>
+                        <div className="font-medium text-gray-900">{product.productName}</div>
+                        <div className="text-sm text-gray-500">
+                          Đã bán: <span className="font-semibold text-blue-600">{product.totalQuantitySold}</span> sản phẩm
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {product.totalOrders} đơn hàng
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Chưa có dữ liệu sản phẩm bán chạy
+              </div>
+            )}
           </Card>
         </Col>
 
         <Col xs={24} lg={12}>
           <Card title="Top 5 người mua (Buyers)">
-            <div className="space-y-3">
-              {topBuyers.map((buyer, index) => (
-                <div key={buyer.userId || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">{index + 1}</div>
-                    <div>
-                      <div className="font-medium">{buyer.username}</div>
-                      <div className="text-sm text-gray-500">{buyer.email}</div>
+            {topBuyers.length > 0 ? (
+              <div className="space-y-3">
+                {topBuyers.map((buyer, index) => (
+                  <div key={buyer.userId || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">{index + 1}</div>
+                      <div>
+                        <div className="font-medium text-gray-900">{buyer.username}</div>
+                        <div className="text-sm text-gray-500">{buyer.email}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-green-600">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyer.totalAmount)}</div>
+                      <div className="text-sm text-gray-500">{buyer.totalCompletedOrders} đơn</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyer.totalAmount)}</div>
-                    <div className="text-sm text-gray-500">{buyer.totalCompletedOrders} đơn</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Chưa có dữ liệu người mua
+              </div>
+            )}
           </Card>
         </Col>
       </Row>

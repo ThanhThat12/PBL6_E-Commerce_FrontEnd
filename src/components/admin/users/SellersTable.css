@@ -62,6 +62,64 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
+/* Filter Styles */
+.filter-container {
+  display: flex;
+  align-items: center;
+}
+
+.status-filter {
+  padding: 8px 16px 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.status-filter:hover {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  transform: translateY(-1px);
+}
+
+.status-filter:focus {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.status-filter option {
+  padding: 10px;
+  background: white;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.status-filter option:first-child {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.status-filter option[value="Verified"] {
+  color: #16a34a;
+}
+
+.status-filter option[value="Pending"] {
+  color: #d97706;
+}
+
+.status-filter option[value="Suspended"] {
+  color: #dc2626;
+}
+
 /* Action Buttons */
 .action-buttons {
   display: flex;
@@ -424,6 +482,31 @@
 
 .delete-btn:hover {
   background: #dc2626;
+}
+
+/* No Results Styles */
+.no-results {
+  text-align: center;
+  padding: 60px 20px !important;
+}
+
+.no-results-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.no-results-content p {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+.no-results-content span {
+  font-size: 14px;
+  color: #94a3b8;
 }
 
 /* Pagination */
