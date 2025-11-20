@@ -303,27 +303,27 @@ const OrderDetailPage = () => {
                           </span>
                         </div>
                       </div>
-                      {/* Add Review Button for COMPLETED orders */}
-                      {currentOrder.status === 'COMPLETED' && (
+                    </Link>
+                    
+                    {/* Action Buttons - Only show for COMPLETED orders */}
+                    {currentOrder.status === 'COMPLETED' && (
+                      <div className="mt-3 flex justify-end gap-2">
                         <Button
-                          onClick={() => handleReviewButtonClick(item.productId)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleReviewButtonClick(item.productId);
+                          }}
                           variant="outline"
-                          className="mt-2 text-sm"
+                          size="sm"
                         >
                           {reviewedProducts.has(item.productId) ? 'Xem đánh giá' : 'Đánh giá sản phẩm'}
                         </Button>
-                      )}
-                    </div>
-                    </Link>
-                    
-                    {/* Return Button - Only show for COMPLETED orders */}
-                    {currentOrder.status === 'COMPLETED' && (
-                      <div className="mt-3 flex justify-end">
                         <Button
                           variant="outline"
                           size="sm"
                           disabled={!item.id}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             console.log('===[OrderDetailPage] Trả hàng clicked for item:', item);
                             if (!item.id) {
                               toast.error('Không thể yêu cầu trả hàng cho sản phẩm này');

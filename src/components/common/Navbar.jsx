@@ -174,7 +174,7 @@ export default function NavbarNew({ isHomePage = false }) {
               <UserMenu user={user} onLogout={handleLogout} />
                             
               {/* Seller Channel - Only show for SELLER role */}
-              {user && (user.role === 'SELLER' || user.role === 1) && (
+              {user && (
                 <Link
                   to="/seller/dashboard"
                   className="
