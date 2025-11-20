@@ -62,9 +62,9 @@ const Header = () => {
         </button>
 
         {/* Settings */}
-        <button className="p-2 text-gray-600 hover:text-gray-800">
+        {/* <button className="p-2 text-gray-600 hover:text-gray-800">
           <Settings size={20} />
-        </button>
+        </button> */}
 
         {/* Profile */}
         <div className="relative">
@@ -78,14 +78,14 @@ const Header = () => {
           {/* Profile Dropdown Menu */}
           {isProfileOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <button 
+                onClick={() => navigate('/admin/myprofile')}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
                 <User size={16} />
                 Profile
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <Settings size={16} />
-                Settings
-              </button>
+          
               <hr className="my-2 border-gray-100" />
               <button 
                 onClick={handleLogout}

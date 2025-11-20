@@ -1,5 +1,6 @@
 // src/components/cart/CartItemCard.jsx
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { FiTrash2, FiMinus, FiPlus, FiAlertCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -12,6 +13,7 @@ import useCartStore from '../../store/cartStore';
  * @param {Object} item - Cart item from CartDTO
  */
 const CartItemCard = ({ item }) => {
+  const location = useLocation();
   const { updateQuantity, removeFromCart } = useCart();
   const selectedItems = useCartStore((state) => state.selectedItems);
   const toggleItemSelection = useCartStore((state) => state.toggleItemSelection);
@@ -91,16 +93,18 @@ const CartItemCard = ({ item }) => {
 
   return (
     <div className="bg-white rounded-lg border border-neutral-200 p-4 flex gap-4 hover:shadow-medium transition-shadow">
-      {/* Checkbox for selection */}
-      <div className="flex items-start pt-2">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => toggleItemSelection(item.id)}
-          className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 cursor-pointer"
-          aria-label="Chọn sản phẩm để thanh toán"
-        />
-      </div>
+      {/* Checkbox for selection - chỉ hiển thị ở trang /cart */}
+      {location.pathname === '/cart' && (
+        <div className="flex items-start pt-2">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleItemSelection(item.id)}
+            className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 cursor-pointer"
+            aria-label="Chọn sản phẩm để thanh toán"
+          />
+        </div>
+      )}
 
       {/* Product Image - Clickable */}
       <Link 
@@ -193,16 +197,18 @@ const CartItemCard = ({ item }) => {
           {formatPrice(item.subTotal)}
         </p>
 
-        {/* Remove Button */}
-        <button
-          onClick={handleRemove}
-          disabled={updating}
-          className="mt-2 p-2 hover:bg-error-50 text-error-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Xóa sản phẩm"
-          aria-label="Xóa sản phẩm khỏi giỏ hàng"
-        >
-          <FiTrash2 size={18} />
-        </button>
+        {/* Remove Button - chỉ hiển thị ở trang /cart */}
+        {location.pathname === '/cart' && (
+          <button
+            onClick={handleRemove}
+            disabled={updating}
+            className="mt-2 p-2 hover:bg-error-50 text-error-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Xóa sản phẩm"
+            aria-label="Xóa sản phẩm khỏi giỏ hàng"
+          >
+            <FiTrash2 size={18} />
+          </button>
+        )}
       </div>
     </div>
   );

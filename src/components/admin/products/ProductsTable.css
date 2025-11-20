@@ -68,6 +68,29 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
+.clear-search-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  transition: all 0.2s;
+}
+
+.clear-search-btn:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .category-select {
   padding: 8px 12px;
   border: 1px solid #e2e8f0;
@@ -309,38 +332,11 @@
   font-family: monospace;
 }
 
-/* Category Badge */
-.category-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.category-electronics {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.category-fashion {
-  background: #fce7f3;
-  color: #be185d;
-}
-
-.category-furniture {
-  background: #fed7aa;
-  color: #ea580c;
-}
-
-.category-sports {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.category-default {
-  background: #f1f5f9;
-  color: #64748b;
+/* Category Styles */
+.product-category {
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 /* Price Styles */
@@ -393,22 +389,13 @@
   color: #16a34a;
 }
 
-.status-out-of-stock {
+.status-pending {
   background: #fef3c7;
   color: #92400e;
 }
 
-.status-out-of-stock .status-dot {
+.status-pending .status-dot {
   color: #92400e;
-}
-
-.status-inactive {
-  background: #f1f5f9;
-  color: #64748b;
-}
-
-.status-inactive .status-dot {
-  color: #64748b;
 }
 
 /* Sales Styles */
@@ -515,6 +502,27 @@
 .pagination-info {
   font-size: 14px;
   color: #64748b;
+}
+
+.pagination-nav {
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-nav:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.pagination-nav:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .pagination-controls {

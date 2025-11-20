@@ -49,17 +49,24 @@ const AddressManagement = () => {
   };
 
   const handleEditAddress = (address) => {
+    console.log('Editing address:', address);
     // Transform backend format to form format
     const formData = {
       id: address.id,
-      recipientName: address.label, // label -> recipientName
+      recipientName: address.contactName || address.label, // contactName ưu tiên, fallback label
       phoneNumber: address.contactPhone, // contactPhone -> phoneNumber
       provinceId: address.provinceId,
       districtId: address.districtId,
       wardId: address.wardCode, // wardCode -> wardId
+      wardCode: address.wardCode, // Keep wardCode for reference
       streetAddress: address.fullAddress, // fullAddress -> streetAddress
-      isPrimary: address.primaryAddress // primaryAddress -> isPrimary
+      isPrimary: address.primaryAddress, // primaryAddress -> isPrimary
+      // Keep original names for display
+      provinceName: address.provinceName,
+      districtName: address.districtName,
+      wardName: address.wardName
     };
+    console.log('Form data for edit:', formData);
     setEditingAddress(formData);
     setModalOpen(true);
   };
@@ -96,13 +103,21 @@ const AddressManagement = () => {
     setActionLoading(addressId);
     try {
       const response = await deleteAddress(addressId);
-      if (response.statusCode === 200) {
+      // Luôn reload danh sách sau khi xóa
+      await loadAddresses();
+      if (response && response.status === 200) {
         toast.success('Xóa địa chỉ thành công');
-        loadAddresses();
+      } else {
+        toast.error((response && response.message) || 'Xóa địa chỉ thất bại');
       }
     } catch (error) {
       console.error('Failed to delete address:', error);
-      toast.error('Xóa địa chỉ thất bại');
+      await loadAddresses();
+      if (error && error.response && error.response.status === 404) {
+        toast.error('Địa chỉ không tồn tại hoặc đã bị xóa. Danh sách đã được cập nhật.');
+      } else {
+        toast.error('Xóa địa chỉ thất bại');
+      }
     } finally {
       setActionLoading(null);
     }
@@ -112,9 +127,27 @@ const AddressManagement = () => {
     setActionLoading(addressId);
     try {
       const response = await setAsPrimary(addressId);
-      if (response.statusCode === 200) {
+      // Fix: check response.status (API returns status 200)
+      if (response.status === 200) {
         toast.success('Đặt làm địa chỉ mặc định thành công');
-        loadAddresses();
+        // Reload addresses, then move primary to top and auto-select
+        await loadAddresses();
+        // Find new primary address
+        const updated = await getAddresses();
+        if (updated.status === 200 && Array.isArray(updated.data)) {
+          const primary = updated.data.find(a => a.primaryAddress);
+          if (primary) {
+            // Move primary to top
+            setAddresses(prev => {
+              const others = updated.data.filter(a => a.id !== primary.id);
+              return [primary, ...others];
+            });
+            // Auto-select (open modal for edit)
+            handleEditAddress(primary);
+          }
+        }
+      } else {
+        toast.error('Đặt địa chỉ mặc định thất bại');
       }
     } catch (error) {
       console.error('Failed to set primary address:', error);
@@ -174,7 +207,7 @@ const AddressManagement = () => {
                 <div className="flex-1">
                   {/* Label and Phone */}
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-gray-900">{address.label}</h3>
+                    <h3 className="font-semibold text-gray-900">{address.contactName || address.label}</h3>
                     <span className="text-gray-600">|</span>
                     <span className="text-gray-600">{address.contactPhone}</span>
                     {address.primaryAddress && (

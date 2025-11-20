@@ -326,14 +326,47 @@ export const getOrderDetail = (orderId) => orderService.getOrderDetail(orderId);
 
 export const ORDER_STATUS = {
   PENDING: 'PENDING',
-  PROCESS: 'PROCESS',
+  PROCESSING: 'PROCESSING',
+  SHIPPING: 'SHIPPING',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
 };
 
 export const STATUS_LABELS = {
   PENDING: 'Chờ xác nhận',
-  PROCESS: 'Đang xử lý',
+  PROCESSING: 'Đang xử lý',
+  SHIPPING: 'Đang giao',
   COMPLETED: 'Hoàn thành',
   CANCELLED: 'Đã hủy',
+};
+
+// Action APIs for seller order management
+export const confirmOrder = async (orderId) => {
+  try {
+    const response = await api.patch(`/seller/orders/${orderId}/confirm`);
+    return response.data;
+  } catch (error) {
+    console.error('Error confirming order:', error);
+    throw error;
+  }
+};
+
+export const shipOrder = async (orderId) => {
+  try {
+    const response = await api.patch(`/seller/orders/${orderId}/ship`);
+    return response.data;
+  } catch (error) {
+    console.error('Error shipping order:', error);
+    throw error;
+  }
+};
+
+export const cancelOrder = async (orderId) => {
+  try {
+    const response = await api.patch(`/seller/orders/${orderId}/cancel`);
+    return response.data;
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    throw error;
+  }
 };

@@ -42,7 +42,7 @@ const usePendingOrderCleanup = () => {
       if (pendingOrderId && !hasCleanedUp.current) {
         // Sử dụng sendBeacon để gửi request ngay cả khi page đang unload
         const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
-        navigator.sendBeacon(`${process.env.REACT_APP_API_BASE_URL || ''}/api/orders/${pendingOrderId}`, blob);
+        navigator.sendBeacon(`${process.env.REACT_APP_API_BASE_URL || ''}/orders/${pendingOrderId}`, blob);
         sessionStorage.removeItem('pendingMomoOrderId');
         hasCleanedUp.current = true;
       }

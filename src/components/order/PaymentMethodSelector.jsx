@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaMoneyBillWave, FaCreditCard } from 'react-icons/fa';
+import { FaMoneyBillWave, FaCreditCard, FaWallet } from 'react-icons/fa';
 
 /**
  * PaymentMethodSelector Component
@@ -33,6 +33,14 @@ const PaymentMethodSelector = ({
       icon: FaCreditCard,
       color: 'bg-blue-50 border-blue-200',
       activeColor: 'bg-blue-100 border-blue-500'
+    },
+    {
+      id: 'SPORTYPAY',
+      name: 'Ví SportyPay',
+      description: 'Thanh toán trực tiếp bằng ví SportyPay trên hệ thống',
+      icon: FaWallet,
+      color: 'bg-orange-50 border-orange-200',
+      activeColor: 'bg-orange-100 border-orange-500'
     },
   ];
 
