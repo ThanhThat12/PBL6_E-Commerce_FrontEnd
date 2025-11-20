@@ -64,13 +64,13 @@ export const getVoucherStats = async () => {
 
 /**
  * Get vouchers with pagination
- * Backend endpoint: GET /api/admin/vouchers/page?page=0&size=10
+ * Backend endpoint: GET /api/admin/vouchers?page=0&size=10
  * Returns: ResponseDTO<Page<AdminVoucherListDTO>>
  */
 export const getVouchers = async (page = 0, size = 10) => {
   try {
-    console.log(`📡 [adminVoucherService] Calling GET /admin/vouchers/page?page=${page}&size=${size}`);
-    const response = await apiClient.get(`/admin/vouchers/page?page=${page}&size=${size}`);
+    console.log(`📡 [adminVoucherService] Calling GET /admin/vouchers?page=${page}&size=${size}`);
+    const response = await apiClient.get(`/admin/vouchers?page=${page}&size=${size}`);
     console.log('✅ [adminVoucherService] Vouchers response:', response.data);
     return response.data;
   } catch (error) {
@@ -92,6 +92,36 @@ export const getVoucherDetail = async (id) => {
     return response.data;
   } catch (error) {
     console.error('❌ [adminVoucherService] Error fetching voucher detail:', error);
+    throw error;
+  }
+};
+
+/**
+ * Search voucher by code to get its ID
+ * This is a workaround since list API doesn't return ID
+ * Backend endpoint: GET /api/admin/vouchers/search?code={code}
+ * Returns: ResponseDTO<AdminVoucherDetailDTO>
+ */
+export const searchVoucherByCode = async (code) => {
+  try {
+    console.log('🔍 [adminVoucherService] Searching voucher by code:', code);
+    // For now, we'll need to fetch all vouchers and find by code
+    // In production, backend should provide a search endpoint
+    const response = await apiClient.get(`/admin/vouchers?page=0&size=1000`);
+    
+    if (response.data.status === 200 && response.data.data.content) {
+      const vouchers = response.data.data.content;
+      const found = vouchers.find(v => v.code === code);
+      
+      if (found && found.id) {
+        // Now fetch the detail
+        return await getVoucherDetail(found.id);
+      }
+    }
+    
+    throw new Error('Voucher not found');
+  } catch (error) {
+    console.error('❌ [adminVoucherService] Error searching voucher:', error);
     throw error;
   }
 };
@@ -154,13 +184,13 @@ export const updateVoucher = async (id, voucherData) => {
 
 /**
  * Delete voucher
- * Backend endpoint: DELETE /api/admin/voucher/{id}/delete
+ * Backend endpoint: DELETE /api/admin/voucher/{id}
  * Returns: ResponseDTO<String>
  */
 export const deleteVoucher = async (id) => {
   try {
-    console.log('🗑️ [adminVoucherService] Calling DELETE /admin/voucher/' + id + '/delete');
-    const response = await apiClient.delete(`/admin/voucher/${id}/delete`);
+    console.log('🗑️ [adminVoucherService] Calling DELETE /admin/voucher/' + id );
+    const response = await apiClient.delete(`/admin/voucher/${id}`);
     console.log('✅ [adminVoucherService] Delete voucher response:', response.data);
     return response.data;
   } catch (error) {

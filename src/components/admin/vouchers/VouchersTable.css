@@ -315,6 +315,19 @@
   color: #10b981;
 }
 
+/* Type Badge */
+.admin-vouchers-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fef3c7;
+  color: #92400e;
+}
+
 /* Quantity and Used Badges */
 .admin-vouchers-quantity-badge,
 .admin-vouchers-used-badge {
@@ -326,7 +339,28 @@
   font-size: 13px;
   font-weight: 500;
 }
+/* Type Badge - Base Style */
+.admin-vouchers-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
 
+/* Percentage Type - Màu vàng */
+.admin-vouchers-type-percentage {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Fixed Amount Type - Màu xanh lá nhạt */
+.admin-vouchers-type-fixed {
+  background: #d1fae5;
+  color: #065f46;
+}
 .admin-vouchers-quantity-badge {
   background: #dbeafe;
   color: #1e40af;

@@ -94,29 +94,22 @@ const VouchersTable = () => {
   useEffect(() => {
     fetchVouchersData();
     fetchStatsData();
-  }, [currentPage, statusFilter]); // Re-fetch when page or status filter changes
+  }, [currentPage]); // Re-fetch when page changes
 
   const fetchVouchersData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log(`📡 [VouchersTable] Fetching vouchers page ${currentPage}, size ${pageSize}, status: ${statusFilter}...`);
+      console.log(`📡 [VouchersTable] Fetching vouchers page ${currentPage}, size ${pageSize}...`);
       
-      let response;
-      
-      // Check if filtering by status
-      if (statusFilter && statusFilter !== 'All') {
-        response = await getVouchersByStatus(statusFilter, currentPage, pageSize);
-      } else {
-        response = await getVouchers(currentPage, pageSize);
-      }
+      const response = await getVouchers(currentPage, pageSize);
       
       console.log('🔍 [VouchersTable] Full API response:', response);
       
       if (response.status === 200 && response.data) {
         // Backend returns ResponseDTO<Page<AdminVoucherListDTO>>
-        // Structure: { status: 200, data: { content: [], page: { totalPages: 3, totalElements: 30 } } }
+        // Structure: { status: 200, data: { content: [], page: { totalPages: 3, totalElements: 24 } } }
         const pageData = response.data;
         const paginationInfo = pageData.page || {};
         
@@ -140,6 +133,7 @@ const VouchersTable = () => {
         
         console.log(`📊 [VouchersTable] Successfully loaded ${vouchersList.length} vouchers`);
         console.log(`📊 [VouchersTable] Pagination: Page ${currentPage + 1}/${pages}, Total items: ${elements}`);
+        console.log('🔍 [VouchersTable] First voucher sample:', vouchersList[0]);
       }
       setLoading(false);
     } catch (err) {
@@ -178,8 +172,11 @@ const VouchersTable = () => {
 
   // Format discount display
   const formatDiscount = (voucher) => {
-    // Backend chỉ trả về discountAmount (BigDecimal), không có discountType
-    return formatCurrency(voucher.discountAmount);
+    if (voucher.discountType === 'PERCENTAGE') {
+      return `${voucher.discountValue}%`;
+    } else {
+      return formatCurrency(voucher.discountValue);
+    }
   };
 
   // Stats data
@@ -212,7 +209,8 @@ const VouchersTable = () => {
 
   // Handle actions
   const handleViewDetail = (voucher) => {
-    console.log('👁️ [VouchersTable] View voucher:', voucher.code);
+    console.log('👁️ [VouchersTable] View voucher:', voucher);
+    console.log('👁️ [VouchersTable] Voucher ID:', voucher.id);
     setSelectedVoucher(voucher);
     setShowDetailModal(true);
   };
@@ -289,19 +287,15 @@ const VouchersTable = () => {
     });
   };
 
-  // Filter vouchers (now only for search, status filtering is done by API)
+  // Filter vouchers by search term only
   const filteredVouchers = vouchers.filter(voucher => {
-    const matchesSearch = 
-      voucher.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (voucher.description && voucher.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    return matchesSearch;
+    if (!searchTerm) return true;
+    return voucher.code.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   // Handle status filter change
   const handleStatusChange = (e) => {
     setStatusFilter(e.target.value);
-    setCurrentPage(0); // Reset to first page when changing filter
   };
 
   // Get status badge class
@@ -338,16 +332,7 @@ const VouchersTable = () => {
             />
           </div>
 
-          <select
-            value={statusFilter}
-            onChange={handleStatusChange}
-            className="admin-vouchers-status-dropdown"
-          >
-            <option value="All">All Status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
+
 
           <button className="admin-vouchers-add-btn" onClick={handleAddVoucher}>
             <Plus size={18} />
@@ -390,36 +375,40 @@ const VouchersTable = () => {
             <thead>
               <tr>
                 <th>Code</th>
-                <th>Discount Amount</th>
+                <th>Discount Type</th>
+                <th>Discount Value</th>
                 <th>Min Order Value</th>
-                <th>Quantity</th>
-                <th>Used</th>
-                <th>Status</th>
+                <th>Usage Limit</th>
+                <th>Used Count</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredVouchers.length > 0 ? (
-                filteredVouchers.map((voucher) => (
-                  <tr key={voucher.id}>
+                filteredVouchers.map((voucher, index) => (
+                  <tr key={`${voucher.code}-${index}`}>
                     <td>
                       <div className="admin-vouchers-code-cell">
                         <Tags size={16} className="admin-vouchers-icon" />
                         <span className="admin-vouchers-code">{voucher.code}</span>
                       </div>
                     </td>
+                    <td>
+                      <span className={`admin-vouchers-type-badge ${
+                        voucher.discountType === 'PERCENTAGE' 
+                          ? 'admin-vouchers-type-percentage' 
+                          : 'admin-vouchers-type-fixed'
+                      }`}>
+                        {voucher.discountType === 'PERCENTAGE' ? 'Percentage' : 'Fixed Amount'}
+                      </span>
+                    </td>
                     <td className="admin-vouchers-discount-cell">{formatDiscount(voucher)}</td>
                     <td>{formatCurrency(voucher.minOrderValue)}</td>
                     <td>
-                      <span className="admin-vouchers-quantity-badge">{voucher.quantity}</span>
+                      <span className="admin-vouchers-quantity-badge">{voucher.usageLimit}</span>
                     </td>
                     <td>
-                      <span className="admin-vouchers-used-badge">{voucher.used || 0}</span>
-                    </td>
-                    <td>
-                      <span className={getStatusBadgeClass(voucher.status)}>
-                        {voucher.status}
-                      </span>
+                      <span className="admin-vouchers-used-badge">{voucher.usedCount}</span>
                     </td>
                     <td className="admin-vouchers-action-cell">
                       <VoucherActions
