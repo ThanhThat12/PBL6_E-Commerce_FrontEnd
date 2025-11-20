@@ -1,7 +1,7 @@
 /* CustomerDetailModal.css */
 
 /* Overlay */
-.modal-overlay {
+.admin-customer-detail-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -10,10 +10,10 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: 999;
-  animation: fadeIn 0.2s ease-out;
+  animation: admin-customer-detail-fadeIn 0.2s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes admin-customer-detail-fadeIn {
   from {
     opacity: 0;
   }
@@ -23,7 +23,7 @@
 }
 
 /* Modal Container */
-.customer-detail-modal {
+.admin-customer-detail-modal {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -36,10 +36,10 @@
   overflow: hidden;
   z-index: 1000;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  animation: slideUp 0.3s ease-out;
+  animation: admin-customer-detail-slideUp 0.3s ease-out;
 }
 
-@keyframes slideUp {
+@keyframes admin-customer-detail-slideUp {
   from {
     opacity: 0;
     transform: translate(-50%, -45%);
@@ -51,7 +51,7 @@
 }
 
 /* Modal Header */
-.modal-header {
+.admin-customer-detail-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -61,13 +61,13 @@
   color: white;
 }
 
-.modal-header-content {
+.admin-customer-detail-modal-header-content {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.modal-avatar {
+.admin-customer-detail-modal-avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -79,21 +79,21 @@
   color: white;
 }
 
-.modal-title {
+.admin-customer-detail-modal-title {
   font-size: 22px;
   font-weight: 700;
   margin: 0;
   color: white;
 }
 
-.modal-subtitle {
+.admin-customer-detail-modal-subtitle {
   font-size: 14px;
   margin: 4px 0 0 0;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
 }
 
-.modal-close-btn {
+.admin-customer-detail-modal-close-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -107,22 +107,22 @@
   transition: all 0.2s;
 }
 
-.modal-close-btn:hover {
+.admin-customer-detail-modal-close-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: rotate(90deg);
 }
 
 /* Modal Header Actions */
-.modal-header-actions {
+.admin-customer-detail-modal-header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
 /* Edit/Save/Cancel Buttons */
-.btn-edit,
-.btn-save,
-.btn-cancel {
+.admin-customer-detail-btn-edit,
+.admin-customer-detail-btn-save,
+.admin-customer-detail-btn-cancel {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -136,82 +136,82 @@
   white-space: nowrap;
 }
 
-.btn-edit {
+.admin-customer-detail-btn-edit {
   background: rgba(255, 255, 255, 0.2);
   color: white;
   backdrop-filter: blur(10px);
 }
 
-.btn-edit:hover {
+.admin-customer-detail-btn-edit:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
 }
 
-.btn-save {
+.admin-customer-detail-btn-save {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
 }
 
-.btn-save:hover:not(:disabled) {
+.admin-customer-detail-btn-save:hover:not(:disabled) {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.btn-save:disabled {
+.admin-customer-detail-btn-save:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-cancel {
+.admin-customer-detail-btn-cancel {
   background: rgba(255, 255, 255, 0.2);
   color: white;
   backdrop-filter: blur(10px);
 }
 
-.btn-cancel:hover {
+.admin-customer-detail-btn-cancel:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
 /* Modal Body */
-.modal-body {
+.admin-customer-detail-modal-body {
   padding: 24px 28px 28px 28px;
   overflow-y: auto;
   max-height: calc(90vh - 100px);
 }
 
-.modal-body::-webkit-scrollbar {
+.admin-customer-detail-modal-body::-webkit-scrollbar {
   width: 6px;
 }
 
-.modal-body::-webkit-scrollbar-track {
+.admin-customer-detail-modal-body::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 3px;
 }
 
-.modal-body::-webkit-scrollbar-thumb {
+.admin-customer-detail-modal-body::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
 
-.modal-body::-webkit-scrollbar-thumb:hover {
+.admin-customer-detail-modal-body::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
 /* Detail Sections */
-.detail-section {
+.admin-customer-detail-section {
   margin-bottom: 28px;
   padding-bottom: 24px;
   border-bottom: 1px solid #f1f5f9;
 }
 
-.detail-section:last-child {
+.admin-customer-detail-section:last-child {
   margin-bottom: 0;
   padding-bottom: 0;
   border-bottom: none;
 }
 
-.section-title {
+.admin-customer-detail-section-title {
   font-size: 16px;
   font-weight: 700;
   color: #1e293b;
@@ -222,18 +222,18 @@
 }
 
 /* Detail Row */
-.detail-row {
+.admin-customer-detail-row {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 0;
 }
 
-.detail-row:first-child {
+.admin-customer-detail-row:first-child {
   padding-top: 0;
 }
 
-.detail-icon {
+.admin-customer-detail-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -245,14 +245,14 @@
   flex-shrink: 0;
 }
 
-.detail-content {
+.admin-customer-detail-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 6px; /* Increased from 4px */
 }
 
-.detail-label {
+.admin-customer-detail-label {
   font-size: 13px;
   font-weight: 500;
   color: #64748b;
@@ -260,14 +260,14 @@
   letter-spacing: 0.05em;
 }
 
-.detail-value {
+.admin-customer-detail-value {
   font-size: 15px;
   font-weight: 600;
   color: #1e293b;
 }
 
 /* Address text with word wrap */
-.detail-value.address-text {
+.admin-customer-detail-value.admin-customer-detail-address-text {
   font-weight: 500;
   line-height: 1.6;
   word-wrap: break-word;
@@ -277,7 +277,7 @@
 }
 
 /* Status Badge in Modal */
-.detail-section .status-badge {
+.admin-customer-detail-section .admin-customer-detail-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -287,33 +287,33 @@
   font-weight: 600;
 }
 
-.status-badge.status-active {
+.admin-customer-detail-status-badge.admin-customer-detail-status-active {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.status-badge.status-inactive {
+.admin-customer-detail-status-badge.admin-customer-detail-status-inactive {
   background: #fee2e2;
   color: #dc2626;
 }
 
-.status-badge.status-vip {
+.admin-customer-detail-status-badge.admin-customer-detail-status-vip {
   background: #fef3c7;
   color: #d97706;
 }
 
-.status-dot {
+.admin-customer-detail-status-dot {
   font-size: 10px;
 }
 
 /* Stats Grid */
-.stats-grid {
+.admin-customer-detail-stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-.stat-box {
+.admin-customer-detail-stat-box {
   background: #f8fafc;
   border-radius: 12px;
   padding: 16px;
@@ -323,7 +323,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.stat-icon-box {
+.admin-customer-detail-stat-icon-box {
   width: 48px;
   height: 48px;
   border-radius: 10px;
@@ -333,29 +333,34 @@
   flex-shrink: 0;
 }
 
-.stat-icon-box.stat-blue {
+.admin-customer-detail-stat-icon-box.admin-customer-detail-stat-blue {
   background: #dbeafe;
   color: #2563eb;
 }
 
-.stat-icon-box.stat-green {
+.admin-customer-detail-stat-icon-box.admin-customer-detail-stat-green {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.stat-info {
+.admin-customer-detail-stat-icon-box.admin-customer-detail-stat-purple {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.admin-customer-detail-stat-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.stat-info .stat-label {
+.admin-customer-detail-stat-info .admin-customer-detail-stat-label {
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
-.stat-info .stat-value {
+.admin-customer-detail-stat-info .admin-customer-detail-stat-value {
   font-size: 20px;
   font-weight: 700;
   color: #1e293b;
@@ -405,7 +410,7 @@
 }
 
 /* Input Wrapper */
-.input-wrapper {
+.admin-customer-detail-input-wrapper {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -413,8 +418,8 @@
 }
 
 /* Input Fields */
-.detail-input,
-.detail-textarea {
+.admin-customer-detail-input,
+.admin-customer-detail-textarea {
   width: 100%;
   padding: 10px 14px;
   border: 1.5px solid #e2e8f0;
@@ -427,28 +432,28 @@
   font-family: inherit;
 }
 
-.detail-input:focus,
-.detail-textarea:focus {
+.admin-customer-detail-input:focus,
+.admin-customer-detail-textarea:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.detail-input.input-error {
+.admin-customer-detail-input.admin-customer-detail-input-error {
   border-color: #ef4444;
 }
 
-.detail-input.input-error:focus {
+.admin-customer-detail-input.admin-customer-detail-input-error:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
-.detail-textarea {
+.admin-customer-detail-textarea {
   resize: vertical;
   min-height: 60px;
 }
 
 /* Error Message */
-.error-message {
+.admin-customer-detail-error-message {
   font-size: 12px;
   color: #ef4444;
   font-weight: 500;
@@ -456,12 +461,12 @@
 }
 
 /* Status Select Wrapper */
-.status-select-wrapper {
+.admin-customer-detail-status-select-wrapper {
   display: inline-flex;
   align-items: center;
 }
 
-.status-select {
+.admin-customer-detail-status-select {
   padding: 6px 32px 6px 14px;
   border: 1.5px solid #e2e8f0;
   border-radius: 20px;
@@ -477,75 +482,71 @@
   background-position: right 10px center;
 }
 
-.status-select:hover {
+.admin-customer-detail-status-select:hover {
   border-color: #cbd5e1;
   background-color: #f8fafc;
 }
 
-.status-select:focus {
+.admin-customer-detail-status-select:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.status-select option {
+.admin-customer-detail-status-select option {
   padding: 8px;
   font-weight: 600;
 }
 
 /* Responsive */
 @media (max-width: 640px) {
-  .customer-detail-modal {
+  .admin-customer-detail-modal {
     width: 95%;
     max-height: 95vh;
   }
 
-  .modal-header {
+  .admin-customer-detail-modal-header {
     padding: 20px;
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
 
-  .modal-header-content {
+  .admin-customer-detail-modal-header-content {
     width: 100%;
   }
 
-  .modal-header-actions {
+  .admin-customer-detail-modal-header-actions {
     width: 100%;
     justify-content: space-between;
   }
 
-  .btn-edit,
-  .btn-save,
-  .btn-cancel {
+  .admin-customer-detail-btn-edit,
+  .admin-customer-detail-btn-save,
+  .admin-customer-detail-btn-cancel {
     padding: 8px 12px;
     font-size: 13px;
   }
 
-  .modal-body {
+  .admin-customer-detail-modal-body {
     padding: 20px;
   }
 
-  .modal-avatar {
+  .admin-customer-detail-modal-avatar {
     width: 48px;
     height: 48px;
   }
 
-  .modal-title {
+  .admin-customer-detail-modal-title {
     font-size: 18px;
   }
 
-  .stats-grid {
+  .admin-customer-detail-stats-grid {
     grid-template-columns: 1fr;
   }
 
-  .modal-footer {
-    padding: 16px 20px;
-  }
-
-  .detail-input,
-  .detail-textarea {
+  .admin-customer-detail-input,
+  .admin-customer-detail-textarea {
     font-size: 14px;
     padding: 8px 12px;
   }
@@ -555,7 +556,7 @@
    ADDRESS SECTION STYLES
    =================================== */
 
-.address-info {
+.admin-customer-detail-address-info {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -565,7 +566,7 @@
   border-left: 3px solid #667eea;
 }
 
-.address-label {
+.admin-customer-detail-address-label {
   font-weight: 600;
   color: #667eea;
   font-size: 14px;
@@ -574,13 +575,13 @@
   gap: 6px;
 }
 
-.address-line {
+.admin-customer-detail-address-line {
   color: #1e293b;
   font-size: 14px;
   line-height: 1.5;
 }
 
-.address-phone {
+.admin-customer-detail-address-phone {
   display: flex;
   align-items: center;
   color: #475569;
@@ -592,20 +593,66 @@
   width: fit-content;
 }
 
-.address-phone svg {
+.admin-customer-detail-address-phone svg {
   margin-right: 6px;
   flex-shrink: 0;
 }
 
 /* Empty address state */
-.address-empty {
+.admin-customer-detail-address-empty {
   color: #94a3b8;
   font-style: italic;
   font-size: 14px;
 }
 
-/* Purple stat box */
-.stat-icon-box.stat-purple {
-  background: #f3e8ff;
-  color: #9333ea;
+/* ===================================
+   RESET PASSWORD SECTION
+   =================================== */
+
+.admin-customer-detail-reset-section {
+  border-top: 2px solid #f1f5f9;
+  padding-top: 24px !important;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-customer-detail-btn-reset-password {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  width: 100%;
+  max-width: 300px;
+}
+
+.admin-customer-detail-btn-reset-password:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+}
+
+.admin-customer-detail-btn-reset-password:active {
+  transform: translateY(0);
+}
+
+.admin-customer-detail-reset-note {
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  margin: 0;
+  max-width: 400px;
+  line-height: 1.5;
 }

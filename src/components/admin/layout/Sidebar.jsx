@@ -21,6 +21,8 @@ import {
   Folder,
   LayoutGrid,
   Grid3x3,
+  Gift,
+  CreditCard,
   X
 } from "lucide-react";
 import "./Sidebar.css";
@@ -106,9 +108,9 @@ const Sidebar = ({ onToggle }) => {
     { name: "Products", icon: <ShoppingBag size={20} />, path: "/admin/products" },
     { name: "Categories", icon: <LayoutGrid size={20} />, path: "/admin/categories" },
     { name: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
-    { name: "Analytics", icon: <BarChart2 size={20} />, path: "/admin/analytics" },
+    { name: "Vouchers", icon: <CreditCard size={20} />, path: "/admin/vouchers" },
     { name: "My Profile", icon: <User size={20} />, path: "/admin/myprofile" },
-    { name: "Settings", icon: <Settings size={20} />, path: "/admin/settings" },
+    { name: "Setting", icon: <Settings size={20} />, path: "/admin/settings" },
   ];
 
   return (

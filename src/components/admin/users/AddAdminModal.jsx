@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, Lock, Shield } from 'lucide-react';
+import { createAdmin } from '../../../services/adminService';
 import './AddAdminModal.css';
 
 const AddAdminModal = ({ onClose, onSubmit }) => {
@@ -7,12 +8,13 @@ const AddAdminModal = ({ onClose, onSubmit }) => {
     username: '',
     password: '',
     email: '',
-    phone: '',
-    role: 'admin'
+    phoneNumber: ''
   });
 
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -65,22 +67,38 @@ const AddAdminModal = ({ onClose, onSubmit }) => {
     }
 
     // Phone validation
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = 'Invalid phone number format';
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^[\d\s\-\+\(\)]+$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Invalid phone number format';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit(formData);
-      onClose();
+      setLoading(true);
+      setApiError('');
+      
+      try {
+        console.log('📝 [AddAdminModal] Submitting admin data:', { ...formData, password: '***' });
+        const response = await createAdmin(formData);
+        
+        if (response.status === 200) {
+          console.log('✅ [AddAdminModal] Admin created successfully:', response.message);
+          onSubmit(formData); // Notify parent component
+          onClose();
+        }
+      } catch (error) {
+        console.error('❌ [AddAdminModal] Error creating admin:', error);
+        setApiError(error.message || 'Failed to create admin account. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -184,16 +202,25 @@ const AddAdminModal = ({ onClose, onSubmit }) => {
               </label>
               <input
                 type="tel"
-                name="phone"
-                value={formData.phone}
+                name="phoneNumber"
+                value={formData.phoneNumber}
                 onChange={handleChange}
                 placeholder="Enter phone number"
-                className={`form-input ${errors.phone ? 'error' : ''}`}
+                className={`form-input ${errors.phoneNumber ? 'error' : ''}`}
+                disabled={loading}
               />
-              {errors.phone && (
-                <span className="error-message">{errors.phone}</span>
+              {errors.phoneNumber && (
+                <span className="error-message">{errors.phoneNumber}</span>
               )}
             </div>
+
+            {/* API Error Message */}
+            {apiError && (
+              <div className="api-error-message">
+                <span className="error-icon">⚠️</span>
+                <span>{apiError}</span>
+              </div>
+            )}
 
             {/* Role Field (Read-only) */}
             <div className="form-group">
@@ -210,12 +237,21 @@ const AddAdminModal = ({ onClose, onSubmit }) => {
 
           {/* Footer */}
           <div className="add-admin-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>
+            <button 
+              type="button" 
+              className="btn-secondary" 
+              onClick={onClose}
+              disabled={loading}
+            >
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button 
+              type="submit" 
+              className="btn-primary"
+              disabled={loading}
+            >
               <Shield size={18} />
-              Add Administrator
+              {loading ? 'Creating...' : 'Add Administrator'}
             </button>
           </div>
         </form>
