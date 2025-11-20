@@ -4,6 +4,7 @@ import { useCart } from '../../context/CartContext';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../../utils/constants';
+import { getProductById } from '../../services/productService';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 import PaymentMethodSelector from '../../components/order/PaymentMethodSelector';
@@ -34,6 +35,47 @@ const PaymentPage = () => {
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
+  const [detectedShopId, setDetectedShopId] = useState(null);
+
+  // Get shopId from checkoutItems (assuming all items are from the same shop)
+  const shopId = useMemo(() => {
+    // Use detected shopId if available
+    if (detectedShopId) return detectedShopId;
+    
+    if (!checkoutItems || checkoutItems.length === 0) return null;
+    // Try to get shopId from first item
+    const firstItem = checkoutItems[0];
+    
+    // Priority order: direct shopId > product.shopId > shop.id > sellerId
+    const id = firstItem?.shopId || 
+               firstItem?.product?.shopId || 
+               firstItem?.product?.shop?.id ||
+               firstItem?.shop?.id ||
+               firstItem?.sellerId || 
+               null;
+    
+    console.log('🏪 PaymentPage - shopId from checkoutItems:', { 
+      firstItem, 
+      shopId: id,
+      detectedShopId,
+      availableFields: Object.keys(firstItem || {})
+    });
+    return id;
+  }, [checkoutItems, detectedShopId]);
+
+  // Fetch shopId from product API if not available in cart
+  const fetchShopIdFromProduct = async (productId) => {
+    try {
+      const response = await getProductById(productId);
+      const shopId = response?.data?.shopId || response?.shopId;
+      console.log('🏪 Fetched shopId from product API:', shopId);
+      if (shopId) {
+        setDetectedShopId(shopId);
+      }
+    } catch (error) {
+      console.error('Error fetching shopId from product:', error);
+    }
+  };
   // Removed stompClient state, handled by hook
 
   // WebSocket order notification using custom hook
@@ -59,7 +101,21 @@ const PaymentPage = () => {
     if (storedItems) {
       try {
         const items = JSON.parse(storedItems);
+        console.log('✅ Parsed checkout items:', items);
+        console.log('🔍 First item structure:', items[0]);
+        console.log('🔍 First item keys:', items[0] ? Object.keys(items[0]) : 'No items');
         setCheckoutItems(items);
+        
+        // If no shopId found in cart items, fetch from product API
+        const firstItem = items[0];
+        const hasShopId = firstItem?.shopId || 
+                         firstItem?.product?.shopId || 
+                         firstItem?.shop?.id;
+        
+        if (!hasShopId && firstItem?.productId) {
+          console.log('🔍 No shopId in cart item, fetching from product API...');
+          fetchShopIdFromProduct(firstItem.productId);
+        }
       } catch (error) {
         console.error('❌ Error parsing checkout items:', error);
         toast.error('Lỗi tải thông tin đơn hàng');
@@ -794,6 +850,8 @@ const PaymentPage = () => {
                 <VoucherSelector 
                   onVoucherApply={handleVoucherApply}
                   subtotal={subtotal}
+                  shopId={shopId}
+                  cartItems={checkoutItems}
                 />
               </div>
 

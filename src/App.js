@@ -43,6 +43,7 @@ import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 import SellerProtectedRoute from './components/seller/ProtectedRoute';
 import { SellerLayout } from './components/seller/Layout';
 import * as SellerPages from './pages/seller';
+import ReviewsPage from './pages/seller/Review';
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
 import OrdersPage from "./pages/admin/Orders/OrdersPage";
@@ -192,9 +193,11 @@ function App() {
               <Route path="products/list" element={<SellerPages.ProductList />} />
               <Route path="products/add" element={<SellerPages.AddProduct />} />
               <Route path="orders" element={<SellerPages.Orders />} />
+              <Route path="reviews" element={<ReviewsPage />} />
               <Route path="my-shop" element={<SellerPages.MyShop />} />
               <Route path="statistical" element={<SellerPages.Statistical />} />
               <Route path="customers" element={<SellerPages.Customers />} />
+              <Route path="vouchers" element={<SellerPages.VoucherManagement />} />
               <Route path="refunds" element={<SellerPages.Refunds />} />
             </Route>
             {/* ================================================= */}

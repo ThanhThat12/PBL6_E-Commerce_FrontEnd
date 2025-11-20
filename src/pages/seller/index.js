@@ -10,4 +10,5 @@ export { default as Orders } from './Orders';
 export { default as MyShop } from './MyShop';
 export { default as Statistical } from './Statistical';
 export { default as Customers } from './Customers';
+export { default as VoucherManagement } from './VoucherManagement';
 export { default as Refunds } from './Refunds';

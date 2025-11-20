@@ -9,6 +9,7 @@ import Loading from '../../components/common/Loading';
 import Button from '../../components/common/Button';
 import { toast } from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import reviewService from '../../services/reviewService'; // Add this import
 
 /**
  * OrderDetailPage Component
@@ -20,6 +21,15 @@ const OrderDetailPage = () => {
   const location = useLocation();
   const { currentOrder, loading, fetchOrderDetail, cancelOrder } = useOrder();
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // Add states for review modal
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [imagesUrls, setImagesUrls] = useState(''); // Change to string for URLs input
+  const [submittingReview, setSubmittingReview] = useState(false);
+  // Add state to track reviewed products
+  const [reviewedProducts, setReviewedProducts] = useState(new Set());
 
   const fromCheckout = location.state?.fromCheckout;
 
@@ -27,6 +37,11 @@ const OrderDetailPage = () => {
     // Skip if orderId is not numeric (prevent conflict with /orders/return-item route)
     if (!orderId || orderId === 'undefined') {
       return;
+    }
+    // Load reviewed products from localStorage
+    const stored = localStorage.getItem('reviewedProducts');
+    if (stored) {
+      setReviewedProducts(new Set(JSON.parse(stored)));
     }
     
     const orderIdNum = parseInt(orderId, 10);
@@ -74,6 +89,52 @@ const OrderDetailPage = () => {
       navigate('/');
     } else {
       navigate('/orders');
+    }
+  };
+
+  // Add handlers for review modal
+  const openReviewModal = (productId) => {
+    setSelectedProductId(productId);
+    setShowReviewModal(true);
+  };
+
+  const closeReviewModal = () => {
+    setShowReviewModal(false);
+    setSelectedProductId(null);
+    setRating(5);
+    setComment('');
+    setImagesUrls('');
+  };
+
+  const submitReview = async () => {
+    if (!selectedProductId) return;
+    setSubmittingReview(true);
+    try {
+      const images = imagesUrls.split(',').map(url => url.trim()).filter(url => url);
+      const payload = {
+        rating,
+        comment,
+        images
+      };
+      await reviewService.postReview(selectedProductId, payload);
+      toast.success('Đánh giá thành công!');
+      const newReviewed = new Set([...reviewedProducts, selectedProductId]);
+      setReviewedProducts(newReviewed);
+      localStorage.setItem('reviewedProducts', JSON.stringify([...newReviewed]));
+      closeReviewModal();
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast.error('Có lỗi xảy ra khi đánh giá. Vui lòng thử lại.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleReviewButtonClick = (productId) => {
+    if (reviewedProducts.has(productId)) {
+      navigate(`/products/${productId}`);
+    } else {
+      openReviewModal(productId);
     }
   };
 
@@ -242,6 +303,17 @@ const OrderDetailPage = () => {
                           </span>
                         </div>
                       </div>
+                      {/* Add Review Button for COMPLETED orders */}
+                      {currentOrder.status === 'COMPLETED' && (
+                        <Button
+                          onClick={() => handleReviewButtonClick(item.productId)}
+                          variant="outline"
+                          className="mt-2 text-sm"
+                        >
+                          {reviewedProducts.has(item.productId) ? 'Xem đánh giá' : 'Đánh giá sản phẩm'}
+                        </Button>
+                      )}
+                    </div>
                     </Link>
                     
                     {/* Return Button - Only show for COMPLETED orders */}
@@ -355,6 +427,78 @@ const OrderDetailPage = () => {
                   className="flex-1"
                 >
                   Đóng
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Review Modal */}
+        {showReviewModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                Đánh giá sản phẩm
+              </h3>
+              <div className="space-y-4">
+                {/* Rating */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Số sao
+                  </label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setRating(star)}
+                        className={`text-2xl ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Comment */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bình luận
+                  </label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    rows={4}
+                    placeholder="Nhập bình luận của bạn..."
+                  />
+                </div>
+                {/* Images URLs */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    URLs hình ảnh (tùy chọn, cách nhau bởi dấu phẩy)
+                  </label>
+                  <textarea
+                    value={imagesUrls}
+                    onChange={(e) => setImagesUrls(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md p-2"
+                    rows={2}
+                    placeholder="https://image1.jpg, https://image2.jpg"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <Button
+                  onClick={submitReview}
+                  disabled={submittingReview}
+                  className="flex-1"
+                >
+                  {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                </Button>
+                <Button
+                  onClick={closeReviewModal}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Hủy
                 </Button>
               </div>
             </div>
