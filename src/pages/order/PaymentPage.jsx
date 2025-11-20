@@ -23,7 +23,7 @@ import useOrderNotification from '../../hooks/useOrderNotification';
 const PaymentPage = () => {
   const navigate = useNavigate();
   const { cartItems, loading: cartLoading, fetchCart } = useCart();
-  
+
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [shippingAddress, setShippingAddress] = useState(null);
   const [orderNotes, setOrderNotes] = useState('');
@@ -41,21 +41,21 @@ const PaymentPage = () => {
   const shopId = useMemo(() => {
     // Use detected shopId if available
     if (detectedShopId) return detectedShopId;
-    
+
     if (!checkoutItems || checkoutItems.length === 0) return null;
     // Try to get shopId from first item
     const firstItem = checkoutItems[0];
-    
+
     // Priority order: direct shopId > product.shopId > shop.id > sellerId
-    const id = firstItem?.shopId || 
-               firstItem?.product?.shopId || 
-               firstItem?.product?.shop?.id ||
-               firstItem?.shop?.id ||
-               firstItem?.sellerId || 
-               null;
-    
-    console.log('🏪 PaymentPage - shopId from checkoutItems:', { 
-      firstItem, 
+    const id = firstItem?.shopId ||
+      firstItem?.product?.shopId ||
+      firstItem?.product?.shop?.id ||
+      firstItem?.shop?.id ||
+      firstItem?.sellerId ||
+      null;
+
+    console.log('🏪 PaymentPage - shopId from checkoutItems:', {
+      firstItem,
       shopId: id,
       detectedShopId,
       availableFields: Object.keys(firstItem || {})
@@ -97,7 +97,7 @@ const PaymentPage = () => {
   useEffect(() => {
     const storedItems = sessionStorage.getItem('checkoutItems');
     // load stored checkout items
-    
+
     if (storedItems) {
       try {
         const items = JSON.parse(storedItems);
@@ -105,13 +105,13 @@ const PaymentPage = () => {
         console.log('🔍 First item structure:', items[0]);
         console.log('🔍 First item keys:', items[0] ? Object.keys(items[0]) : 'No items');
         setCheckoutItems(items);
-        
+
         // If no shopId found in cart items, fetch from product API
         const firstItem = items[0];
-        const hasShopId = firstItem?.shopId || 
-                         firstItem?.product?.shopId || 
-                         firstItem?.shop?.id;
-        
+        const hasShopId = firstItem?.shopId ||
+          firstItem?.product?.shopId ||
+          firstItem?.shop?.id;
+
         if (!hasShopId && firstItem?.productId) {
           console.log('🔍 No shopId in cart item, fetching from product API...');
           fetchShopIdFromProduct(firstItem.productId);
@@ -195,7 +195,7 @@ const PaymentPage = () => {
             // silent request data for GHN
             const response = await api.post('/checkout/available-services', requestData);
             console.log('[GHN] Raw response:', response.data);
-            
+
             // handle GHN response - backend returns [{buyerAddress, totalWeight, services: [...], shopAddress}]
             let servicesArray = [];
             if (response.data) {
@@ -212,9 +212,9 @@ const PaymentPage = () => {
                 servicesArray = response.data.services;
               }
             }
-            
+
             console.log('[GHN] Extracted services array:', servicesArray);
-            
+
             if (servicesArray.length > 0) {
               setGhnServices(prev => ({
                 ...prev,
@@ -244,25 +244,25 @@ const PaymentPage = () => {
       // GHN service fetch finished
     };
     loadServices();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shippingAddress, itemsByShop]);
 
   // Handle service selection for a shop
   const handleServiceSelect = async (shopId, service) => {
     console.log('[Service Select] shopId:', shopId, 'service:', service);
-    
+
     // Validate service has required fields
     if (!service || !service.service_id || !service.service_type_id) {
       console.error('[Service Select] Invalid service object:', service);
       toast.error('Dịch vụ vận chuyển không hợp lệ');
       return;
     }
-    
+
     setSelectedServices(prev => ({
       ...prev,
       [shopId]: service
     }));
-    
+
     // Calculate shipping fee for this service
     const addrIdForFee = shippingAddress?.addressId || shippingAddress?.id;
     if (shippingAddress && addrIdForFee) {
@@ -276,10 +276,10 @@ const PaymentPage = () => {
           service.service_type_id,
           cartItemIds
         );
-        
+
         // If fee is 0 (error), the error message is already shown to user
         // User should try another service or address
-        
+
         // Update shipping fee for this shop
         setShopShippingFees(prev => ({
           ...prev,
@@ -309,7 +309,7 @@ const PaymentPage = () => {
   const handleVoucherApply = (voucher) => {
     // Apply voucher without noisy logs
     setAppliedVoucher(voucher);
-    
+
     if (voucher) {
       // Nếu là voucher miễn phí ship
       if (voucher.type === 'SHIPPING') {
@@ -324,34 +324,34 @@ const PaymentPage = () => {
 
   // Calculate totals - sử dụng useMemo để tự động tính lại khi checkoutItems thay đổi
   const { subtotal, total, finalTotal } = useMemo(() => {
-    
+
     if (!checkoutItems || checkoutItems.length === 0) {
       return { subtotal: 0, shipping: shippingFee, total: shippingFee, finalTotal: shippingFee - voucherDiscount };
     }
-    
+
     const subtotal = checkoutItems.reduce((sum, item) => {
       // Kiểm tra cả unitPrice và price
       const price = parseFloat(item.unitPrice || item.price) || 0;
       const quantity = parseInt(item.quantity) || 0;
       const itemTotal = price * quantity;
-      
+
       // quiet: don't log every item in production
-      
+
       return sum + itemTotal;
     }, 0);
-    
+
     const total = subtotal + shippingFee;
     const finalTotal = total - voucherDiscount;
-    
+
     // totals computed
-    
+
     return { subtotal, shipping: shippingFee, total, finalTotal };
   }, [checkoutItems, shippingFee, voucherDiscount]);
 
   // Prepare order items from selected checkout items
   const prepareOrderItems = () => {
     if (!checkoutItems || checkoutItems.length === 0) return [];
-    
+
     return checkoutItems.map(item => ({
       variantId: item.variantId,
       quantity: item.quantity
@@ -369,13 +369,13 @@ const PaymentPage = () => {
       };
       console.log('[Fee Calc] Payload:', payload);
       const response = await api.post('/checkout/calculate-fee', payload);
-      
+
       // calculate fee response (store/handle errors as needed)
-      
+
       // GHN API trả về: { code, message, data: { total, service_fee, ... } }
       // Backend ResponseDTO trả về: { code, message, data: { ... GHN response ... } }
       let shippingFee = 0;
-      
+
       if (response.data) {
         // Kiểm tra các trường hợp có thể có
         if (response.data.data && response.data.data.total !== undefined) {
@@ -389,42 +389,49 @@ const PaymentPage = () => {
           shippingFee = response.data.shippingFee;
         }
       }
-      
+
       // shippingFee determined
       return shippingFee;
     } catch (error) {
       console.error(`❌ Error calculating shipping fee for shop ${shopId}:`, error);
-      
+
       // Extract detailed error message from backend
       let errorMessage = 'Không thể tính phí vận chuyển';
-      
+
       if (error.response?.data) {
         const errorData = error.response.data;
-        
+
         // Backend returns: { code, message, type, data }
-        if (errorData.message && errorData.message.includes('route not found')) {
-          errorMessage = 'GHN không hỗ trợ vận chuyển đến địa chỉ này cho dịch vụ đã chọn. Vui lòng chọn dịch vụ khác hoặc địa chỉ khác.';
+        if (errorData.type === 'GHN_ROUTE_NOT_FOUND') {
+          errorMessage = '⚠️ Dịch vụ này không hỗ trợ tuyến đường của bạn. Vui lòng chọn dịch vụ khác trong danh sách bên dưới.';
+        } else if (errorData.message && errorData.message.includes('route not found')) {
+          errorMessage = '⚠️ GHN không hỗ trợ vận chuyển đến địa chỉ này cho dịch vụ đã chọn. Vui lòng chọn dịch vụ khác hoặc địa chỉ khác.';
         } else if (errorData.message) {
           errorMessage = errorData.message;
         }
-        
+
         console.error('[Fee Calc] Error details:', errorData);
       }
-      
-      toast.error(errorMessage);
+
+      toast.warning(errorMessage, {
+        autoClose: 5000,
+        position: 'top-center'
+      });
+
+      // Return 0 so user can try another service
       return 0;
     }
   };
 
   // Handle place order - NEW GHN 3-step flow
   const handlePlaceOrder = async () => {
-    
+
     // Validation
     if (!shippingAddress) {
       toast.error('Vui lòng chọn hoặc nhập địa chỉ giao hàng');
       return;
     }
-    
+
     if (!shippingAddress.toName || !shippingAddress.toPhone || !shippingAddress.toAddress) {
       toast.error('Vui lòng điền đầy đủ thông tin giao hàng');
       return;
@@ -437,9 +444,9 @@ const PaymentPage = () => {
       if (!grouped[shopId]) grouped[shopId] = [];
       grouped[shopId].push(item);
     });
-    
+
     const shopGroups = Object.entries(grouped);
-    
+
     // Validate service selection for each shop
     for (const [shopId, items] of shopGroups) {
       if (!selectedServices[shopId]) {
@@ -453,22 +460,22 @@ const PaymentPage = () => {
 
     try {
       // Creating orders for shops
-      
+
       // Lưu danh sách order đã tạo
       const createdOrders = [];
       let hasError = false;
-      
+
       // Tạo order cho từng shop using NEW checkout/confirm endpoint
       for (let i = 0; i < shopGroups.length; i++) {
         const [shopId, items] = shopGroups[i];
         const shopName = items[0]?.shopName || `Shop ${shopId}`;
         const selectedService = selectedServices[shopId];
-        
+
         // creating order i+1
-        
+
         // Get cart item IDs
         const cartItemIds = items.map(item => item.cartItemId || item.id).filter(Boolean);
-        
+
         // Prepare checkout confirm request
         const confirmData = {
           shopId: parseInt(shopId),
@@ -484,14 +491,14 @@ const PaymentPage = () => {
 
         try {
           const response = await api.post('/checkout/confirm', confirmData);
-          
+
           // log response if needed
-          
+
           if (response.data?.orderId) {
             const { orderId, totalAmount, status } = response.data;
-            
+
             // order created
-            
+
             createdOrders.push({
               orderId,
               shopId,
@@ -507,7 +514,7 @@ const PaymentPage = () => {
         } catch (error) {
           console.error(`❌ Error creating order for ${shopName}:`, error);
           hasError = true;
-          
+
           let errorMsg = error?.response?.data?.message || error?.message || 'Không xác định';
           toast.error(`Lỗi đặt hàng cho ${shopName}: ${errorMsg}`);
         }
@@ -537,16 +544,16 @@ const PaymentPage = () => {
       // Xử lý theo phương thức thanh toán
       if (paymentMethod === 'MOMO') {
         // processing MoMo payment...
-        
+
         // Lấy order đầu tiên để tạo payment
         const firstOrder = createdOrders[0];
         const momoOrderId = Number(firstOrder.orderId);
-        
+
         // Tính tổng tiền của tất cả đơn hàng đã tạo thành công
         const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-        
+
         // total amount for payment - computed
-        
+
         const momoPayload = {
           orderId: momoOrderId,
           amount: Math.round(totalAmount),
@@ -559,14 +566,14 @@ const PaymentPage = () => {
 
         try {
           const momoResponse = await api.post('payment/momo/create', momoPayload);
-          
+
           if (momoResponse.data?.payUrl) {
             toast.success('Đang chuyển đến trang thanh toán MoMo...');
-            
+
             // Lưu danh sách orderIds để xử lý sau
             sessionStorage.setItem('pendingMomoOrderIds', JSON.stringify(createdOrders.map(o => o.orderId)));
             // saved pending MoMo order IDs
-            
+
             // Chuyển hướng đến trang thanh toán MoMo
             window.location.href = momoResponse.data.payUrl;
             return;
@@ -582,10 +589,10 @@ const PaymentPage = () => {
         }
       } else if (paymentMethod === 'SPORTYPAY') {
         console.log('💳 Processing SportyPay payment for multiple orders...');
-        
+
         // Tính tổng tiền của tất cả đơn hàng
         const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-        
+
         try {
           const walletResponse = await api.post('/wallet/withdraw', {
             amount: Math.round(totalAmount),
@@ -596,7 +603,7 @@ const PaymentPage = () => {
 
           if (walletResponse.status === 200) {
             toast.success('Thanh toán bằng ví SportyPay thành công!');
-            
+
             // Update tất cả order status sau khi thanh toán thành công
             for (const order of createdOrders) {
               try {
@@ -606,7 +613,7 @@ const PaymentPage = () => {
                 console.error(`⚠️ Error updating order ${order.orderId}:`, updateError);
               }
             }
-            
+
             console.log('✅ Cart will be cleared by backend for purchased items');
             await refreshCartAndNavigate('/orders');
           } else {
@@ -621,17 +628,17 @@ const PaymentPage = () => {
       } else {
         // COD - Đơn hàng đã được tạo, chuyển đến trang đơn hàng
         console.log('✅ COD orders created successfully');
-        
+
         if (hasError) {
           toast.warning(`Đã tạo ${createdOrders.length}/${shopGroups.length} đơn hàng thành công. Một số đơn hàng không thể tạo.`);
         } else {
           toast.success(`Đặt hàng thành công ${createdOrders.length} đơn hàng!`);
         }
-        
+
         console.log('✅ Cart will be cleared by backend for purchased items (COD)');
         await refreshCartAndNavigate('/orders');
       }
-      
+
     } catch (error) {
       console.error('❌ Error placing orders:', error);
       toast.error('Lỗi đặt hàng. Vui lòng thử lại!');
@@ -666,13 +673,13 @@ const PaymentPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Form */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* Shipping Address Section */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
                   Địa chỉ giao hàng
                 </h2>
-                <ShippingAddressForm 
+                <ShippingAddressForm
                   onAddressChange={handleAddressChange}
                   initialAddress={shippingAddress}
                 />
@@ -683,7 +690,7 @@ const PaymentPage = () => {
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
                   <h2 className="text-xl font-bold text-gray-900">Sản phẩm</h2>
                 </div>
-                
+
                 {!checkoutItems || checkoutItems.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
                     <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -734,8 +741,8 @@ const PaymentPage = () => {
                                 {/* Product Info - Col 6 */}
                                 <div className="col-span-12 md:col-span-6 flex gap-4">
                                   <div className="relative flex-shrink-0">
-                                    <img 
-                                      src={safeItem.productImage || '/placeholder.png'} 
+                                    <img
+                                      src={safeItem.productImage || '/placeholder.png'}
                                       alt={safeItem.productName}
                                       className="w-20 h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
                                     />
@@ -790,19 +797,19 @@ const PaymentPage = () => {
                           {/* Message Input */}
                           <div className="flex items-center gap-3">
                             <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Lời nhắn:</label>
-                            <input 
-                              type="text" 
-                              placeholder="Lưu ý cho Người bán..." 
+                            <input
+                              type="text"
+                              placeholder="Lưu ý cho Người bán..."
                               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             />
                           </div>
-                          
+
                           {/* GHN Service Selection */}
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
                             <div className="flex items-center gap-2 text-sm flex-1">
                               <span className="text-gray-600 whitespace-nowrap">Phương thức vận chuyển:</span>
                               {ghnServices[shopGroup.shopId] && ghnServices[shopGroup.shopId].length > 0 ? (
-                                <select 
+                                <select
                                   className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                   value={selectedServices[shopGroup.shopId]?.service_id || ''}
                                   onChange={(e) => {
@@ -847,7 +854,7 @@ const PaymentPage = () => {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
                   Mã giảm giá
                 </h2>
-                <VoucherSelector 
+                <VoucherSelector
                   onVoucherApply={handleVoucherApply}
                   subtotal={subtotal}
                   shopId={shopId}
@@ -860,7 +867,7 @@ const PaymentPage = () => {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
                   Phương thức thanh toán
                 </h2>
-                <PaymentMethodSelector 
+                <PaymentMethodSelector
                   selectedMethod={paymentMethod}
                   onMethodChange={setPaymentMethod}
                 />

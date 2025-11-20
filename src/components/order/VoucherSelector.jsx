@@ -76,11 +76,18 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
 
   // Kiểm tra voucher có hợp lệ không
   const validateVoucher = (voucher) => {
-    if (!voucher) return { valid: false, message: 'Mã voucher không tồn tại' };
-    
-    // Check if voucher is active
-    if (!voucher.isActive) {
-      return { valid: false, message: 'Voucher đã hết hiệu lực' };
+if (!voucher) return { valid: false, message: 'Mã voucher không tồn tại' };
+    // Check voucher status enum (backend provides Status: UPCOMING, ACTIVE, EXPIRED)
+    if (voucher.status) {
+      if (voucher.status === 'UPCOMING') {
+        return { valid: false, message: 'Voucher chưa có hiệu lực' };
+      }
+      if (voucher.status === 'EXPIRED') {
+        return { valid: false, message: 'Voucher đã hết hạn' };
+      }
+      if (voucher.status !== 'ACTIVE') {
+        return { valid: false, message: 'Voucher không khả dụng' };
+      }
     }
     
     // Note: backend now allows a user to use the same voucher multiple times,
@@ -91,16 +98,16 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
       return { valid: false, message: 'Voucher đã hết lượt sử dụng' };
     }
     
-    // Check date validity
+    // Date checks are kept as a fallback in case status is not provided
     const now = new Date();
-    const startDate = new Date(voucher.startDate);
-    const endDate = new Date(voucher.endDate);
-    
-    if (now < startDate) {
+    const startDate = voucher.startDate ? new Date(voucher.startDate) : null;
+    const endDate = voucher.endDate ? new Date(voucher.endDate) : null;
+
+    if (startDate && now < startDate) {
       return { valid: false, message: 'Voucher chưa có hiệu lực' };
     }
-    
-    if (now > endDate) {
+
+    if (endDate && now > endDate) {
       return { valid: false, message: 'Voucher đã hết hạn' };
     }
     
@@ -158,8 +165,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
       console.log('🎫 Voucher applied successfully:', response);
       
       const result = response.data;
-      
-      // Set applied voucher with discount from API response
+// Set applied voucher with discount from API response
       const appliedVoucherData = {
         ...voucher,
         discount: result.discountAmount || calculateDiscount(voucher),
@@ -241,8 +247,8 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
             onClick={handleRemoveVoucher}
             className="p-2 hover:bg-green-100 rounded-lg transition-colors"
             aria-label="Xóa voucher"
-          >
-            <XMarkIcon className="w-5 h-5 text-green-700" />
+>
+<XMarkIcon className="w-5 h-5 text-green-700" />
           </button>
         </div>
       )}
@@ -313,8 +319,8 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
               return (
                 <div
                   key={voucher.code}
-                  className={`
-                    p-3 border rounded-lg transition-all
+className={`
+p-3 border rounded-lg transition-all
                     ${isValid 
                       ? 'border-blue-300 bg-white hover:border-blue-500 cursor-pointer' 
                       : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'}
