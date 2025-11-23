@@ -165,13 +165,6 @@ const OrderDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Order Timeline & Details */}
           <div className="lg:col-span-2 space-y-6">
-                        {/* Refund Request Form (Buyer) */}
-                        {currentOrder.status === 'COMPLETED' && (
-                          <div className="bg-white rounded-lg shadow-md p-6">
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Yêu cầu hoàn tiền</h2>
-                            <RefundRequestForm orderId={currentOrder.id} onSuccess={() => toast.success('Đã gửi yêu cầu hoàn tiền!')} />
-                          </div>
-                        )}
             {/* Order Timeline */}
             <OrderTimeline
               status={currentOrder.status}
@@ -188,19 +181,25 @@ const OrderDetailPage = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Người nhận:</span>
                   <span className="font-medium text-gray-900">
-                    {currentOrder.receiverName || 'N/A'}
+                    {currentOrder.shipment?.receiverName
+                      || currentOrder.receiverName
+                      || 'Chưa cập nhật'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Số điện thoại:</span>
                   <span className="font-medium text-gray-900">
-                    {currentOrder.receiverPhone || 'N/A'}
+                    {currentOrder.shipment?.receiverPhone
+                      || currentOrder.receiverPhone
+                      || 'Chưa cập nhật'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Địa chỉ:</span>
                   <span className="font-medium text-gray-900 text-right max-w-xs">
-                    {currentOrder.receiverAddress || 'N/A'}
+                    {currentOrder.shipment?.receiverAddress
+                      || currentOrder.receiverAddress
+                      || 'Chưa cập nhật'}
                   </span>
                 </div>
               </div>
