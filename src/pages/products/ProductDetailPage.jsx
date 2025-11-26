@@ -8,7 +8,7 @@ import Footer from '../../components/layout/footer/Footer';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import VariantSelector from '../../components/product/VariantSelector';
-import { getProductById } from '../../services/productService';
+import { getProductById, getProductImages } from '../../services/productService';
 import reviewService from '../../services/reviewService';
 import orderService from '../../services/orderService';
 import useCart from '../../hooks/useCart';
@@ -28,6 +28,7 @@ const ProductDetailPage = () => {
   const [selectedImage, setSelectedImage] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [productImages, setProductImages] = useState(null); // {mainImage, galleryImages, primaryAttribute, variantImages}
   const [adding, setAdding] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -61,6 +62,18 @@ const ProductDetailPage = () => {
             console.log('🔍 Auto-selected variant:', firstAvailable);
             setSelectedVariant(firstAvailable);
           }
+
+          // Load product images (main, gallery, variant-specific)
+          try {
+            const imagesResponse = await getProductImages(id);
+            console.log('🖼️ Product images loaded:', imagesResponse);
+            if (imagesResponse && imagesResponse.data) {
+              setProductImages(imagesResponse.data);
+            }
+          } catch (error) {
+            console.error('Failed to load product images:', error);
+            // Non-critical error, continue with product data
+          }
         }
       } catch (error) {
         console.error('Failed to load product:', error);
@@ -81,6 +94,52 @@ const ProductDetailPage = () => {
 
     loadProduct();
   }, [id, navigate]);
+
+  // Update displayed image when variant selection changes (Shopee-style behavior)
+  useEffect(() => {
+    if (!selectedVariant || !product) {
+      console.log('⏭️ Skipping image update: missing selectedVariant or product');
+      return;
+    }
+
+    console.log('🔄 Variant changed, updating image...', {
+      variantId: selectedVariant.id,
+      variantName: selectedVariant.name,
+      variantValues: selectedVariant.variantValues,
+      hasProductImages: !!productImages,
+      productImages: productImages
+    });
+
+    // Check if product has primary attribute for variant images
+    if (productImages && productImages.primaryAttribute) {
+      console.log('🎨 Primary attribute:', productImages.primaryAttribute);
+      
+      // Extract primary attribute value from selected variant
+      const primaryAttrValue = selectedVariant.variantValues?.find(
+        vv => vv.productAttribute?.id === productImages.primaryAttribute.id
+      )?.value;
+
+      console.log('🎨 Looking for variant image with attribute value:', primaryAttrValue);
+      console.log('🎨 Available variant images:', productImages.variantImages);
+
+      // Look up variant image
+      if (primaryAttrValue && productImages.variantImages && productImages.variantImages[primaryAttrValue]) {
+        const variantImageUrl = productImages.variantImages[primaryAttrValue].imageUrl;
+        console.log('✅ Found variant image:', variantImageUrl);
+        setSelectedImage(variantImageUrl);
+        return;
+      } else {
+        console.log('⚠️ No variant image found for:', primaryAttrValue, '- Available keys:', Object.keys(productImages.variantImages || {}));
+      }
+    } else {
+      console.log('⚠️ No primary attribute or productImages not loaded yet');
+    }
+
+    // Fallback to main image
+    const fallbackImage = productImages?.mainImage || product.mainImage || '/placeholder-product.jpg';
+    console.log('📸 Falling back to main image:', fallbackImage);
+    setSelectedImage(fallbackImage);
+  }, [selectedVariant, productImages, product]);
 
   // When product or user changes, load reviews and check if user can review
   useEffect(() => {

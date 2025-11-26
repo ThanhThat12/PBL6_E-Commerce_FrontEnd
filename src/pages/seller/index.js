@@ -6,6 +6,8 @@
 export { default as Dashboard } from './Dashboard';
 export { default as ProductList } from './ProductList';
 export { default as AddProduct } from './AddProduct';
+export { default as EditProduct } from './EditProduct';
+export { default as ProductImageManagement } from './ProductImageManagement';
 export { default as Orders } from './Orders';
 export { default as MyShop } from './MyShop';
 export { default as Statistical } from './Statistical';

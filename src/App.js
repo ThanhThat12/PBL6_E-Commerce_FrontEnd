@@ -189,6 +189,7 @@ function App() {
               <Route path="dashboard" element={<SellerPages.Dashboard />} />
               <Route path="products/list" element={<SellerPages.ProductList />} />
               <Route path="products/add" element={<SellerPages.AddProduct />} />
+              <Route path="products/edit/:id" element={<SellerPages.EditProduct />} />
               <Route path="orders" element={<SellerPages.Orders />} />
               <Route path="my-shop" element={<SellerPages.MyShop />} />
               <Route path="statistical" element={<SellerPages.Statistical />} />
