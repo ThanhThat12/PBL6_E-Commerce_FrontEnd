@@ -79,14 +79,35 @@ const VoucherManagement = () => {
         topBuyersCount: values.topBuyersCount || null
       };
 
-      await voucherService.createVoucher(voucherData);
-      message.success('Tạo voucher thành công!');
+      const response = await voucherService.createVoucher(voucherData);
+      const createdCode = response?.data?.code || voucherData.code;
+      message.success(`Tạo voucher "${createdCode}" thành công!`);
       setShowCreateModal(false);
       form.resetFields();
       loadVouchers();
     } catch (error) {
       console.error('Error creating voucher:', error);
-      message.error(error.response?.data?.message || 'Không thể tạo voucher');
+      // Prefer structured message from backend, fallback to other fields
+      let errMsg = 'Không thể tạo voucher';
+      if (error?.response?.data) {
+        const data = error.response.data;
+        if (data.message) errMsg = data.message;
+        else if (data.errors) {
+          try {
+            if (Array.isArray(data.errors)) errMsg = data.errors.join('; ');
+            else if (typeof data.errors === 'object') errMsg = Object.values(data.errors).flat().join('; ');
+            else errMsg = String(data.errors);
+          } catch (e) {
+            errMsg = JSON.stringify(data.errors);
+          }
+        } else {
+          errMsg = JSON.stringify(data);
+        }
+      } else if (error?.message) {
+        errMsg = error.message;
+      }
+
+      message.error(errMsg);
     }
   };
 

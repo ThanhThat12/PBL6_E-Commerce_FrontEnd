@@ -274,6 +274,20 @@ const AddProductForm = () => {
 
       formData.append('variants', JSON.stringify(variants));
 
+      // Add dimensions/weight (BE expects these new fields)
+      if (values.weightGrams !== undefined && values.weightGrams !== null) {
+        formData.append('weightGrams', values.weightGrams);
+      }
+      if (values.lengthCm !== undefined && values.lengthCm !== null) {
+        formData.append('lengthCm', values.lengthCm);
+      }
+      if (values.widthCm !== undefined && values.widthCm !== null) {
+        formData.append('widthCm', values.widthCm);
+      }
+      if (values.heightCm !== undefined && values.heightCm !== null) {
+        formData.append('heightCm', values.heightCm);
+      }
+
       // Gọi API
       await createProduct(formData);
       
@@ -366,6 +380,62 @@ const AddProductForm = () => {
                     </div>
                   )}
                 </Upload>
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Cân nặng (gram)"
+                name="weightGrams"
+                rules={[{ required: true, message: 'Vui lòng nhập cân nặng (gram)' }]}
+              >
+                <InputNumber
+                  placeholder="Ví dụ: 500"
+                  style={{ width: '100%' }}
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Chiều dài (cm)"
+                name="lengthCm"
+                rules={[{ type: 'number', min: 0, message: 'Phải >= 0' }]}
+              >
+                <InputNumber
+                  placeholder="Chiều dài (tùy chọn)"
+                  style={{ width: '100%' }}
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Chiều rộng (cm)"
+                name="widthCm"
+                rules={[{ type: 'number', min: 0, message: 'Phải >= 0' }]}
+              >
+                <InputNumber
+                  placeholder="Chiều rộng (tùy chọn)"
+                  style={{ width: '100%' }}
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Chiều cao (cm)"
+                name="heightCm"
+                rules={[{ type: 'number', min: 0, message: 'Phải >= 0' }]}
+              >
+                <InputNumber
+                  placeholder="Chiều cao (tùy chọn)"
+                  style={{ width: '100%' }}
+                  min={0}
+                />
               </Form.Item>
             </Col>
           </Row>
