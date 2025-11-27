@@ -2,10 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, DatePicker, Select, Button, Spin, message, Radio } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+<<<<<<< HEAD
 import { 
   getRevenueStats, 
   getSalesStats, 
   exportReport,
+=======
+import {
+  getRevenueStats,
+  // getSalesStats,  // TODO: Not implemented yet
+  // getTopProducts,  // TODO: Not implemented yet
+  // exportReport,    // TODO: Not implemented yet
+>>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
   getShopAnalytics,
   getTopBuyers,
   getCompletedOrdersMonthly,
@@ -69,13 +77,8 @@ const Statistical = () => {
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      
-      const params = {
-        startDate: dateRange[0]?.format('YYYY-MM-DD'),
-        endDate: dateRange[1]?.format('YYYY-MM-DD'),
-        groupBy: groupBy,
-      };
 
+<<<<<<< HEAD
       const [revenue, sales] = await Promise.all([
         getRevenueStats(params),
         getSalesStats(params),
@@ -83,6 +86,13 @@ const Statistical = () => {
 
       setRevenueData(revenue || []);
       setSalesData(sales || []);
+=======
+      // TODO: Implement these APIs in backend
+      // Temporary: Set empty data
+      setRevenueData([]);
+      setSalesData([]);
+      setTopProducts([]);
+>>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
     } catch (error) {
       console.error('Error fetching statistics:', error);
       message.error('Không thể tải dữ liệu thống kê');
@@ -170,28 +180,7 @@ const Statistical = () => {
   };
 
   const handleExport = async () => {
-    try {
-      const params = {
-        startDate: dateRange[0]?.format('YYYY-MM-DD'),
-        endDate: dateRange[1]?.format('YYYY-MM-DD'),
-        type: 'revenue',
-      };
-
-      const blob = await exportReport(params);
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `report-${Date.now()}.xlsx`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-      
-      message.success('Xuất báo cáo thành công');
-    } catch (error) {
-      console.error('Error exporting report:', error);
-      message.error('Không thể xuất báo cáo');
-    }
+    message.warning('Tính năng xuất báo cáo đang được phát triển');
   };
 
   if (loading) {
@@ -206,8 +195,8 @@ const Statistical = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Thống kê</h1>
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<DownloadOutlined />}
           onClick={handleExport}
         >
@@ -285,6 +274,7 @@ const Statistical = () => {
 
         {/* Order Statistics Chart */}
         <Col xs={24} lg={12}>
+<<<<<<< HEAD
           <Card 
             title={`Biểu đồ đơn hàng ${orderStatsType === 'completed' ? 'hoàn thành' : 'bị hủy'} (${orderStatsYear})`}
             extra={
@@ -335,10 +325,28 @@ const Statistical = () => {
                 </BarChart>
               </ResponsiveContainer>
             )}
+=======
+          <Card title="Biểu đồ đơn hàng">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar
+                  dataKey="sales"
+                  fill="#10b981"
+                  name="Số đơn hàng"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+>>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
           </Card>
         </Col>
       </Row>
 
+<<<<<<< HEAD
       {/* Top Products and Buyers */}
       <Row gutter={[16, 16]}> 
         <Col xs={24} lg={12}>
@@ -373,10 +381,38 @@ const Statistical = () => {
                         </div>
                         <div className="text-xs text-gray-400">
                           {product.totalOrders} đơn hàng
+=======
+      {/* Top Products */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <Card title="Top 5 sản phẩm bán chạy">
+            <div className="space-y-3">
+              {topProducts.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">Chưa có dữ liệu</div>
+              ) : (
+                topProducts.map((product, index) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-gray-500">
+                          Đã bán: {product.soldCount} |
+                          Doanh thu: {new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND'
+                          }).format(product.revenue)}
+>>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
                         </div>
                       </div>
                     </div>
                   </div>
+<<<<<<< HEAD
                 ))}
               </div>
             ) : (
@@ -384,11 +420,17 @@ const Statistical = () => {
                 Chưa có dữ liệu sản phẩm bán chạy
               </div>
             )}
+=======
+                ))
+              )}
+            </div>
+>>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
           </Card>
         </Col>
 
         <Col xs={24} lg={12}>
           <Card title="Top 5 người mua (Buyers)">
+<<<<<<< HEAD
             {topBuyers.length > 0 ? (
               <div className="space-y-3">
                 {topBuyers.map((buyer, index) => (
@@ -397,10 +439,23 @@ const Statistical = () => {
                       <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">{index + 1}</div>
                       <div>
                         <div className="font-medium text-gray-900">{buyer.username}</div>
+=======
+            <div className="space-y-3">
+              {topBuyers.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">Chưa có dữ liệu</div>
+              ) : (
+                topBuyers.map((buyer, index) => (
+                  <div key={buyer.userId || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">{index + 1}</div>
+                      <div>
+                        <div className="font-medium">{buyer.username}</div>
+>>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
                         <div className="text-sm text-gray-500">{buyer.email}</div>
                       </div>
                     </div>
                     <div className="text-right">
+<<<<<<< HEAD
                       <div className="font-semibold text-green-600">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyer.totalAmount)}</div>
                       <div className="text-sm text-gray-500">{buyer.totalCompletedOrders} đơn</div>
                     </div>
@@ -412,6 +467,15 @@ const Statistical = () => {
                 Chưa có dữ liệu người mua
               </div>
             )}
+=======
+                      <div className="font-semibold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyer.totalAmount)}</div>
+                      <div className="text-sm text-gray-500">{buyer.totalCompletedOrders} đơn</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+>>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
           </Card>
         </Col>
       </Row>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Card, Tag, message } from 'antd';
 import { SearchOutlined, UserOutlined } from '@ant-design/icons';
-import { getCustomers } from '../../services/seller/customerService';
+import { getTopBuyers } from '../../services/seller/customerService';
 
 const { Search } = Input;
 
@@ -27,18 +27,23 @@ const Customers = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const params = {
-        page: pagination.current - 1,
-        size: pagination.pageSize,
-        keyword: keyword || undefined,
-      };
-
-      const response = await getCustomers(params);
       
-      setCustomers(response.content || []);
+      // Backend only supports top buyers endpoint, not paginated customer list
+      const response = await getTopBuyers();
+      
+      // Filter by keyword if provided
+      let filteredCustomers = response || [];
+      if (keyword) {
+        filteredCustomers = filteredCustomers.filter(customer => 
+          customer.fullName?.toLowerCase().includes(keyword.toLowerCase()) ||
+          customer.email?.toLowerCase().includes(keyword.toLowerCase())
+        );
+      }
+      
+      setCustomers(filteredCustomers);
       setPagination({
         ...pagination,
-        total: response.totalElements || 0,
+        total: filteredCustomers.length,
       });
     } catch (error) {
       console.error('Error fetching customers:', error);

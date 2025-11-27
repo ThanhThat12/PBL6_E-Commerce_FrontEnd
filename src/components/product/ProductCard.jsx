@@ -1,23 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiShoppingCart, FiHeart } from 'react-icons/fi';
+import { FiShoppingCart, FiHeart, FiPackage, FiStar } from 'react-icons/fi';
+import { getProductImage } from '../../utils/placeholderImage';
 
 /**
  * ProductCard Component
- * Reusable product card for grid display
+ * Modern product card with improved design
  * 
  * @param {Object} product - Product data
  * @param {Function} onAddToCart - Add to cart handler
  * @param {Function} onWishlist - Add to wishlist handler
  */
 const ProductCard = ({ product, onAddToCart, onWishlist }) => {
-  // Find cheapest variant for display
-  const cheapestVariant = product.variants?.reduce((min, v) => 
-    v.price < min.price ? v : min
-  , product.variants[0]) || {};
-
-  const displayPrice = cheapestVariant.price || product.basePrice || 0;
+  // Calculate price range from variants
+  const prices = product.variants?.map(v => v.price) || [product.basePrice];
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
   const hasVariants = product.variants && product.variants.length > 1;
+  const hasPriceRange = minPrice !== maxPrice;
+
+  // Calculate total stock
+  const totalStock = product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || product.stock || 0;
+
+  // Find cheapest variant for "Add to Cart"
+  const cheapestVariant = product.variants?.reduce((min, v) =>
+    v.price < min.price ? v : min
+    , product.variants[0]) || {};
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -38,97 +46,156 @@ const ProductCard = ({ product, onAddToCart, onWishlist }) => {
   return (
     <Link
       to={`/products/${product.id}`}
-      className="group relative bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden no-underline"
+      className="group relative bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-primary-200 no-underline flex flex-col h-full"
     >
       {/* Image Container */}
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
+      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
         <img
-          src={product.mainImage || 'https://via.placeholder.com/400x400?text=No+Image'}
+          src={getProductImage(product)}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
           onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/400x400?text=No+Image';
+            e.target.onerror = null;
           }}
         />
-        
+
+        {/* Overlay gradient on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-2">
+        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
           {!product.isActive && (
-            <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded">
+            <span className="bg-gray-800/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
               Inactive
             </span>
           )}
+          {totalStock === 0 && (
+            <span className="bg-red-500/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
+              Sold Out
+            </span>
+          )}
           {hasVariants && (
-            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+            <span className="bg-blue-500/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+              <FiPackage className="w-3 h-3" />
               {product.variants.length} Options
             </span>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {/* Wishlist Button */}
+        <div className="absolute top-3 right-3 z-10">
           <button
             onClick={handleWishlist}
-            className="p-2 bg-white rounded-full shadow-md hover:bg-red-50 hover:text-red-500 transition-colors"
+            className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 hover:text-red-500 transition-all duration-300 opacity-0 group-hover:opacity-100"
             aria-label="Add to wishlist"
           >
             <FiHeart className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Quick Add to Cart */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button
-            onClick={handleAddToCart}
-            className="w-full bg-primary-500 text-white py-2 px-4 rounded-lg hover:bg-primary-600 transition-colors flex items-center justify-center gap-2"
-          >
-            <FiShoppingCart className="w-5 h-5" />
-            <span className="font-medium">Add to Cart</span>
-          </button>
-        </div>
+        {/* Quick Add to Cart - Only show if in stock */}
+        {totalStock > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
+            <button
+              onClick={handleAddToCart}
+              className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 shadow-xl"
+            >
+              <FiShoppingCart className="w-5 h-5" />
+              <span>Add to Cart</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Product Info */}
-      <div className="p-4">
-        {/* Category */}
-        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-          {product.category?.name || 'Uncategorized'}
-        </p>
-
-        {/* Product Name */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
-          {product.name}
-        </h3>
-
-        {/* Description */}
-        {product.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {product.description}
-          </p>
-        )}
-
-        {/* Price */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-primary-600">
-            {displayPrice.toLocaleString('vi-VN')}₫
+      <div className="p-4 flex flex-col flex-1">
+        {/* Category & Shop */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+            {product.category?.name || product.categoryName || 'Uncategorized'}
           </span>
-          {hasVariants && (
-            <span className="text-sm text-gray-500">+</span>
+          {product.shopName && (
+            <span className="text-xs text-gray-500 font-medium truncate max-w-[120px]">
+              {product.shopName}
+            </span>
           )}
         </div>
 
-        {/* Stock Info */}
-        {cheapestVariant.stock !== undefined && (
-          <p className={`text-xs mt-2 ${
-            cheapestVariant.stock > 0 ? 'text-green-600' : 'text-red-600'
-          }`}>
-            {cheapestVariant.stock > 0 
-              ? `In stock (${cheapestVariant.stock})` 
-              : 'Out of stock'
-            }
-          </p>
+        {/* Product Name */}
+        <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3rem] group-hover:text-primary-600 transition-colors leading-tight">
+          {product.name}
+        </h3>
+
+        {/* Rating */}
+        {(product.averageRating || product.totalReviews) && (
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <FiStar
+                  key={star}
+                  className={`w-4 h-4 ${star <= Math.round(product.averageRating || 0)
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'text-gray-300'
+                    }`}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-semibold text-gray-700">
+              {product.averageRating ? product.averageRating.toFixed(1) : '0.0'}
+            </span>
+            {product.totalReviews > 0 && (
+              <span className="text-xs text-gray-400">
+                ({product.totalReviews})
+              </span>
+            )}
+          </div>
         )}
+
+        {/* Spacer to push price and stock to bottom */}
+        <div className="flex-1" />
+
+        {/* Price */}
+        <div className="mb-3">
+          {hasPriceRange ? (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-primary-600">
+                {minPrice.toLocaleString('vi-VN')}₫
+              </span>
+              <span className="text-sm text-gray-400 font-medium">-</span>
+              <span className="text-xl font-bold text-primary-600">
+                {maxPrice.toLocaleString('vi-VN')}₫
+              </span>
+            </div>
+          ) : (
+            <span className="text-2xl font-bold text-primary-600">
+              {minPrice.toLocaleString('vi-VN')}₫
+            </span>
+          )}
+        </div>
+
+        {/* Stock & Variants Info */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${totalStock > 0 ? 'bg-green-500' : 'bg-red-500'
+              }`} />
+            <span className={`text-xs font-medium ${totalStock > 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+              {totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}
+            </span>
+          </div>
+
+          {hasVariants && (
+            <span className="text-xs text-gray-500 font-medium">
+              {product.variants.length} variants
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
