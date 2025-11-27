@@ -156,12 +156,6 @@ const ProductList = () => {
       title: 'Trạng thái',
       dataIndex: 'isActive',
       key: 'status',
-<<<<<<< HEAD
-      render: (isActive) => (
-        <Tag color={isActive ? 'green' : 'orange'}>
-          {isActive ? 'Hoạt động' : 'Chờ duyệt'}
-        </Tag>
-=======
       render: (isActive, record) => (
         <Button
           size="small"
@@ -170,7 +164,6 @@ const ProductList = () => {
         >
           {isActive ? 'Hoạt động' : 'Tạm ngưng'}
         </Button>
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
       ),
     },
     {

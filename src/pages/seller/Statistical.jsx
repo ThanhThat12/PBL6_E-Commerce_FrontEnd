@@ -2,18 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, DatePicker, Select, Button, Spin, message, Radio } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-<<<<<<< HEAD
-import { 
-  getRevenueStats, 
-  getSalesStats, 
-  exportReport,
-=======
 import {
   getRevenueStats,
   // getSalesStats,  // TODO: Not implemented yet
   // getTopProducts,  // TODO: Not implemented yet
   // exportReport,    // TODO: Not implemented yet
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
   getShopAnalytics,
   getTopBuyers,
   getCompletedOrdersMonthly,
@@ -78,21 +71,11 @@ const Statistical = () => {
     try {
       setLoading(true);
 
-<<<<<<< HEAD
-      const [revenue, sales] = await Promise.all([
-        getRevenueStats(params),
-        getSalesStats(params),
-      ]);
-
-      setRevenueData(revenue || []);
-      setSalesData(sales || []);
-=======
       // TODO: Implement these APIs in backend
       // Temporary: Set empty data
       setRevenueData([]);
       setSalesData([]);
       setTopProducts([]);
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
     } catch (error) {
       console.error('Error fetching statistics:', error);
       message.error('Không thể tải dữ liệu thống kê');
@@ -274,58 +257,6 @@ const Statistical = () => {
 
         {/* Order Statistics Chart */}
         <Col xs={24} lg={12}>
-<<<<<<< HEAD
-          <Card 
-            title={`Biểu đồ đơn hàng ${orderStatsType === 'completed' ? 'hoàn thành' : 'bị hủy'} (${orderStatsYear})`}
-            extra={
-              <div className="flex items-center gap-2">
-                <Select
-                  value={orderStatsYear}
-                  onChange={(val) => setOrderStatsYear(val)}
-                  style={{ width: 120 }}
-                >
-                  {Array.from({ length: 6 }).map((_, idx) => {
-                    const y = dayjs().year() - idx;
-                    return (
-                      <Select.Option key={y} value={y}>{y}</Select.Option>
-                    );
-                  })}
-                </Select>
-              </div>
-            }
-          >
-            <div className="mb-4">
-              <Radio.Group 
-                value={orderStatsType} 
-                onChange={(e) => setOrderStatsType(e.target.value)}
-                buttonStyle="solid"
-              >
-                <Radio.Button value="completed">Đơn hoàn thành</Radio.Button>
-                <Radio.Button value="cancelled">Đơn bị hủy</Radio.Button>
-              </Radio.Group>
-            </div>
-            
-            {orderStatsLoading ? (
-              <div className="flex items-center justify-center" style={{ height: 300 }}>
-                <Spin />
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyOrderStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="monthName" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar 
-                    dataKey="orderCount" 
-                    fill={orderStatsType === 'completed' ? '#10b981' : '#ef4444'} 
-                    name={orderStatsType === 'completed' ? 'Đơn hoàn thành' : 'Đơn bị hủy'}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-=======
           <Card title="Biểu đồ đơn hàng">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={salesData}>
@@ -341,47 +272,10 @@ const Statistical = () => {
                 />
               </BarChart>
             </ResponsiveContainer>
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
           </Card>
         </Col>
       </Row>
 
-<<<<<<< HEAD
-      {/* Top Products and Buyers */}
-      <Row gutter={[16, 16]}> 
-        <Col xs={24} lg={12}>
-          <Card title="Top 5 sản phẩm bán chạy">
-            {topProducts.length > 0 ? (
-              <div className="space-y-3">
-                {topProducts.map((product, index) => (
-                  <div 
-                    key={product.productId} 
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      
-                      {product.mainImage && (
-                        <img 
-                          src={product.mainImage} 
-                          alt={product.productName}
-                          className="w-12 h-12 object-cover rounded"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      )}
-                      
-                      <div>
-                        <div className="font-medium text-gray-900">{product.productName}</div>
-                        <div className="text-sm text-gray-500">
-                          Đã bán: <span className="font-semibold text-blue-600">{product.totalQuantitySold}</span> sản phẩm
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {product.totalOrders} đơn hàng
-=======
       {/* Top Products */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
@@ -407,39 +301,18 @@ const Statistical = () => {
                             style: 'currency',
                             currency: 'VND'
                           }).format(product.revenue)}
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
                         </div>
                       </div>
                     </div>
                   </div>
-<<<<<<< HEAD
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                Chưa có dữ liệu sản phẩm bán chạy
-              </div>
-            )}
-=======
                 ))
               )}
             </div>
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
           </Card>
         </Col>
 
         <Col xs={24} lg={12}>
           <Card title="Top 5 người mua (Buyers)">
-<<<<<<< HEAD
-            {topBuyers.length > 0 ? (
-              <div className="space-y-3">
-                {topBuyers.map((buyer, index) => (
-                  <div key={buyer.userId || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">{index + 1}</div>
-                      <div>
-                        <div className="font-medium text-gray-900">{buyer.username}</div>
-=======
             <div className="space-y-3">
               {topBuyers.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">Chưa có dữ liệu</div>
@@ -450,24 +323,10 @@ const Statistical = () => {
                       <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">{index + 1}</div>
                       <div>
                         <div className="font-medium">{buyer.username}</div>
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
                         <div className="text-sm text-gray-500">{buyer.email}</div>
                       </div>
                     </div>
                     <div className="text-right">
-<<<<<<< HEAD
-                      <div className="font-semibold text-green-600">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyer.totalAmount)}</div>
-                      <div className="text-sm text-gray-500">{buyer.totalCompletedOrders} đơn</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                Chưa có dữ liệu người mua
-              </div>
-            )}
-=======
                       <div className="font-semibold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(buyer.totalAmount)}</div>
                       <div className="text-sm text-gray-500">{buyer.totalCompletedOrders} đơn</div>
                     </div>
@@ -475,7 +334,6 @@ const Statistical = () => {
                 ))
               )}
             </div>
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
           </Card>
         </Col>
       </Row>

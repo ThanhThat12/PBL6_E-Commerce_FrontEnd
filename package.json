@@ -36,11 +36,8 @@
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.3.0",
-<<<<<<< HEAD
-  "@ant-design/icons": "^5.0.1",
+    "@ant-design/icons": "^5.0.1",
     "sockjs-client": "^1.6.1",
-=======
->>>>>>> 60cf25a0cc7d5258c82167b08d99ed532eee5b0b
     "web-vitals": "^2.1.4",
     "yet-another-react-lightbox": "^3.25.0",
     "yup": "^1.7.1",
