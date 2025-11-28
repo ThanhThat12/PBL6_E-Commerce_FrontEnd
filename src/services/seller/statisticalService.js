@@ -56,3 +56,60 @@ export const getShopAnalytics = async (year) => {
     throw error;
   }
 };
+
+/**
+ * Get top buyers for the shop
+ * @param {object} params - optional params { limit }
+ * @returns {Promise<Array>} list of buyers
+ */
+export const getTopBuyers = async (params = {}) => {
+  try {
+    const response = await api.get('/seller/top-buyers', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching top buyers:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get completed orders monthly statistics
+ * @returns {Promise<Array>} Array of { year, month, orderCount }
+ */
+export const getCompletedOrdersMonthly = async () => {
+  try {
+    const response = await api.get('/seller/analytics/orders/completed-monthly');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching completed orders monthly:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get cancelled orders monthly statistics
+ * @returns {Promise<Array>} Array of { year, month, orderCount }
+ */
+export const getCancelledOrdersMonthly = async () => {
+  try {
+    const response = await api.get('/seller/analytics/orders/cancelled-monthly');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching cancelled orders monthly:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get top selling products
+ * @returns {Promise<Array>} Array of { productId, productName, mainImage, totalQuantitySold, totalOrders }
+ */
+export const getTopSellingProducts = async () => {
+  try {
+    const response = await api.get('/seller/analytics/products/top-selling');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching top selling products:', error);
+    throw error;
+  }
+};

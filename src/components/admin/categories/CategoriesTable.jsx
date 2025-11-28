@@ -1,80 +1,86 @@
-import React, { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Layers, Package, Grid, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Layers, Package, Grid, TrendingUp } from 'lucide-react';
 import './CategoriesTable.css';
 import CategoryModal from './CategoryModal';
+import CategoryActions from './CategoryActions';
+import Toast from '../common/Toast';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { getAdminCategories, getCategoryStats, createCategory, updateCategory, deleteCategory } from '../../../services/adminService';
 
 const CategoriesTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [categories, setCategories] = useState([
-    {
-      id: 1,
-      name: 'Electronics',
-      description: 'Electronic devices and gadgets',
-      productCount: 245,
-      soldCount: 1823,
-      icon: '📱',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Fashion',
-      description: 'Clothing, shoes, and accessories',
-      productCount: 532,
-      soldCount: 3456,
-      icon: '👔',
-      createdAt: '2024-01-20'
-    },
-    {
-      id: 3,
-      name: 'Furniture',
-      description: 'Home and office furniture',
-      productCount: 128,
-      soldCount: 687,
-      icon: '🪑',
-      createdAt: '2024-02-05'
-    },
-    {
-      id: 4,
-      name: 'Sports',
-      description: 'Sports equipment and fitness gear',
-      productCount: 87,
-      soldCount: 412,
-      icon: '⚽',
-      createdAt: '2024-02-12'
-    },
-    {
-      id: 5,
-      name: 'Books',
-      description: 'Books, magazines, and reading materials',
-      productCount: 156,
-      soldCount: 934,
-      icon: '📚',
-      createdAt: '2024-03-01'
-    }
-  ]);
-
+  const [categories, setCategories] = useState([]);
+  const [stats, setStats] = useState({
+    totalCategories: 0,
+    totalProducts: 0,
+    productsSold: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [operationLoading, setOperationLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
-  // Stats data
+  // Fetch categories and stats from API
+  useEffect(() => {
+    fetchCategories();
+    fetchStats();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      console.log('📡 [CategoriesTable] Fetching categories from API...');
+      const response = await getAdminCategories();
+      
+      if (response.status === 200 && response.data) {
+        console.log('✅ [CategoriesTable] Categories loaded:', response.data);
+        setCategories(Array.isArray(response.data) ? response.data : []);
+      }
+    } catch (err) {
+      console.error('❌ [CategoriesTable] Error fetching categories:', err);
+      setError('Failed to load categories. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      console.log('📊 [CategoriesTable] Fetching category stats from API...');
+      const response = await getCategoryStats();
+      
+      if (response.status === 200 && response.data) {
+        console.log('✅ [CategoriesTable] Stats loaded:', response.data);
+        setStats(response.data);
+      }
+    } catch (err) {
+      console.error('❌ [CategoriesTable] Error fetching stats:', err);
+      // Don't set error state for stats - just log it
+    }
+  };
+
+  // Stats data for display
   const statsData = [
     {
       title: 'Total Categories',
-      value: categories.length.toString(),
+      value: stats.totalCategories.toString(),
       icon: <Grid size={24} />,
       color: 'blue',
       description: 'All categories'
     },
     {
       title: 'Total Products',
-      value: categories.reduce((sum, c) => sum + c.productCount, 0).toLocaleString(),
+      value: stats.totalProducts.toLocaleString(),
       icon: <Package size={24} />,
       color: 'purple',
       description: 'Across all categories'
     },
     {
       title: 'Products Sold',
-      value: categories.reduce((sum, c) => sum + c.soldCount, 0).toLocaleString(),
+      value: stats.productsSold.toLocaleString(),
       icon: <TrendingUp size={24} />,
       color: 'green',
       description: 'Total sold products'
@@ -92,35 +98,90 @@ const CategoriesTable = () => {
   };
 
   const handleDeleteCategory = (category) => {
-    if (window.confirm(`Are you sure you want to delete "${category.name}"?`)) {
-      setCategories(categories.filter(c => c.id !== category.id));
-      alert(`Category "${category.name}" has been deleted`);
+    setCategoryToDelete(category);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      setOperationLoading(true);
+      console.log('🗑️ [CategoriesTable] Deleting category:', categoryToDelete.id);
+      
+      await deleteCategory(categoryToDelete.id);
+      
+      setToast({
+        show: true,
+        message: `Category "${categoryToDelete.name}" has been deleted successfully.`,
+        type: 'success'
+      });
+      
+      // Refresh data from API after deletion
+      await fetchCategories();
+      await fetchStats();
+      
+    } catch (error) {
+      console.error('❌ [CategoriesTable] Error deleting category:', error);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete category. Please try again.';
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: 'error'
+      });
+    } finally {
+      setOperationLoading(false);
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
     }
   };
 
-  const handleSaveCategory = (categoryData) => {
-    if (editingCategory) {
-      // Update existing category
-      setCategories(categories.map(c => 
-        c.id === editingCategory.id 
-          ? { ...c, ...categoryData }
-          : c
-      ));
-      alert('Category updated successfully!');
-    } else {
-      // Add new category
-      const newCategory = {
-        ...categoryData,
-        id: Math.max(...categories.map(c => c.id), 0) + 1,
-        productCount: 0,
-        soldCount: 0,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setCategories([...categories, newCategory]);
-      alert('Category added successfully!');
+  const handleSaveCategory = async (categoryData) => {
+    try {
+      setOperationLoading(true);
+      
+      if (editingCategory) {
+        // Update existing category
+        console.log('📝 [CategoriesTable] Updating category:', editingCategory.id, categoryData);
+        await updateCategory(editingCategory.id, categoryData);
+        
+        setToast({
+          show: true,
+          message: `Category "${categoryData.name}" has been updated successfully.`,
+          type: 'success'
+        });
+      } else {
+        // Create new category
+        console.log('📝 [CategoriesTable] Creating new category:', categoryData);
+        await createCategory(categoryData);
+        
+        setToast({
+          show: true,
+          message: `Category "${categoryData.name}" has been created successfully.`,
+          type: 'success'
+        });
+      }
+      
+      setShowModal(false);
+      setEditingCategory(null);
+      
+      // Refresh data from API after save
+      await fetchCategories();
+      await fetchStats();
+      
+    } catch (error) {
+      console.error('❌ [CategoriesTable] Error saving category:', error);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save category. Please try again.';
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: 'error'
+      });
+    } finally {
+      setOperationLoading(false);
     }
-    setShowModal(false);
-    setEditingCategory(null);
   };
 
   const handleCloseModal = () => {
@@ -175,58 +236,77 @@ const CategoriesTable = () => {
         ))}
       </div>
 
-      {/* Categories Grid */}
-      <div className="categories-grid">
-        {filteredCategories.map((category) => (
-          <div key={category.id} className="category-card">
-            <div className="category-card-header">
-              <div className="category-icon-wrapper">
-                <span className="category-icon-emoji">{category.icon}</span>
-              </div>
-              <div className="category-actions">
-                <button
-                  className="action-btn edit-btn"
-                  onClick={() => handleEditCategory(category)}
-                  title="Edit Category"
-                >
-                  <Edit2 size={16} />
-                </button>
-                <button
-                  className="action-btn delete-btn"
-                  onClick={() => handleDeleteCategory(category)}
-                  title="Delete Category"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-
-            <div className="category-card-body">
-              <h3 className="category-name">{category.name}</h3>
-              <p className="category-description">{category.description}</p>
-
-              <div className="category-meta">
-                <div className="category-stat">
-                  <Package size={16} />
-                  <span>{category.productCount} products</span>
-                </div>
-                <div className="category-stat">
-                  <TrendingUp size={16} />
-                  <span>{category.soldCount.toLocaleString()} sold</span>
-                </div>
-              </div>
-            </div>
+      {/* Categories Table */}
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading categories...</p>
           </div>
-        ))}
+        ) : error ? (
+          <div className="error-state">
+            <p>{error}</p>
+            <button onClick={() => { setLoading(true); setError(null); fetchCategories(); fetchStats(); }}>
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <table className="categories-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Category Name</th>
+                <th>Total Products</th>
+                <th>Total Sold Products</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map((category) => (
+                  <tr key={category.id}>
+                    <td>#{category.id}</td>
+                    <td>
+                      <div className="category-name-cell">
+                        <span className="category-name-text">{category.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="stat-badge stat-badge-purple">
+                        <Package size={14} />
+                        <span>{category.totalProducts || 0}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="stat-badge stat-badge-green">
+                        <TrendingUp size={14} />
+                        <span>{(category.totalSoldProducts || 0).toLocaleString()}</span>
+                      </div>
+                    </td>
+                    <td className="action-cell">
+                      <CategoryActions 
+                        category={category}
+                        onEdit={handleEditCategory}
+                        onDelete={handleDeleteCategory}
+                      />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="empty-state-row">
+                    <div className="empty-state">
+                      <Layers size={48} />
+                      <h3>No categories found</h3>
+                      <p>Try adjusting your search or add a new category</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
-
-      {filteredCategories.length === 0 && (
-        <div className="empty-state">
-          <Layers size={48} />
-          <h3>No categories found</h3>
-          <p>Try adjusting your search or add a new category</p>
-        </div>
-      )}
 
       {/* Category Modal */}
       {showModal && (
@@ -234,8 +314,32 @@ const CategoriesTable = () => {
           category={editingCategory}
           onClose={handleCloseModal}
           onSave={handleSaveCategory}
+          loading={operationLoading}
         />
       )}
+
+      {/* Delete Confirm Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Delete Category"
+        userName={categoryToDelete?.name}
+        userType="category"
+        deletionDetails={[
+          "All products in this category may be affected",
+          "This action cannot be undone"
+        ]}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={3000}
+      />
     </div>
   );
 };

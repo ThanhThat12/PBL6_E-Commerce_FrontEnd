@@ -29,37 +29,46 @@ const reviewService = {
   /**
    * Post a review for a product
    * @param {number|string} productId
-   * @param {object} payload - { rating, comment, images? }
+   * @param {object} payload - { rating, comment, images? } where images is array of URLs
    */
   postReview: async (productId, payload) => {
     try {
-      // If payload contains File objects in `images`, send as FormData
-      const hasFiles = payload && Array.isArray(payload.images) && payload.images.some(f => typeof File !== 'undefined' ? f instanceof File : (f && f.raw instanceof File));
-      let res;
-      if (hasFiles) {
-        const formData = new FormData();
-        formData.append('rating', payload.rating);
-        if (payload.comment) formData.append('comment', payload.comment);
-        // Append files
-        payload.images.forEach((file, idx) => {
-          // some upload components wrap file in { originFileObj } or { raw }
-          const f = file.originFileObj || file.raw || file;
-          formData.append('images', f);
-        });
-
-        res = await api.post(`${BASE}/${productId}/reviews`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      } else {
-        res = await api.post(`${BASE}/${productId}/reviews`, payload);
-      }
+      const res = await api.post(`${BASE}/${productId}/reviews`, payload);
       return res;
     } catch (err) {
       console.error('Error posting review:', err);
       throw err;
     }
-  }
-,
+  },
+
+  /**
+   * Update a review
+   * @param {number|string} reviewId
+   * @param {object} payload - { rating, comment, images? } where images is array of URLs
+   */
+  updateReview: async (reviewId, payload) => {
+    try {
+      const res = await api.put(`reviews/${reviewId}`, payload);
+      return res;
+    } catch (err) {
+      console.error('Error updating review:', err);
+      throw err;
+    }
+  },
+
+   /**
+   * Get all reviews for current seller's shop
+   * GET /my-shop/reviews/all
+   */
+   getShopReviews: async () => {
+    try {
+      const res = await api.get('my-shop/reviews/all');
+      return res;
+    } catch (err) {
+      console.error('Error fetching shop reviews:', err);
+      throw err;
+    }
+  },
 
   /**
    * Seller reply to a review

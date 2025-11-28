@@ -7,6 +7,8 @@ import {
   ShopOutlined,
   BarChartOutlined,
   UserOutlined,
+  GiftOutlined,
+  StarOutlined,
 } from '@ant-design/icons';
 import { Menu } from 'antd';
 
@@ -50,6 +52,11 @@ const menuItems = [
     key: '/seller/customers',
     icon: <UserOutlined />,
     label: <Link to="/seller/customers">Khách hàng</Link>,
+  },
+  {
+    key: '/seller/vouchers',
+    icon: <GiftOutlined />,
+    label: <Link to="/seller/vouchers">Voucher</Link>,
   },
   {
     key: '/seller/reviews',

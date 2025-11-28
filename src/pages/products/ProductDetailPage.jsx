@@ -35,11 +35,15 @@ const ProductDetailPage = () => {
   const [canReview, setCanReview] = useState(false);
   const [ratingInput, setRatingInput] = useState(5);
   const [commentInput, setCommentInput] = useState('');
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
   const [uploadingReview, setUploadingReview] = useState(false);
   const [replyState, setReplyState] = useState({});
   const { user, isAuthenticated, hasRole } = useAuth();
+
+  // Add states for edit mode
+  const [editMode, setEditMode] = useState(false);
+  const [editReviewId, setEditReviewId] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Load product
   useEffect(() => {
@@ -143,99 +147,140 @@ const ProductDetailPage = () => {
 
   // When product or user changes, load reviews and check if user can review
   useEffect(() => {
-    if (!product) return;
+    if (product) {
+      loadReviews();
+    }
+  }, [product]);
 
-    const fetchReviews = async () => {
-      setReviewsLoading(true);
-      try {
-        const res = await reviewService.getReviews(product.id, { page: 0, size: 10 });
-        if (res && res.content) {
-          setReviews(res.content);
-        } else if (res && res.data && res.data.content) {
-          setReviews(res.data.content);
-        } else if (Array.isArray(res)) {
-          setReviews(res);
-        } else {
-          setReviews([]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch reviews:', err);
-        setReviews([]);
-      } finally {
-        setReviewsLoading(false);
-      }
-    };
+  // Check can review after reviews are loaded
+  useEffect(() => {
+    if (reviews.length >= 0 && isAuthenticated && user) {
+      checkCanReview();
+    }
+  }, [reviews, isAuthenticated, user]);
 
-    const checkUserPurchaseEligibility = async () => {
-      try {
-        if (!isAuthenticated) {
-          setCanReview(false);
-          return;
-        }
+  const checkCanReview = () => {
+    if (!isAuthenticated || !user || !reviews) {
+      setCanReview(false);
+      setEditMode(false);
+      setEditReviewId(null);
+      return;
+    }
 
-        const resp = await orderService.getMyOrders();
-        const data = resp?.data || resp;
-        let ordersArray = [];
-        if (Array.isArray(data)) ordersArray = data;
-        else if (data && Array.isArray(data.content)) ordersArray = data.content;
-
-        const purchased = ordersArray.some((ord) => {
-          const items = ord.items || ord.orderItems || [];
-          const status = ord.status || '';
-          if (!items || !Array.isArray(items)) return false;
-          if (String(status).toUpperCase() !== 'COMPLETED') return false;
-          return items.some(it => Number(it.productId || it.product?.id) === Number(product.id));
-        });
-
-        setCanReview(!!purchased);
-      } catch (err) {
-        console.error('Failed to check purchase eligibility:', err);
+    console.log('Checking can review for user:', user.id, 'Reviews:', reviews);
+    
+    const userReview = reviews.find(review => review.userId === user.id);
+    console.log('Found user review:', userReview);
+    
+    if (userReview) {
+      const reviewTime = new Date(userReview.createdAt);
+      const lastUpdateTime = userReview.updatedAt ? new Date(userReview.updatedAt) : reviewTime;
+      const now = new Date();
+      
+      // Check if review is within 30 days from creation
+      const daysSinceCreation = (now - reviewTime) / (1000 * 60 * 60 * 24);
+      console.log('Days since creation:', daysSinceCreation);
+      
+      // Check if user has already edited (updatedAt exists and is different from createdAt)
+      const hasBeenEdited = userReview.updatedAt && 
+        new Date(userReview.updatedAt).getTime() !== new Date(userReview.createdAt).getTime();
+      console.log('Has been edited:', hasBeenEdited);
+      
+      // Allow edit only if:
+      // 1. Within 30 days from creation
+      // 2. Has not been edited before
+      if (daysSinceCreation <= 30 && !hasBeenEdited) {
+        setCanReview(true);
+        setEditMode(true);
+        setEditReviewId(userReview.id);
+        setRatingInput(userReview.rating);
+        setCommentInput(userReview.comment);
+        setPreviewUrls(userReview.images || []);
+        console.log('Edit mode enabled - can edit once within 30 days');
+      } else {
         setCanReview(false);
+        setEditMode(false);
+        setEditReviewId(null);
+        if (daysSinceCreation > 30) {
+          console.log('Review too old to edit (over 30 days)');
+        } else if (hasBeenEdited) {
+          console.log('Review has already been edited once');
+        }
       }
-    };
+    } else {
+      setCanReview(false);
+      setEditMode(false);
+      setEditReviewId(null);
+      console.log('No user review found');
+    }
+  };
 
-    fetchReviews();
-    checkUserPurchaseEligibility();
-  }, [product, isAuthenticated, user]);
+  // Load reviews for the product
+  const loadReviews = async () => {
+    if (!product?.id) return;
+    
+    setReviewsLoading(true);
+    try {
+      console.log('Loading reviews for product:', product.id);
+      const res = await reviewService.getReviews(product.id, { page: 0, size: 10 });
+      console.log('Reviews response:', res);
+      
+      let reviewsData = [];
+      if (res && res.content) {
+        reviewsData = res.content;
+      } else if (res && res.data && res.data.content) {
+        reviewsData = res.data.content;
+      } else if (Array.isArray(res)) {
+        reviewsData = res;
+      }
+      
+      console.log('Setting reviews:', reviewsData);
+      setReviews(reviewsData);
+    } catch (err) {
+      console.error('Failed to fetch reviews:', err);
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   const submitReview = async () => {
     if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để đánh giá sản phẩm');
-      return;
-    }
-    if (!canReview) {
-      toast.error('Bạn chỉ có thể đánh giá sản phẩm sau khi hoàn tất đơn hàng');
-      return;
-    }
-    if (!ratingInput || ratingInput < 1) {
-      toast.error('Vui lòng chọn số sao');
+      toast.error('Vui lòng đăng nhập để đánh giá');
       return;
     }
 
+    setUploadingReview(true);
     try {
-      setUploadingReview(true);
-      const payload = { rating: Number(ratingInput), comment: commentInput || '' };
-      if (selectedFiles && selectedFiles.length > 0) {
-        payload.images = selectedFiles;
-      }
-      const res = await reviewService.postReview(product.id, payload);
-      if (res && (res.status === 200 || res.status === 201 || res.status === 'success')) {
-        toast.success('Cảm ơn đánh giá của bạn!');
-        setCommentInput('');
-        setRatingInput(5);
-        setSelectedFiles([]);
-        previewUrls.forEach(u => URL.revokeObjectURL(u));
-        setPreviewUrls([]);
-        // refresh
-        const r = await reviewService.getReviews(product.id, { page: 0, size: 10 });
-        if (r && r.content) setReviews(r.content);
+      const images = previewUrls; // Assuming previewUrls are URLs
+      const payload = {
+        rating: ratingInput,
+        comment: commentInput,
+        images
+      };
+
+      if (editMode && editReviewId) {
+        await reviewService.updateReview(editReviewId, payload);
+        toast.success('Cập nhật đánh giá thành công! (Lưu ý: Bạn đã sử dụng quyền chỉnh sửa duy nhất)');
       } else {
-        toast.success(res.message || 'Đã gửi đánh giá');
+        await reviewService.postReview(id, payload);
+        toast.success('Đánh giá thành công! (Bạn có thể chỉnh sửa 1 lần trong vòng 30 ngày)');
       }
-    } catch (err) {
-      console.error('Submit review error:', err);
-      const msg = err.response?.data?.message || err.message || 'Không thể gửi đánh giá';
-      toast.error(msg);
+
+      // Reload reviews
+      await loadReviews();
+      checkCanReview();
+
+      // Reset form
+      setRatingInput(5);
+      setCommentInput('');
+      setPreviewUrls([]);
+      setEditMode(false);
+      setEditReviewId(null);
+      setShowEditModal(false);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast.error('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
     } finally {
       setUploadingReview(false);
     }
@@ -347,29 +392,6 @@ const ProductDetailPage = () => {
       </div>
     );
   }
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    // Limit to 6 images
-    const limited = files.slice(0, 6);
-    setSelectedFiles(limited);
-
-    // Generate preview URLs
-    const urls = limited.map(f => URL.createObjectURL(f));
-    // Revoke previous urls
-    previewUrls.forEach(u => URL.revokeObjectURL(u));
-    setPreviewUrls(urls);
-  };
-
-  const removePreview = (index) => {
-    const newFiles = [...selectedFiles];
-    const newPreviews = [...previewUrls];
-    if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index]);
-    newFiles.splice(index, 1);
-    newPreviews.splice(index, 1);
-    setSelectedFiles(newFiles);
-    setPreviewUrls(newPreviews);
-  };
 
   const isProductOwner = () => {
     if (!user || !product || !hasRole) return false;
@@ -678,10 +700,10 @@ const ProductDetailPage = () => {
                     <dt className="text-gray-600">SKU:</dt>
                     <dd className="font-mono font-semibold">{selectedVariant.sku}</dd>
                   </div>
-                  {product.shop && (
+                  {(product.shopName || product.shop?.name) && (
                     <div className="flex justify-between">
                       <dt className="text-gray-600">Shop:</dt>
-                      <dd className="font-semibold">{product.shop.name}</dd>
+                      <dd className="font-semibold">{product.shopName || product.shop?.name}</dd>
                     </div>
                   )}
                 </dl>
@@ -695,46 +717,40 @@ const ProductDetailPage = () => {
         <div className="bg-white p-6 rounded shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">Đánh giá sản phẩm</h3>
 
-          {/* Review input for eligible users */}
-          {canReview ? (
+          {/* Edit Review Button */}
+          {editMode && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Đánh giá của bạn</label>
-              <div className="flex items-center gap-4 mb-2">
-                <select value={ratingInput} onChange={(e) => setRatingInput(Number(e.target.value))} className="border rounded px-3 py-2">
-                  <option value={5}>5 sao</option>
-                  <option value={4}>4 sao</option>
-                  <option value={3}>3 sao</option>
-                  <option value={2}>2 sao</option>
-                  <option value={1}>1 sao</option>
-                </select>
-                <button onClick={submitReview} disabled={uploadingReview} className={`px-4 py-2 text-white rounded ${uploadingReview ? 'bg-gray-400' : 'bg-primary-600'}`}>
-                  {uploadingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
-                </button>
-              </div>
-              <textarea
-                value={commentInput}
-                onChange={(e) => setCommentInput(e.target.value)}
-                className="w-full border rounded p-3"
-                rows={3}
-                placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
-              />
-              <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Thêm ảnh (tối đa 6)</label>
-                <input type="file" accept="image/*" multiple onChange={handleFileChange} />
-                {previewUrls && previewUrls.length > 0 && (
-                  <div className="mt-2 grid grid-cols-6 gap-2">
-                    {previewUrls.map((u, i) => (
-                      <div key={i} className="relative">
-                        <img src={u} alt={`preview-${i}`} className="w-24 h-24 object-cover rounded" />
-                        <button type="button" onClick={() => removePreview(i)} className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 -translate-y-1/4 translate-x-1/4">✕</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <Button
+                onClick={() => setShowEditModal(true)}
+                variant="outline"
+                className="text-sm"
+              >
+                Sửa đánh giá 
+              </Button>
             </div>
-          ) : (
-            <p className="text-sm text-gray-600 mb-4">Chỉ khách hàng đã hoàn tất đơn hàng mới có thể gửi đánh giá.</p>
+          )}
+
+          {/* Show message if review exists but cannot be edited */}
+          {!editMode && reviews.some(r => r.userId === user?.id) && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                {(() => {
+                  const userReview = reviews.find(r => r.userId === user.id);
+                  if (!userReview) return '';
+                  
+                  const daysSinceCreation = (new Date() - new Date(userReview.createdAt)) / (1000 * 60 * 60 * 24);
+                  const hasBeenEdited = userReview.updatedAt && 
+                    new Date(userReview.updatedAt).getTime() !== new Date(userReview.createdAt).getTime();
+                  
+                  if (daysSinceCreation > 30) {
+                    return 'Đánh giá của bạn đã quá 30 ngày, không thể chỉnh sửa.';
+                  } else if (hasBeenEdited) {
+                    return 'Bạn đã sử dụng quyền chỉnh sửa đánh giá. Mỗi đánh giá chỉ được sửa 1 lần.';
+                  }
+                  return '';
+                })()}
+              </p>
+            </div>
           )}
 
           {/* Reviews list */}
@@ -805,6 +821,78 @@ const ProductDetailPage = () => {
         </div>
       </div>
       </main>
+
+      {/* Edit Review Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Sửa đánh giá
+            </h3>
+            <div className="space-y-4">
+              {/* Rating */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Số sao
+                </label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRatingInput(star)}
+                      className={`text-2xl ${star <= ratingInput ? 'text-yellow-400' : 'text-gray-300'}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Comment */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bình luận
+                </label>
+                <textarea
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md p-2"
+                  rows={4}
+                  placeholder="Nhập bình luận của bạn..."
+                />
+              </div>
+              {/* Images URLs */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  URLs hình ảnh (tùy chọn, cách nhau bởi dấu phẩy)
+                </label>
+                <textarea
+                  value={previewUrls.join(', ')}
+                  onChange={(e) => setPreviewUrls(e.target.value.split(',').map(url => url.trim()).filter(url => url))}
+                  className="w-full border border-gray-300 rounded-md p-2"
+                  rows={2}
+                  placeholder="https://image1.jpg, https://image2.jpg"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={submitReview}
+                disabled={uploadingReview}
+                className="flex-1"
+              >
+                {uploadingReview ? 'Đang gửi...' : 'Cập nhật đánh giá'}
+              </Button>
+              <Button
+                onClick={() => setShowEditModal(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <Footer />

@@ -25,9 +25,7 @@ export const loginUser = async (loginData) => {
  * Get user's saved addresses
  */
 export const getAddresses = async () => {
-  console.log('getAddresses: Calling me/addresses');
   const responseDTO = await api.get('me/addresses');
-  console.log('getAddresses responseDTO:', responseDTO);
   // Interceptor returns response.data which is ResponseDTO { status, message, data }
   return responseDTO;
 };
@@ -36,9 +34,7 @@ export const getAddresses = async () => {
  * Create new address
  */
 export const createAddress = async (addressData) => {
-  console.log('createAddress: Sending data:', addressData);
   const responseDTO = await api.post('me/addresses', addressData);
-  console.log('createAddress responseDTO:', responseDTO);
   // Interceptor returns response.data which is ResponseDTO { status, message, data }
   return responseDTO;
 };
@@ -47,9 +43,7 @@ export const createAddress = async (addressData) => {
  * Update address
  */
 export const updateAddress = async (addressId, addressData) => {
-  console.log('updateAddress: Sending data:', addressData);
   const responseDTO = await api.put(`me/addresses/${addressId}`, addressData);
-  console.log('updateAddress responseDTO:', responseDTO);
   return responseDTO;
 };
 
@@ -114,7 +108,6 @@ export const updateAvatar = async (avatarUrl) => {
  */
 export const getProvinces = async () => {
   const data = await api.get('ghn/master/provinces');
-  console.log('getProvinces data:', data);
   return Array.isArray(data) ? data : [];
 };
 
@@ -124,7 +117,6 @@ export const getProvinces = async () => {
  */
 export const getDistricts = async (provinceId) => {
   const data = await api.get(`ghn/master/districts?province_id=${provinceId}`);
-  console.log('getDistricts data:', data);
   return Array.isArray(data) ? data : [];
 };
 
@@ -134,7 +126,6 @@ export const getDistricts = async (provinceId) => {
  */
 export const getWards = async (districtId) => {
   const data = await api.get(`ghn/master/wards?district_id=${districtId}`);
-  console.log('getWards data:', data);
   return Array.isArray(data) ? data : [];
 };
 
@@ -144,7 +135,6 @@ export const getWards = async (districtId) => {
  */
 export const resolveAddress = async (addressData) => {
   const data = await api.post('ghn/master/resolve', addressData);
-  console.log('resolveAddress data:', data);
   return data;
 };
 
