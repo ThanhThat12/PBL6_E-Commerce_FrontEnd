@@ -1,0 +1,41 @@
+/* VoucherActions.css */
+
+.admin-voucher-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.admin-voucher-action-btn {
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.admin-voucher-view-btn {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.admin-voucher-view-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.admin-voucher-delete-btn {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.admin-voucher-delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}

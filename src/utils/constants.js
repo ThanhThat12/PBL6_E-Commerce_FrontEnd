@@ -1,5 +1,5 @@
 // API Base URL
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081/api/';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost:8081/api/';
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -10,14 +10,14 @@ export const API_ENDPOINTS = {
     LOGIN_FACEBOOK: 'authenticate/facebook',
     REFRESH_TOKEN: 'refresh-token',
     LOGOUT: 'logout',
-    
+
     // Register
     REGISTER: {
       CHECK_CONTACT: 'register/check-contact',
       VERIFY_OTP: 'register/verify-otp',
       REGISTER: 'register/register',
     },
-    
+
     // Forgot Password
     FORGOT_PASSWORD: {
       SEND_OTP: 'forgot-password/send-otp',
@@ -25,7 +25,7 @@ export const API_ENDPOINTS = {
       RESET: 'forgot-password/reset',
     },
   },
-  
+
   // User Profile
   PROFILE: {
     ME: 'user/me',
@@ -35,7 +35,7 @@ export const API_ENDPOINTS = {
     CHANGE_EMAIL: 'user/change-email',
     VERIFY_EMAIL_CHANGE: 'user/verify-email-change',
   },
-  
+
   // Cart
   CART: {
     GET: 'cart',
@@ -44,21 +44,37 @@ export const API_ENDPOINTS = {
     REMOVE_ITEM: (itemId) => `cart/items/${itemId}`,
     CLEAR: 'cart',
   },
-  
+
   // Product
   PRODUCT: {
     GET_ALL: 'products',
     GET_BY_ID: (id) => `products/${id}`,
     SEARCH: 'products/search',
     BY_CATEGORY: (categoryId) => `products/category/${categoryId}`,
+    // Seller endpoints
+    CREATE: 'products',
+    UPDATE: (id) => `products/${id}`,
+    DELETE: (id) => `products/${id}`,
+    MY_PRODUCTS: 'products/my-products',
+    TOGGLE_STATUS: (id) => `products/${id}/status`,
+    // Image endpoints
+    UPLOAD_MAIN_IMAGE: (id) => `products/${id}/images/main`,
+    UPLOAD_GALLERY: (id) => `products/${id}/images/gallery`,
+    UPLOAD_VARIANT_IMAGE: (id, attributeValue) => `products/${id}/images/variant?attributeValue=${attributeValue}`,
+    UPLOAD_VARIANT_BATCH: (id) => `products/${id}/images/gallery/batch-variants`,
+    DELETE_MAIN_IMAGE: (id) => `products/${id}/images/main`,
+    DELETE_GALLERY_IMAGE: (id, imageId) => `products/${id}/images/gallery/${imageId}`,
+    DELETE_VARIANT_IMAGE: (id, attributeValue) => `products/${id}/images/variant?attributeValue=${attributeValue}`,
+    REORDER_GALLERY: (id) => `products/${id}/images/gallery/reorder`,
+    GET_PRIMARY_ATTRIBUTE: (id) => `products/${id}/images/primary-attribute`,
   },
-  
+
   // Category
   CATEGORY: {
     GET_ALL: 'categories',
     GET_BY_ID: (id) => `categories/${id}`,
   },
-  
+
   // Order (fixed: added missing ORDER endpoints)
   // Note: CREATE and GET_LIST use same path 'orders' but different HTTP methods (POST vs GET)
   ORDER: {
@@ -67,7 +83,7 @@ export const API_ENDPOINTS = {
     GET_BY_ID: (orderId) => `orders/${orderId}`,
     CANCEL: (orderId) => `orders/${orderId}/cancel`,
   },
-  
+
   // Security
   SECURITY: {
     LOGIN_HISTORY: 'user/login-history',
@@ -121,7 +137,7 @@ export const ERROR_MESSAGES = {
     CURRENT_PASSWORD: 'Vui lòng nhập mật khẩu hiện tại',
     NEW_PASSWORD: 'Vui lòng nhập mật khẩu mới',
   },
-  
+
   // Invalid format
   INVALID: {
     EMAIL: 'Email không hợp lệ',
@@ -131,13 +147,13 @@ export const ERROR_MESSAGES = {
     OTP: 'Mã OTP phải là 6 chữ số',
     CONFIRM_PASSWORD: 'Mật khẩu xác nhận không khớp',
   },
-  
+
   // Network & Server
   NETWORK_ERROR: 'Lỗi kết nối. Vui lòng kiểm tra internet và thử lại',
   SERVER_ERROR: 'Lỗi máy chủ. Vui lòng thử lại sau',
   TIMEOUT: 'Yêu cầu quá thời gian. Vui lòng thử lại',
   UNAUTHORIZED: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại',
-  
+
   // Auth specific
   LOGIN_FAILED: 'Đăng nhập thất bại. Vui lòng kiểm tra thông tin',
   REGISTER_FAILED: 'Đăng ký thất bại. Vui lòng thử lại',
@@ -198,3 +214,51 @@ export const REQUEST_TIMEOUT = 30000; // 30 seconds
 // OAuth Configuration
 export const GOOGLE_CLIENT_ID = '675831796221-gv53a00leksrq5f08lbds5kej9jjlm4q.apps.googleusercontent.com';
 export const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '';
+
+// Image Upload Configuration
+export const IMAGE_UPLOAD = {
+  // File constraints
+  MAX_FILE_SIZE: parseInt(process.env.REACT_APP_MAX_IMAGE_SIZE) || 5242880, // 5MB in bytes
+  MAX_GALLERY_IMAGES: parseInt(process.env.REACT_APP_MAX_GALLERY_IMAGES) || 10,
+  MAX_REVIEW_IMAGES: parseInt(process.env.REACT_APP_MAX_REVIEW_IMAGES) || 5,
+
+  // Allowed formats
+  ALLOWED_FORMATS: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp'],
+
+  // Display formats (for UI)
+  formats: ['JPG', 'PNG', 'WEBP'],
+  maxFileSize: parseInt(process.env.REACT_APP_MAX_IMAGE_SIZE) || 5242880,
+
+  // Dimension constraints
+  DIMENSIONS: {
+    avatar: {
+      width: parseInt(process.env.REACT_APP_AVATAR_SIZE) || 400,
+      height: parseInt(process.env.REACT_APP_AVATAR_SIZE) || 400,
+    },
+    shopLogo: {
+      width: parseInt(process.env.REACT_APP_SHOP_LOGO_SIZE) || 400,
+      height: parseInt(process.env.REACT_APP_SHOP_LOGO_SIZE) || 400,
+    },
+    shopBanner: {
+      width: parseInt(process.env.REACT_APP_SHOP_BANNER_WIDTH) || 1200,
+      height: parseInt(process.env.REACT_APP_SHOP_BANNER_HEIGHT) || 400,
+    },
+    productImage: {
+      minWidth: parseInt(process.env.REACT_APP_PRODUCT_IMAGE_MIN_WIDTH) || 500,
+      minHeight: parseInt(process.env.REACT_APP_PRODUCT_IMAGE_MIN_HEIGHT) || 500,
+    },
+  },
+
+  // Upload behavior
+  CONCURRENT_UPLOAD_LIMIT: 3,
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 1000, // milliseconds
+
+  // Compression settings
+  COMPRESSION: {
+    maxSizeMB: 2,
+    maxWidthOrHeight: 1920,
+    initialQuality: 0.8,
+  },
+};

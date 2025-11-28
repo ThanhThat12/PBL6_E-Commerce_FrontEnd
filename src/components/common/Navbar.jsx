@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
+import { useNotifications } from "../../hooks/useNotifications";
 import { getCategories } from "../../services/homeService";
 import { 
   Bars3Icon,
@@ -13,6 +14,7 @@ import {
 // Import các component con
 import SearchBar from './Navbar/SearchBar';
 import CartButton from './Navbar/CartButton';
+import NotificationButton from './Navbar/NotificationButton';
 import UserMenu from './Navbar/UserMenu';
 import CategoryMenu from './Navbar/CategoryMenu';
 import MobileMenu from './Navbar/MobileMenu';
@@ -40,6 +42,12 @@ export default function NavbarNew({ isHomePage = false }) {
   
   const { user, logout } = useAuth(); // Sử dụng AuthContext
   const { cartCount } = useCart(); // Sử dụng CartContext
+  const { 
+    notifications, 
+    markAsRead, 
+    clearAll,
+    unreadCount 
+  } = useNotifications(user?.id); // Sử dụng NotificationContext
 
   // Scroll effect
   useEffect(() => {
@@ -170,35 +178,47 @@ export default function NavbarNew({ isHomePage = false }) {
               {/* Cart Button */}
               <CartButton itemCount={cartCount} />
               
+              {/* Notification Button - Only show when logged in */}
+              {user && (
+                <NotificationButton 
+                  notifications={notifications}
+                  onMarkAsRead={markAsRead}
+                  onClearAll={clearAll}
+                />
+              )}
+              
               {/* User Menu */}
               <UserMenu user={user} onLogout={handleLogout} />
                             
-              {/* Become Vendor - Nút nổi bật */}
-              <Link
-                to="/become-vendor"
-                className="
-                  hidden
-                  md:flex
-                  items-center
-                  gap-2
-                  px-3
-                  py-2
-                  rounded-lg
-                  bg-secondary-500
-                  text-white
-                  font-semibold
-                  shadow-colored-secondary
-                  hover:bg-secondary-600
-                  transition-colors
-                  group
-                "
-                aria-label="Kênh người bán"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1.5 9h-11L5 11z" />
-                </svg>
-                <span className="hidden lg:inline">Kênh người bán</span>
-              </Link>
+              {/* Seller Channel - Only show for SELLER role */}
+              {user && (
+                <Link
+                  to="/seller/dashboard"
+                  className="
+                    hidden
+                    md:flex
+                    items-center
+                    gap-2
+                    px-3
+                    py-2
+                    rounded-lg
+                    bg-secondary-500
+                    text-white
+                    font-semibold
+                    shadow-colored-secondary
+                    hover:bg-secondary-600
+                    transition-colors
+                    group
+                    no-underline
+                  "
+                  aria-label="Kênh người bán"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1.5 9h-11L5 11z" />
+                  </svg>
+                  <span className="hidden lg:inline">Kênh người bán</span>
+                </Link>
+              )}
               
               {/* Mobile Menu Button */}
               <button

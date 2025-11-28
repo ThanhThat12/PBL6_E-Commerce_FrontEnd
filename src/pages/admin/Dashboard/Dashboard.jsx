@@ -69,7 +69,7 @@ const DashboardPage = () => {
       sales: 2847,
       revenue: "2,847,000",
       status: "Active",
-      image: "https://via.placeholder.com/48x48"
+      image: null // TODO: Load from API
     },
     {
       name: "MacBook Pro M3",
@@ -78,7 +78,7 @@ const DashboardPage = () => {
       sales: 1596,
       revenue: "3,592,800",
       status: "Active",
-      image: "https://via.placeholder.com/48x48"
+      image: null // TODO: Load from API
     },
     {
       name: "AirPods Pro Gen 2",
@@ -87,7 +87,7 @@ const DashboardPage = () => {
       sales: 3456,
       revenue: "863,400",
       status: "Active",
-      image: "https://via.placeholder.com/48x48"
+      image: null // TODO: Load from API
     }
   ];
 
@@ -97,7 +97,7 @@ const DashboardPage = () => {
       customer: {
         name: "Alexander Chen",
         email: "alexander.chen@email.com",
-        avatar: "https://via.placeholder.com/40x40"
+        avatar: null // TODO: Load from API
       },
       date: "2024-10-13",
       amount: "2,459.99",
@@ -108,7 +108,7 @@ const DashboardPage = () => {
       customer: {
         name: "Sarah Johnson",
         email: "sarah.johnson@email.com",
-        avatar: "https://via.placeholder.com/40x40"
+        avatar: null // TODO: Load from API
       },
       date: "2024-10-13",
       amount: "1,299.00",
@@ -119,7 +119,7 @@ const DashboardPage = () => {
       customer: {
         name: "Michael Rodriguez", 
         email: "michael.r@email.com",
-        avatar: "https://via.placeholder.com/40x40"
+        avatar: null // TODO: Load from API
       },
       date: "2024-10-12",
       amount: "3,847.50",

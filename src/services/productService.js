@@ -10,21 +10,40 @@ import toast from 'react-hot-toast';
  */
 const transformProduct = (product) => {
   if (!product) return null;
-  
-  return {
+
+  // Log to debug image issues
+  if (!product.mainImage) {
+    console.warn('⚠️ Product missing mainImage:', {
+      id: product.id,
+      name: product.name,
+      rawProduct: product
+    });
+  }
+
+  // Don't spread product first - build clean object
+  const transformed = {
     id: product.id,
     name: product.name,
+    description: product.description,
     slug: product.name?.toLowerCase().replace(/\s+/g, '-'),
-    image: product.mainImage || '/placeholder-product.jpg',
-    price: product.basePrice || 0,
+    mainImage: product.mainImage || null, // Keep null if missing
+    image: product.mainImage || null, // Backwards compatibility
+    basePrice: product.basePrice || 0,
+    price: product.basePrice || 0, // Backwards compatibility
     originalPrice: product.basePrice ? product.basePrice * 1.2 : null,
     rating: 4.5,
     reviewCount: Math.floor(Math.random() * 200) + 50,
-    brand: product.shop?.name || 'SportZone',
+    brand: product.shop?.name || product.shopName || 'SportZone',
+    shopName: product.shopName,
+    isActive: product.isActive,
     inStock: product.variants?.some(v => v.stock > 0) ?? true,
     badge: null,
-    ...product
+    category: product.category,
+    variants: product.variants,
+    images: product.images
   };
+
+  return transformed;
 };
 
 /**
@@ -32,7 +51,7 @@ const transformProduct = (product) => {
  */
 const transformCategory = (category) => {
   if (!category) return null;
-  
+
   const iconMap = {
     'Bóng Đá': '⚽',
     'Bóng Rổ': '🏀',
@@ -72,9 +91,9 @@ export const getProducts = async (page = 0, size = 12) => {
     const response = await api.get(API_ENDPOINTS.PRODUCT.GET_ALL, {
       params: { page, size }
     });
-    
+
     console.log('🔍 getProducts raw response:', response);
-    
+
     // api interceptor returns response.data, which is ResponseDTO
     // ResponseDTO structure: { status, error, message, data: Page<ProductDTO> }
     return response; // Return full ResponseDTO
@@ -123,7 +142,7 @@ export const searchProducts = async (filters = {}) => {
         size: filters.size || 12,
       }
     });
-    
+
     console.log('🔍 searchProducts raw response:', response);
     return response; // Return full ResponseDTO
   } catch (error) {
@@ -143,7 +162,7 @@ export const getProductsByCategory = async (categoryId, page = 0, size = 12) => 
     const response = await api.get(API_ENDPOINTS.PRODUCT.BY_CATEGORY(categoryId), {
       params: { page, size }
     });
-    
+
     console.log('🔍 getProductsByCategory raw response:', response);
     return response; // Return full ResponseDTO
   } catch (error) {
@@ -159,10 +178,10 @@ export const getCategories = async () => {
   try {
     const response = await api.get('categories');
     console.log('📦 getCategories response:', response);
-    
+
     const categories = response?.data || [];
     const transformed = categories.map(transformCategory).filter(c => c !== null);
-    
+
     return {
       code: response?.code || 200,
       data: transformed,
@@ -225,6 +244,32 @@ export const deleteProduct = async (id) => {
 export const createCategory = async (categoryData) => {
   const response = await api.post('/categories/addCategory', categoryData);
   return response.data;
+};
+
+/**
+ * Get all product images (main, gallery, variant-specific)
+ * PUBLIC endpoint - no authentication required
+ * 
+ * Returns ProductImagesResponse with:
+ * - mainImage: string (URL)
+ * - galleryImages: Array<{id, url, displayOrder}>
+ * - primaryAttribute: {id, name, values: string[]} | null
+ * - variantImages: Map<attributeValue, {id, attributeValue, imageUrl, publicId}>
+ * 
+ * @param {number} productId - Product ID
+ * @returns {Promise} Product images data
+ */
+export const getProductImages = async (productId) => {
+  try {
+    const response = await api.get(`/products/${productId}/images`);
+    console.log('🖼️ getProductImages response:', response);
+    // api interceptor returns response.data which is ResponseDTO
+    // ResponseDTO.data contains ProductImagesResponse
+    return response; // Return full response for consistent handling
+  } catch (error) {
+    console.error('Failed to get product images:', error);
+    throw error;
+  }
 };
 
 // Legacy support

@@ -1,20 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, Package, DollarSign, Calendar, FileText, Store, Edit2, Save, XCircle } from 'lucide-react';
+import { X, User, Mail, Phone, MapPin, Package, DollarSign, Calendar, FileText, Store, Edit2, Save, XCircle, Key } from 'lucide-react';
 import './SellerDetailModal.css';
+import { resetUserPassword, updateSeller } from '../../../services/adminService';
+import Toast from '../common/Toast';
 
 const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     owner: seller?.owner || '',
+    username: seller?.username || '',
     shopName: seller?.name || '',
     email: seller?.email || '',
     phone: seller?.phone || '',
     address: seller?.address || '',
     shopDescription: seller?.shopDescription || '',
-    status: seller?.status || 'Pending'
+    status: seller?.status || 'PENDING'
   });
   const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Sync formData when seller prop changes (after API update)
+  useEffect(() => {
+    if (seller) {
+      setFormData({
+        owner: seller.owner || '',
+        username: seller.username || '',
+        shopName: seller.name || '',
+        email: seller.email || '',
+        phone: seller.phone || '',
+        address: seller.address || '',
+        shopDescription: seller.shopDescription || '',
+        status: seller.status || 'PENDING'
+      });
+    }
+  }, [seller]);
 
   // Add ESC key listener
   useEffect(() => {
@@ -49,12 +69,19 @@ const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
   };
 
   const getStatusClass = (status) => {
-    switch(status) {
-      case 'Verified': return 'status-verified';
-      case 'Pending': return 'status-pending';
-      case 'Suspended': return 'status-suspended';
+    const upperStatus = status?.toUpperCase();
+    switch(upperStatus) {
+      case 'ACTIVE': return 'admin-seller-detail-status-verified';
+      case 'PENDING': return 'admin-seller-detail-status-pending';
+      case 'INACTIVE': return 'admin-seller-detail-status-suspended';
       default: return '';
     }
+  };
+
+  const getStatusDisplay = (status) => {
+    // Convert ACTIVE -> Active, PENDING -> Pending, INACTIVE -> Inactive
+    if (!status) return 'Unknown';
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   };
 
   const validateForm = () => {
@@ -63,6 +90,11 @@ const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
     // Validate owner name
     if (!formData.owner.trim()) {
       newErrors.owner = 'Owner name is required';
+    }
+
+    // Validate username
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
     }
 
     // Validate shop name
@@ -109,12 +141,13 @@ const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
       // Cancel edit - reset form data
       setFormData({
         owner: seller.owner || '',
+        username: seller.username || '',
         shopName: seller.name || '',
         email: seller.email || '',
         phone: seller.phone || '',
         address: seller.address || '',
         shopDescription: seller.shopDescription || '',
-        status: seller.status || 'Pending'
+        status: seller.status || 'PENDING'
       });
       setErrors({});
     }
@@ -129,51 +162,108 @@ const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
     setIsSaving(true);
     
     try {
-      // Call API to update seller
-      await onUpdate(seller.id, formData);
+      // Prepare update data for API
+      const updateData = {
+        username: formData.username?.trim() || null,
+        email: formData.email?.trim() || null,
+        phone: formData.phone?.trim() || null,
+        fullName: formData.owner?.trim() || null,
+        shopStatus: formData.status?.toUpperCase() || null,
+        shopName: formData.shopName?.trim() || null,
+        shopDescription: formData.shopDescription?.trim() || null
+      };
       
-      setIsEditing(false);
-      alert('Seller information updated successfully!');
+      console.log('💾 Saving seller data:', updateData);
+      
+      // Call API to update seller
+      const response = await updateSeller(seller.id, updateData);
+      
+      if (response.status === 200) {
+        console.log('✅ Seller updated successfully');
+        
+        // Exit edit mode
+        setIsEditing(false);
+        
+        // Show success toast
+        setToast({
+          show: true,
+          message: 'Seller information updated successfully!',
+          type: 'success'
+        });
+        
+        // Call onUpdate callback to refresh parent data (table + stats)
+        if (onUpdate) {
+          await onUpdate(seller.id, formData);
+        }
+      }
     } catch (error) {
-      console.error('Error updating seller:', error);
-      alert('Failed to update seller information. Please try again.');
+      console.error('❌ Error updating seller:', error);
+      
+      // Show error toast
+      setToast({
+        show: true,
+        message: error.message || 'Failed to update seller information. Please try again.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      console.log('🔑 Resetting password for seller ID:', seller.id);
+      const response = await resetUserPassword(seller.id);
+      
+      // Show success toast with the new password
+      const newPassword = response.data || 'Seller123@';
+      setToast({
+        show: true,
+        message: `Password reset successfully! New password: ${newPassword}`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('❌ Error resetting password:', error);
+      setToast({
+        show: true,
+        message: error.message || 'Failed to reset password. Please try again.',
+        type: 'error'
+      });
     }
   };
 
   return (
     <>
       {/* Overlay */}
-      <div className="modal-overlay" onClick={onClose} />
+      <div className="admin-seller-detail-modal-overlay" onClick={onClose} />
       
       {/* Modal */}
-      <div className="seller-detail-modal">
+      <div className="admin-seller-detail-modal">
         {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-content">
-            <div className="modal-avatar">
+        <div className="admin-seller-detail-modal-header">
+          <div className="admin-seller-detail-modal-header-content">
+            <div className="admin-seller-detail-modal-avatar">
               <Store size={32} />
             </div>
             <div>
-              <h2 className="modal-title">{seller.name}</h2>
-              <p className="modal-subtitle">Seller ID: {seller.id}</p>
+              <h2 className="admin-seller-detail-modal-title">{seller.name}</h2>
+              <p className="admin-seller-detail-modal-subtitle">USER ID: {seller.id}</p>
             </div>
           </div>
-          <div className="modal-header-actions">
+          <div className="admin-seller-detail-modal-header-actions">
             {!isEditing ? (
-              <button className="btn-edit" onClick={handleEditToggle} title="Edit Seller">
+              <button className="admin-seller-detail-btn-edit" onClick={handleEditToggle} title="Edit Seller">
                 <Edit2 size={18} />
                 Edit
               </button>
             ) : (
               <>
-                <button className="btn-cancel" onClick={handleEditToggle} title="Cancel (ESC)">
+                <button className="admin-seller-detail-btn-cancel" onClick={handleEditToggle} title="Cancel (ESC)">
                   <XCircle size={18} />
                   Cancel
                 </button>
                 <button 
-                  className="btn-save" 
+                  className="admin-seller-detail-btn-save" 
                   onClick={handleSave}
                   disabled={isSaving}
                   title="Save Changes"
@@ -183,102 +273,126 @@ const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
                 </button>
               </>
             )}
-            <button className="modal-close-btn" onClick={onClose} title="Close (ESC)">
+            <button className="admin-seller-detail-modal-close-btn" onClick={onClose} title="Close (ESC)">
               <X size={24} />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="modal-body">
+        <div className="admin-seller-detail-modal-body">
           {/* Status Badge */}
-          <div className="detail-section">
-            <div className="detail-row">
-              <span className="detail-label">Status</span>
+          <div className="admin-seller-detail-section">
+            <div className="admin-seller-detail-row">
+              <span className="admin-seller-detail-label">Status</span>
               {isEditing ? (
-                <div className="status-select-wrapper">
+                <div className="admin-seller-detail-status-select-wrapper">
                   <select
-                    className="status-select"
+                    className="admin-seller-detail-status-select"
                     value={formData.status}
                     onChange={(e) => handleInputChange('status', e.target.value)}
                   >
-                    <option value="Verified">Verified</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Suspended">Suspended</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="INACTIVE">Inactive</option>
                   </select>
                 </div>
               ) : (
-                <span className={`status-badge ${getStatusClass(seller.status)}`}>
-                  <span className="status-dot">●</span>
-                  {seller.status}
+                <span className={`admin-seller-detail-status-badge ${getStatusClass(seller.status)}`}>
+                  <span className="admin-seller-detail-status-dot">●</span>
+                  {getStatusDisplay(seller.status)}
                 </span>
               )}
             </div>
           </div>
 
           {/* Shop Information */}
-          <div className="detail-section">
-            <h3 className="section-title">Shop Information</h3>
+          <div className="admin-seller-detail-section">
+            <h3 className="admin-seller-detail-section-title">Shop Information</h3>
             
             {/* Shop Name */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
                 <Store size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Shop Name</span>
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Shop Name</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-seller-detail-input-wrapper">
                     <input
                       type="text"
-                      className={`detail-input ${errors.shopName ? 'input-error' : ''}`}
+                      className={`admin-seller-detail-input ${errors.shopName ? 'admin-seller-detail-input-error' : ''}`}
                       value={formData.shopName}
                       onChange={(e) => handleInputChange('shopName', e.target.value)}
                       placeholder="Enter shop name"
                     />
-                    {errors.shopName && <span className="error-message">{errors.shopName}</span>}
+                    {errors.shopName && <span className="admin-seller-detail-error-message">{errors.shopName}</span>}
                   </div>
                 ) : (
-                  <span className="detail-value">{seller.name}</span>
+                  <span className="admin-seller-detail-value">{seller.name}</span>
                 )}
               </div>
             </div>
 
             {/* Owner Name */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
                 <User size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Owner Name</span>
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Owner Name</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-seller-detail-input-wrapper">
                     <input
                       type="text"
-                      className={`detail-input ${errors.owner ? 'input-error' : ''}`}
+                      className={`admin-seller-detail-input ${errors.owner ? 'admin-seller-detail-input-error' : ''}`}
                       value={formData.owner}
                       onChange={(e) => handleInputChange('owner', e.target.value)}
                       placeholder="Enter owner name"
                     />
-                    {errors.owner && <span className="error-message">{errors.owner}</span>}
+                    {errors.owner && <span className="admin-seller-detail-error-message">{errors.owner}</span>}
                   </div>
                 ) : (
-                  <span className="detail-value">{seller.owner || 'Not provided'}</span>
+                  <span className="admin-seller-detail-value">{seller.owner || 'Not provided'}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Username */}
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
+                <User size={18} />
+              </div>
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Username</span>
+                {isEditing ? (
+                  <div className="admin-seller-detail-input-wrapper">
+                    <input
+                      type="text"
+                      className={`admin-seller-detail-input ${errors.username ? 'admin-seller-detail-input-error' : ''}`}
+                      value={formData.username}
+                      onChange={(e) => handleInputChange('username', e.target.value)}
+                      placeholder="Enter username"
+                    />
+                    {errors.username && <span className="admin-seller-detail-error-message">{errors.username}</span>}
+                  </div>
+                ) : (
+                  <span className="admin-seller-detail-value">{seller.username || 'Not provided'}</span>
                 )}
               </div>
             </div>
 
             {/* Shop Description */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
                 <FileText size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Shop Description</span>
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Shop Description</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-seller-detail-input-wrapper">
                     <textarea
-                      className="detail-textarea"
+                      className="admin-seller-detail-textarea"
                       value={formData.shopDescription}
                       onChange={(e) => handleInputChange('shopDescription', e.target.value)}
                       placeholder="Enter shop description"
@@ -286,131 +400,140 @@ const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
                     />
                   </div>
                 ) : (
-                  <span className="detail-value">{seller.shopDescription || 'Not provided'}</span>
+                  <span className="admin-seller-detail-value">{seller.shopDescription || 'Not provided'}</span>
                 )}
               </div>
             </div>
           </div>
 
           {/* Contact Information */}
-          <div className="detail-section">
-            <h3 className="section-title">Contact Information</h3>
+          <div className="admin-seller-detail-section">
+            <h3 className="admin-seller-detail-section-title">Contact Information</h3>
             
             {/* Email */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
                 <Mail size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Email</span>
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Email</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-seller-detail-input-wrapper">
                     <input
                       type="email"
-                      className={`detail-input ${errors.email ? 'input-error' : ''}`}
+                      className={`admin-seller-detail-input ${errors.email ? 'admin-seller-detail-input-error' : ''}`}
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       placeholder="Enter email address"
                     />
-                    {errors.email && <span className="error-message">{errors.email}</span>}
+                    {errors.email && <span className="admin-seller-detail-error-message">{errors.email}</span>}
                   </div>
                 ) : (
-                  <span className="detail-value">{seller.email || 'Not provided'}</span>
+                  <span className="admin-seller-detail-value">{seller.email || 'Not provided'}</span>
                 )}
               </div>
             </div>
 
             {/* Phone */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
                 <Phone size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Phone</span>
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Phone</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-seller-detail-input-wrapper">
                     <input
                       type="tel"
-                      className={`detail-input ${errors.phone ? 'input-error' : ''}`}
+                      className={`admin-seller-detail-input ${errors.phone ? 'admin-seller-detail-input-error' : ''}`}
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       placeholder="Enter phone number"
                     />
-                    {errors.phone && <span className="error-message">{errors.phone}</span>}
+                    {errors.phone && <span className="admin-seller-detail-error-message">{errors.phone}</span>}
                   </div>
                 ) : (
-                  <span className="detail-value">{seller.phone}</span>
+                  <span className="admin-seller-detail-value">{seller.phone}</span>
                 )}
               </div>
             </div>
 
             {/* Address */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
                 <MapPin size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Address</span>
-                {isEditing ? (
-                  <div className="input-wrapper">
-                    <textarea
-                      className="detail-textarea"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="Enter address (optional)"
-                      rows="2"
-                    />
-                  </div>
-                ) : (
-                  <span className="detail-value">{seller.address || 'Not provided'}</span>
-                )}
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Address</span>
+                <span className="admin-seller-detail-value">{seller.address || 'Not provided'}</span>
               </div>
             </div>
           </div>
 
           {/* Performance Statistics */}
-          <div className="detail-section">
-            <h3 className="section-title">Performance Statistics</h3>
+          <div className="admin-seller-detail-section">
+            <h3 className="admin-seller-detail-section-title">Performance Statistics</h3>
             
-            <div className="stats-grid">
-              <div className="stat-box">
-                <div className="stat-icon-box stat-blue">
+            <div className="admin-seller-detail-stats-grid">
+              <div className="admin-seller-detail-stat-box">
+                <div className="admin-seller-detail-stat-icon-box admin-seller-detail-stat-blue">
                   <Package size={20} />
                 </div>
-                <div className="stat-info">
-                  <span className="stat-label">Total Products</span>
-                  <span className="stat-value">{seller.products}</span>
+                <div className="admin-seller-detail-stat-info">
+                  <span className="admin-seller-detail-stat-label">Total Products</span>
+                  <span className="admin-seller-detail-stat-value">{seller.products}</span>
                 </div>
               </div>
 
-              <div className="stat-box">
-                <div className="stat-icon-box stat-green">
+              <div className="admin-seller-detail-stat-box">
+                <div className="admin-seller-detail-stat-icon-box admin-seller-detail-stat-green">
                   <DollarSign size={20} />
                 </div>
-                <div className="stat-info">
-                  <span className="stat-label">Total Revenue</span>
-                  <span className="stat-value">${seller.totalSales?.toFixed(2)}</span>
+                <div className="admin-seller-detail-stat-info">
+                  <span className="admin-seller-detail-stat-label">Total Revenue</span>
+                  <span className="admin-seller-detail-stat-value">${seller.totalSales?.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Account Information */}
-          <div className="detail-section">
-            <h3 className="section-title">Account Information</h3>
+          <div className="admin-seller-detail-section">
+            <h3 className="admin-seller-detail-section-title">Account Information</h3>
             
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-seller-detail-row">
+              <div className="admin-seller-detail-icon">
                 <Calendar size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Member Since</span>
-                <span className="detail-value">{formatDate(seller.joinDate)}</span>
+              <div className="admin-seller-detail-content">
+                <span className="admin-seller-detail-label">Member Since</span>
+                <span className="admin-seller-detail-value">{formatDate(seller.joinDate)}</span>
               </div>
             </div>
           </div>
+
+          {/* Reset Password Section */}
+          <div className="admin-seller-detail-section admin-seller-detail-reset-section">
+            <button 
+              className="admin-seller-detail-btn-reset-password"
+              onClick={handleResetPassword}
+              type="button"
+            >
+              <Key size={18} />
+              Reset Password
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={5000}
+      />
     </>
   );
 };

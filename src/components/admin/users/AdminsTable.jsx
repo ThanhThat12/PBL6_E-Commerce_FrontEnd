@@ -1,105 +1,140 @@
-import React, { useState } from 'react';
-import { UserPlus, Search, Filter, Users, Shield, Clock, UserCheck, Settings, Crown, Eye, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { UserPlus, Search, Filter, Users, Shield, Clock, UserCheck, Settings, Crown, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import AddAdminModal from './AddAdminModal';
+import AdminEditModal from './AdminEditModal';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import Toast from '../common/Toast';
+import { getAdminsPage, getAdminDetail, getAdminStats, deleteUser } from '../../../services/adminService';
 import './AdminsTable.css';
 
 const AdminsTable = () => {
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  
-  // Mock data cho admins
-  const adminsData = [
-    { 
-      id: 'ADM001', 
-      name: 'John Smith', 
-      email: 'john.smith@company.com', 
-      phone: '+1234567890', 
-      role: 'Super Admin',
-      status: 'Active', 
-      lastLogin: '2024-10-14 09:30', 
-      permissions: ['All Access'], 
-      department: 'IT',
-      joinDate: '2024-01-15',
-      avatar: 'https://via.placeholder.com/40'
-    },
-    { 
-      id: 'ADM002', 
-      name: 'Sarah Johnson', 
-      email: 'sarah.j@company.com', 
-      phone: '+1234567891', 
-      role: 'Admin',
-      status: 'Active', 
-      lastLogin: '2024-10-14 08:45', 
-      permissions: ['User Management', 'Content Management'], 
-      department: 'Operations',
-      joinDate: '2024-02-20',
-      avatar: 'https://via.placeholder.com/40'
-    },
-    { 
-      id: 'ADM003', 
-      name: 'Michael Davis', 
-      email: 'michael.d@company.com', 
-      phone: '+1234567892', 
-      role: 'Moderator',
-      status: 'Active', 
-      lastLogin: '2024-10-13 16:20', 
-      permissions: ['Content Management'], 
-      department: 'Content',
-      joinDate: '2024-03-10',
-      avatar: 'https://via.placeholder.com/40'
-    },
-    { 
-      id: 'ADM004', 
-      name: 'Emily Wilson', 
-      email: 'emily.w@company.com', 
-      phone: '+1234567893', 
-      role: 'Admin',
-      status: 'Inactive', 
-      lastLogin: '2024-10-10 14:30', 
-      permissions: ['Reports', 'Analytics'], 
-      department: 'Analytics',
-      joinDate: '2024-04-05',
-      avatar: 'https://via.placeholder.com/40'
-    },
-    { 
-      id: 'ADM005', 
-      name: 'David Brown', 
-      email: 'david.b@company.com', 
-      phone: '+1234567894', 
-      role: 'Support Admin',
-      status: 'Active', 
-      lastLogin: '2024-10-14 07:15', 
-      permissions: ['User Support', 'Ticket Management'], 
-      department: 'Support',
-      joinDate: '2024-05-12',
-      avatar: 'https://via.placeholder.com/40'
-    }
-  ];
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [adminToDelete, setAdminToDelete] = useState(null);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [adminsData, setAdminsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [statsData, setStatsData] = useState({
+    totalAdmins: 0,
+    activeAdmins: 0,
+    inactiveAdmins: 0
+  });
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [pageSize] = useState(10);
 
-  // Stats data cho admins
-  const statsData = [
+  // Fetch admins data from API
+  useEffect(() => {
+    fetchAdmins();
+    fetchStats();
+  }, [currentPage]); // Re-fetch when page changes
+
+  const fetchStats = async () => {
+    try {
+      console.log('📊 [AdminsTable] Fetching admin stats...');
+      const response = await getAdminStats();
+      
+      if (response.status === 200 && response.data) {
+        console.log('✅ [AdminsTable] Admin stats:', response.data);
+        setStatsData({
+          totalAdmins: response.data.totalAdmins,
+          activeAdmins: response.data.activeAdmins,
+          inactiveAdmins: response.data.inactiveAdmins
+        });
+      }
+    } catch (error) {
+      console.error('❌ [AdminsTable] Error fetching stats:', error);
+    }
+  };
+
+  const fetchAdmins = async () => {
+    try {
+      setLoading(true);
+      console.log(`📡 [AdminsTable] Fetching admins page ${currentPage}...`);
+      const response = await getAdminsPage(currentPage, pageSize);
+      
+      if (response.status === 200 && response.data) {
+        // Response structure: ResponseDTO<Page<ListAdminUserDTO>>
+        const pageData = response.data.data || response.data;
+        
+        console.log('✅ [AdminsTable] Page data:', pageData);
+        
+        // Backend trả về structure: {content: [], page: {totalPages, totalElements, size, number}}
+        const paginationInfo = pageData.page || {};
+        setTotalPages(paginationInfo.totalPages || 0);
+        setTotalElements(paginationInfo.totalElements || 0);
+        
+        console.log('🔍 [DEBUG] paginationInfo:', paginationInfo);
+        
+        // Set admins from content array
+        const adminsList = pageData.content || [];
+        
+        // Map API response to component format
+        const mappedAdmins = (Array.isArray(adminsList) ? adminsList : []).map(admin => ({
+          id: admin.id,
+          name: admin.username || 'N/A',
+          email: admin.email || 'N/A',
+          phone: admin.phoneNumber || 'N/A',
+          avatar: admin.avatar || 'https://via.placeholder.com/40',
+          role: mapRoleFromAPI(admin.role),
+          status: admin.activated ? 'Active' : 'Inactive',
+          createdAt: admin.createdAt || null
+        }));
+        
+        setAdminsData(mappedAdmins);
+        console.log(`📊 [AdminsTable] Loaded ${mappedAdmins.length} admins, Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
+      }
+    } catch (error) {
+      console.error('❌ [AdminsTable] Error fetching admins:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Map API role to display role
+  const mapRoleFromAPI = (apiRole) => {
+    const roleMap = {
+      'ADMIN': 'Admin',
+      'SUPER_ADMIN': 'Super Admin',
+      'MODERATOR': 'Moderator',
+      'SUPPORT_ADMIN': 'Support Admin'
+    };
+    return roleMap[apiRole] || apiRole;
+  };
+
+  // Get permissions based on role
+  const getRolePermissions = (role) => {
+    const permissionsMap = {
+      'ADMIN': ['User Management', 'Content Management', 'Reports'],
+      'SUPER_ADMIN': ['All Access'],
+      'MODERATOR': ['Content Management'],
+      'SUPPORT_ADMIN': ['User Support', 'Ticket Management']
+    };
+    return permissionsMap[role] || [];
+  };
+
+  // Stats cards data - Use data from API
+  const statsCards = [
     { 
       title: 'Total Admins', 
-      value: '15', 
+      value: statsData.totalAdmins.toString(), 
       icon: <Users size={24} />, 
       color: 'blue',
     },
     { 
-      title: 'Super Admins', 
-      value: '3', 
-      icon: <Crown size={24} />, 
-      color: 'purple',
-    },
-    { 
-      title: 'Active Sessions', 
-      value: '12', 
+      title: 'Active', 
+      value: statsData.activeAdmins.toString(), 
       icon: <UserCheck size={24} />, 
       color: 'green',
     },
     { 
       title: 'Inactive', 
-      value: '3', 
+      value: statsData.inactiveAdmins.toString(), 
       icon: <Clock size={24} />, 
       color: 'orange',
     }
@@ -134,13 +169,25 @@ const AdminsTable = () => {
   };
 
   const formatLastLogin = (datetime) => {
+    if (!datetime) return 'N/A';
     const date = new Date(datetime);
-    const now = new Date();
-    const diffHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffHours < 1) return 'Just now';
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  const formatCreatedAt = (datetime) => {
+    if (!datetime) return 'N/A';
+    const date = new Date(datetime);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const handleViewDetails = (admin) => {
@@ -148,10 +195,67 @@ const AdminsTable = () => {
     alert(`Viewing details for ${admin.name}`);
   };
 
+  const handleEdit = (admin) => {
+    setSelectedAdmin(admin);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateAdmin = async (updatedAdmin) => {
+    console.log('Updating admin:', updatedAdmin);
+    
+    // Refresh admins list and stats after update
+    await fetchAdmins();
+    await fetchStats();
+    
+    // Update selected admin to show changes in modal immediately
+    setSelectedAdmin(updatedAdmin);
+  };
+
   const handleDelete = (admin) => {
-    console.log('Delete admin:', admin);
-    if (window.confirm(`Are you sure you want to delete ${admin.name}?`)) {
-      alert(`${admin.name} has been deleted`);
+    console.log('🗑️ [AdminsTable] Opening delete confirmation for admin:', admin);
+    setAdminToDelete(admin);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!adminToDelete) return;
+    
+    const admin = adminToDelete;
+    
+    try {
+      setLoading(true);
+      console.log('🗑️ [AdminsTable] Calling deleteUser API for admin ID:', admin.id);
+      
+      const response = await deleteUser(admin.id);
+      
+      if (response.status === 200) {
+        console.log('✅ [AdminsTable] Admin deleted successfully:', response.message);
+        
+        // Show success toast instead of alert
+        setToast({
+          show: true,
+          message: `Admin "${admin.name}" has been removed from the system.`,
+          type: 'success'
+        });
+        
+        // Refresh admins list and stats after successful deletion
+        await fetchAdmins();
+        await fetchStats();
+      }
+    } catch (error) {
+      console.error('❌ [AdminsTable] Error deleting admin:', error);
+      
+      // Show error toast instead of alert
+      const errorMessage = error.message || 'Failed to delete admin. Please try again.';
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+      setAdminToDelete(null);
     }
   };
 
@@ -167,7 +271,20 @@ const AdminsTable = () => {
     console.log('New admin data:', formData);
     // TODO: Implement API call to create admin
     // After successful creation, refresh the admin list
+    fetchAdmins();
+    fetchStats(); // Refresh stats after adding new admin
   };
+
+  // Filter admins based on search term
+  const filteredAdmins = adminsData.filter(admin => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      admin.name.toLowerCase().includes(searchLower) ||
+      admin.email.toLowerCase().includes(searchLower) ||
+      admin.role.toLowerCase().includes(searchLower) ||
+      admin.phone.toLowerCase().includes(searchLower)
+    );
+  });
 
   return (
     <div>
@@ -206,14 +323,14 @@ const AdminsTable = () => {
 
       {/* Stats Cards */}
       <div className="stats-grid">
-        {statsData.map((stat, index) => (
+        {statsCards.map((stat, index) => (
           <div key={index} className={`stat-card stat-${stat.color}`}>
             <div className="stat-icon">
               {stat.icon}
             </div>
             <div className="stat-content">
               <p className="stat-label">{stat.title}</p>
-              <p className="stat-value">{stat.value}</p>
+              <p className="stat-value">{loading ? '...' : stat.value}</p>
             </div>
           </div>
         ))}
@@ -221,19 +338,28 @@ const AdminsTable = () => {
 
       {/* Table */}
       <div className="admins-table-container">
-        <table className="admins-table">
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>Loading admins...</p>
+          </div>
+        ) : adminsData.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>No admin users found.</p>
+          </div>
+        ) : (
+          <table className="admins-table">
           <thead>
             <tr>
               <th>Administrator</th>
               <th>Email</th>
               <th>Phone</th>
               <th>Status</th>
-              <th>Last Login</th>
+              <th>Created At</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {adminsData.map((admin, index) => (
+            {filteredAdmins.map((admin, index) => (
               <tr key={index} className="table-row">
                 <td className="admin-info">
                   <div className="admin-avatar-container">
@@ -260,17 +386,17 @@ const AdminsTable = () => {
                     {admin.status}
                   </span>
                 </td>
-                <td className="last-login">
-                  <div className="login-time">{formatLastLogin(admin.lastLogin)}</div>
+                <td className="created-at">
+                  <div className="created-time">{formatCreatedAt(admin.createdAt)}</div>
                 </td>
                 <td className="action-cell">
                   <div className="customer-actions admin-actions">
                     <button
                       className="action-btn view-btn"
-                      onClick={(e) => { e.stopPropagation(); handleViewDetails(admin); }}
-                      title="View Details"
+                      onClick={(e) => { e.stopPropagation(); handleEdit(admin); }}
+                      title="Edit Admin"
                     >
-                      <Eye size={16} />
+                      <Edit2 size={16} />
                     </button>
                     <button
                       className="action-btn delete-btn"
@@ -285,28 +411,39 @@ const AdminsTable = () => {
             ))}
           </tbody>
         </table>
+        )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Controls */}
       <div className="pagination-container">
         <div className="pagination-info">
-          <button className="pagination-nav">
+          <button 
+            className="pagination-nav"
+            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+            disabled={currentPage === 0}
+          >
             <span>← Previous</span>
           </button>
         </div>
         
         <div className="pagination-numbers">
-          <button className="page-btn active">1</button>
-          <button className="page-btn">2</button>
-          <button className="page-btn">3</button>
-          <button className="page-btn">4</button>
-          <button className="page-btn">5</button>
-          <span className="pagination-dots">...</span>
-          <button className="page-btn">24</button>
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index}
+              className={`page-btn ${currentPage === index ? 'active' : ''}`}
+              onClick={() => setCurrentPage(index)}
+            >
+              {index + 1}
+            </button>
+          ))}
         </div>
         
         <div className="pagination-info">
-          <button className="pagination-nav">
+          <button 
+            className="pagination-nav"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+            disabled={currentPage >= totalPages - 1}
+          >
             <span>Next →</span>
           </button>
         </div>
@@ -319,6 +456,45 @@ const AdminsTable = () => {
           onSubmit={handleSubmitAdmin}
         />
       )}
+
+      {/* Edit Admin Modal */}
+      {showEditModal && (
+        <AdminEditModal
+          admin={selectedAdmin}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedAdmin(null);
+          }}
+          onUpdate={handleUpdateAdmin}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setAdminToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Admin"
+        userName={adminToDelete?.name || `Admin #${adminToDelete?.id}`}
+        userType="admin"
+        deletionDetails={[
+          'Admin account',
+          'All addresses',
+          'Verification codes'
+        ]}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={3000}
+      />
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, ShoppingBag, DollarSign, Calendar, Package, Edit2, Save, XCircle } from 'lucide-react';
+import { X, User, Mail, Phone, MapPin, ShoppingBag, DollarSign, Calendar, Package, Edit2, Save, XCircle, Key } from 'lucide-react';
 import './CustomerDetailModal.css';
+import { resetUserPassword, updateUser } from '../../../services/adminService';
+import Toast from '../common/Toast';
 
 const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -12,6 +14,7 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
     activated: customer?.activated !== undefined ? customer.activated : true
   });
   const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Add ESC key listener
   useEffect(() => {
@@ -36,6 +39,39 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
 
   if (!customer) return null;
 
+  // Helper function to format full address
+  const formatFullAddress = () => {
+    const addressParts = [];
+    
+    // Add label if exists
+    if (customer.primaryAddressLabel) {
+      addressParts.push(`[${customer.primaryAddressLabel}]`);
+    }
+    
+    // Add full address
+    if (customer.primaryAddressFullAddress) {
+      addressParts.push(customer.primaryAddressFullAddress);
+    }
+    
+    // Add ward, district, province
+    const locationParts = [
+      customer.primaryAddressWard,
+      customer.primaryAddressDistrict,
+      customer.primaryAddressProvince
+    ].filter(Boolean);
+    
+    if (locationParts.length > 0) {
+      addressParts.push(locationParts.join(', '));
+    }
+    
+    // Add contact phone if exists
+    if (customer.primaryAddressContactPhone) {
+      addressParts.push(`☎️ ${customer.primaryAddressContactPhone}`);
+    }
+    
+    return addressParts.length > 0 ? addressParts.join(' | ') : 'N/A';
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -47,8 +83,8 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
 
   const getStatusClass = (status) => {
     switch(status) {
-      case 'Active': return 'status-active';
-      case 'Inactive': return 'status-inactive';
+      case 'Active': return 'admin-customer-detail-status-active';
+      case 'Inactive': return 'admin-customer-detail-status-inactive';
       default: return '';
     }
   };
@@ -117,51 +153,104 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
     setIsSaving(true);
     
     try {
-      // Call API to update customer
-      await onUpdate(customer.id, formData);
+      console.log('💾 [CustomerDetailModal] Updating customer ID:', customer.id);
+      console.log('💾 [CustomerDetailModal] Form data:', formData);
       
+      // Prepare update data for API
+      const updateData = {
+        username: formData.username?.trim() || null,
+        email: formData.email?.trim() || null,
+        phone: formData.phoneNumber?.trim() || null,
+        activated: formData.activated
+      };
+      
+      // Call API to update customer
+      const response = await updateUser(customer.id, updateData);
+      
+      console.log('✅ [CustomerDetailModal] Customer updated successfully:', response);
+      
+      // Exit edit mode
       setIsEditing(false);
-      alert('Customer information updated successfully!');
+      
+      // Show success toast
+      setToast({
+        show: true,
+        message: 'Customer information updated successfully!',
+        type: 'success'
+      });
+      
+      // Call parent onUpdate to refresh data (table + stats + modal detail)
+      if (onUpdate) {
+        await onUpdate({ id: customer.id, ...formData });
+      }
     } catch (error) {
-      console.error('Error updating customer:', error);
-      alert('Failed to update customer information. Please try again.');
+      console.error('❌ [CustomerDetailModal] Error updating customer:', error);
+      
+      // Show error toast
+      setToast({
+        show: true,
+        message: error.message || 'Failed to update customer information. Please try again.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      console.log('🔑 Resetting password for customer ID:', customer.id);
+      const response = await resetUserPassword(customer.id);
+      
+      // Show success toast with the new password
+      const newPassword = response.data || 'Customer123@';
+      setToast({
+        show: true,
+        message: `Password reset successfully! New password: ${newPassword}`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('❌ Error resetting password:', error);
+      setToast({
+        show: true,
+        message: error.message || 'Failed to reset password. Please try again.',
+        type: 'error'
+      });
     }
   };
 
   return (
     <>
       {/* Overlay */}
-      <div className="modal-overlay" onClick={onClose} />
+      <div className="admin-customer-detail-modal-overlay" onClick={onClose} />
       
       {/* Modal */}
-      <div className="customer-detail-modal">
+      <div className="admin-customer-detail-modal">
         {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-content">
-            <div className="modal-avatar">
+        <div className="admin-customer-detail-modal-header">
+          <div className="admin-customer-detail-modal-header-content">
+            <div className="admin-customer-detail-modal-avatar">
               <User size={32} />
             </div>
             <div>
-              <h2 className="modal-title">{customer.username || 'N/A'}</h2>
-              <p className="modal-subtitle">Customer ID: #{customer.id}</p>
+              <h2 className="admin-customer-detail-modal-title">{customer.username || 'N/A'}</h2>
+              <p className="admin-customer-detail-modal-subtitle">User ID: #{customer.id}</p>
             </div>
           </div>
-          <div className="modal-header-actions">
+          <div className="admin-customer-detail-modal-header-actions">
             {!isEditing ? (
-              <button className="btn-edit" onClick={handleEditToggle} title="Edit Customer">
+              <button className="admin-customer-detail-btn-edit" onClick={handleEditToggle} title="Edit Customer">
                 <Edit2 size={18} />
                 Edit
               </button>
             ) : (
               <>
-                <button className="btn-cancel" onClick={handleEditToggle} title="Cancel (ESC)">
+                <button className="admin-customer-detail-btn-cancel" onClick={handleEditToggle} title="Cancel (ESC)">
                   <XCircle size={18} />
                   Cancel
                 </button>
                 <button 
-                  className="btn-save" 
+                  className="admin-customer-detail-btn-save" 
                   onClick={handleSave}
                   disabled={isSaving}
                   title="Save Changes"
@@ -171,22 +260,22 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
                 </button>
               </>
             )}
-            <button className="modal-close-btn" onClick={onClose} title="Close (ESC)">
+            <button className="admin-customer-detail-modal-close-btn" onClick={onClose} title="Close (ESC)">
               <X size={24} />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="modal-body">
+        <div className="admin-customer-detail-modal-body">
           {/* Status Badge */}
-          <div className="detail-section">
-            <div className="detail-row">
-              <span className="detail-label">Status</span>
+          <div className="admin-customer-detail-section">
+            <div className="admin-customer-detail-row">
+              <span className="admin-customer-detail-label">Status</span>
               {isEditing ? (
-                <div className="status-select-wrapper">
+                <div className="admin-customer-detail-status-select-wrapper">
                   <select
-                    className="status-select"
+                    className="admin-customer-detail-status-select"
                     value={formData.activated}
                     onChange={(e) => handleInputChange('activated', e.target.value === 'true')}
                   >
@@ -195,8 +284,8 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
                   </select>
                 </div>
               ) : (
-                <span className={`status-badge ${customer.activated ? 'status-active' : 'status-inactive'}`}>
-                  <span className="status-dot">●</span>
+                <span className={`admin-customer-detail-status-badge ${customer.activated ? 'admin-customer-detail-status-active' : 'admin-customer-detail-status-inactive'}`}>
+                  <span className="admin-customer-detail-status-dot">●</span>
                   {customer.activated ? 'Active' : 'Inactive'}
                 </span>
               )}
@@ -204,196 +293,207 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
           </div>
 
           {/* Contact Information - Editable */}
-          <div className="detail-section">
-            <h3 className="section-title">Contact Information</h3>
+          <div className="admin-customer-detail-section">
+            <h3 className="admin-customer-detail-section-title">Contact Information</h3>
             
             {/* Username */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-customer-detail-row">
+              <div className="admin-customer-detail-icon">
                 <User size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Username</span>
+              <div className="admin-customer-detail-content">
+                <span className="admin-customer-detail-label">Username</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-customer-detail-input-wrapper">
                     <input
                       type="text"
-                      className={`detail-input ${errors.username ? 'input-error' : ''}`}
+                      className={`admin-customer-detail-input ${errors.username ? 'admin-customer-detail-input-error' : ''}`}
                       value={formData.username}
                       onChange={(e) => handleInputChange('username', e.target.value)}
                       placeholder="Enter username"
                     />
-                    {errors.username && <span className="error-message">{errors.username}</span>}
+                    {errors.username && <span className="admin-customer-detail-error-message">{errors.username}</span>}
                   </div>
                 ) : (
-                  <span className="detail-value">{customer.username || 'N/A'}</span>
+                  <span className="admin-customer-detail-value">{customer.username || 'N/A'}</span>
                 )}
               </div>
             </div>
 
             {/* Email */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-customer-detail-row">
+              <div className="admin-customer-detail-icon">
                 <Mail size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Email</span>
+              <div className="admin-customer-detail-content">
+                <span className="admin-customer-detail-label">Email</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-customer-detail-input-wrapper">
                     <input
                       type="email"
-                      className={`detail-input ${errors.email ? 'input-error' : ''}`}
+                      className={`admin-customer-detail-input ${errors.email ? 'admin-customer-detail-input-error' : ''}`}
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       placeholder="Enter email address"
                     />
-                    {errors.email && <span className="error-message">{errors.email}</span>}
+                    {errors.email && <span className="admin-customer-detail-error-message">{errors.email}</span>}
                   </div>
                 ) : (
-                  <span className="detail-value">{customer.email || 'N/A'}</span>
+                  <span className="admin-customer-detail-value">{customer.email || 'N/A'}</span>
                 )}
               </div>
             </div>
 
             {/* Phone */}
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-customer-detail-row">
+              <div className="admin-customer-detail-icon">
                 <Phone size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Phone</span>
+              <div className="admin-customer-detail-content">
+                <span className="admin-customer-detail-label">Phone</span>
                 {isEditing ? (
-                  <div className="input-wrapper">
+                  <div className="admin-customer-detail-input-wrapper">
                     <input
                       type="tel"
-                      className={`detail-input ${errors.phoneNumber ? 'input-error' : ''}`}
+                      className={`admin-customer-detail-input ${errors.phoneNumber ? 'admin-customer-detail-input-error' : ''}`}
                       value={formData.phoneNumber}
                       onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                       placeholder="Enter phone number"
                     />
-                    {errors.phoneNumber && <span className="error-message">{errors.phoneNumber}</span>}
+                    {errors.phoneNumber && <span className="admin-customer-detail-error-message">{errors.phoneNumber}</span>}
                   </div>
                 ) : (
-                  <span className="detail-value">{customer.phoneNumber || 'N/A'}</span>
+                  <span className="admin-customer-detail-value">{customer.phoneNumber || 'N/A'}</span>
                 )}
               </div>
             </div>
 
-            {/* Primary Address */}
-            {(customer.primaryAddressFullAddress || customer.primaryAddressLabel) && (
-              <div className="detail-row">
-                <div className="detail-icon">
-                  <MapPin size={18} />
-                </div>
-                <div className="detail-content">
-                  <span className="detail-label">Primary Address</span>
-                  <div className="address-info">
-                    {customer.primaryAddressLabel && (
-                      <div className="address-label" style={{ fontWeight: 600, color: '#667eea', marginBottom: '4px' }}>
-                        {customer.primaryAddressLabel}
-                      </div>
-                    )}
-                    {customer.primaryAddressFullAddress && (
-                      <div className="address-line" style={{ marginBottom: '4px' }}>
-                        {customer.primaryAddressFullAddress}
-                      </div>
-                    )}
-                    {(customer.primaryAddressWard || customer.primaryAddressDistrict || customer.primaryAddressProvince) && (
-                      <div className="address-line" style={{ color: '#64748b', marginBottom: '4px' }}>
-                        {[customer.primaryAddressWard, customer.primaryAddressDistrict, customer.primaryAddressProvince]
-                          .filter(Boolean)
-                          .join(', ')}
-                      </div>
-                    )}
-                    {customer.primaryAddressContactPhone && (
-                      <div className="address-phone" style={{ display: 'flex', alignItems: 'center', color: '#475569', fontSize: '14px' }}>
-                        <Phone size={14} style={{ marginRight: '6px' }} />
-                        {customer.primaryAddressContactPhone}
-                      </div>
-                    )}
-                  </div>
-                </div>
+          </div>
+
+          {/* Address Section */}
+          <div className="admin-customer-detail-section">
+            <h3 className="admin-customer-detail-section-title">
+              <MapPin size={18} />
+              Address
+            </h3>
+            
+            <div className="admin-customer-detail-row">
+              <div className="admin-customer-detail-icon">
+                <MapPin size={18} />
               </div>
-            )}
+              <div className="admin-customer-detail-content">
+                <span className="admin-customer-detail-label">Primary Address</span>
+                <span className="admin-customer-detail-value admin-customer-detail-address-text">
+                  {formatFullAddress()}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Order Statistics */}
-          <div className="detail-section">
-            <h3 className="section-title">Order Statistics</h3>
+          <div className="admin-customer-detail-section">
+            <h3 className="admin-customer-detail-section-title">
+              <ShoppingBag size={18} />
+              Order Statistics
+            </h3>
             
-            <div className="stats-grid">
-              <div className="stat-box">
-                <div className="stat-icon-box stat-blue">
+            <div className="admin-customer-detail-stats-grid">
+              <div className="admin-customer-detail-stat-box">
+                <div className="admin-customer-detail-stat-icon-box admin-customer-detail-stat-blue">
                   <ShoppingBag size={20} />
                 </div>
-                <div className="stat-info">
-                  <span className="stat-label">Total Orders</span>
-                  <span className="stat-value">{customer.totalOrders || 0}</span>
+                <div className="admin-customer-detail-stat-info">
+                  <span className="admin-customer-detail-stat-label">Total Orders</span>
+                  <span className="admin-customer-detail-stat-value">{customer.totalOrders || 0}</span>
                 </div>
               </div>
 
-              <div className="stat-box">
-                <div className="stat-icon-box stat-green">
+              <div className="admin-customer-detail-stat-box">
+                <div className="admin-customer-detail-stat-icon-box admin-customer-detail-stat-green">
                   <DollarSign size={20} />
                 </div>
-                <div className="stat-info">
-                  <span className="stat-label">Total Spent</span>
-                  <span className="stat-value">${customer.totalSpent ? customer.totalSpent.toFixed(2) : '0.00'}</span>
+                <div className="admin-customer-detail-stat-info">
+                  <span className="admin-customer-detail-stat-label">Total Spent</span>
+                  <span className="admin-customer-detail-stat-value">
+                    ${customer.totalSpent != null ? customer.totalSpent.toFixed(2) : '0.00'}
+                  </span>
                 </div>
               </div>
 
-              {customer.cartItemsCount !== undefined && (
-                <div className="stat-box">
-                  <div className="stat-icon-box stat-purple">
-                    <Package size={20} />
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-label">Cart Items</span>
-                    <span className="stat-value">{customer.cartItemsCount}</span>
-                  </div>
+              {/* <div className="admin-customer-detail-stat-box">
+                <div className="admin-customer-detail-stat-icon-box admin-customer-detail-stat-purple">
+                  <Package size={20} />
                 </div>
-              )}
+                <div className="admin-customer-detail-stat-info">
+                  <span className="admin-customer-detail-stat-label">Cart Items</span>
+                  <span className="admin-customer-detail-stat-value">{customer.cartItemsCount || 0}</span>
+                </div>
+              </div> */}
             </div>
           </div>
 
           {/* Account Information */}
-          <div className="detail-section">
-            <h3 className="section-title">Account Information</h3>
+          <div className="admin-customer-detail-section">
+            <h3 className="admin-customer-detail-section-title">
+              <User size={18} />
+              Account Information
+            </h3>
             
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-customer-detail-row">
+              <div className="admin-customer-detail-icon">
                 <Calendar size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Created At</span>
-                <span className="detail-value">{formatDate(customer.createdAt)}</span>
+              <div className="admin-customer-detail-content">
+                <span className="admin-customer-detail-label">Registered At</span>
+                <span className="admin-customer-detail-value">{formatDate(customer.registeredAt || customer.createdAt)}</span>
               </div>
             </div>
 
             {customer.lastOrderDate && (
-              <div className="detail-row">
-                <div className="detail-icon">
-                  <Package size={18} />
+              <div className="admin-customer-detail-row">
+                <div className="admin-customer-detail-icon">
+                  <ShoppingBag size={18} />
                 </div>
-                <div className="detail-content">
-                  <span className="detail-label">Last Order Date</span>
-                  <span className="detail-value">{formatDate(customer.lastOrderDate)}</span>
+                <div className="admin-customer-detail-content">
+                  <span className="admin-customer-detail-label">Last Order Date</span>
+                  <span className="admin-customer-detail-value">{formatDate(customer.lastOrderDate)}</span>
                 </div>
               </div>
             )}
 
-            <div className="detail-row">
-              <div className="detail-icon">
+            <div className="admin-customer-detail-row">
+              <div className="admin-customer-detail-icon">
                 <User size={18} />
               </div>
-              <div className="detail-content">
-                <span className="detail-label">Role</span>
-                <span className="detail-value">{customer.role || 'BUYER'}</span>
+              <div className="admin-customer-detail-content">
+                <span className="admin-customer-detail-label">Role</span>
+                <span className="admin-customer-detail-value">{customer.role || 'BUYER'}</span>
               </div>
             </div>
           </div>
+
+          {/* Reset Password Section */}
+          <div className="admin-customer-detail-section admin-customer-detail-reset-section">
+            <button 
+              className="admin-customer-detail-btn-reset-password"
+              onClick={handleResetPassword}
+              type="button"
+            >
+              <Key size={18} />
+              Reset Password
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={5000}
+      />
     </>
   );
 };

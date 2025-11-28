@@ -79,9 +79,19 @@ const LoginForm = () => {
           description: 'Đang chuyển hướng...',
         });
         
-        // Redirect will be handled by AuthContext
+        // Check user role and redirect accordingly
+        const userRole = result.data?.user?.role;
+        console.log('[LoginForm] Login result:', result);
+        console.log('[LoginForm] User role:', userRole);
+        
         setTimeout(() => {
-          window.location.href = ROUTES.HOME;
+          if (userRole === 'ADMIN') {
+            console.log('[LoginForm] Redirecting to admin dashboard');
+            window.location.href = '/admin/dashboard';
+          } else {
+            console.log('[LoginForm] Redirecting to home');
+            window.location.href = ROUTES.HOME;
+          }
         }, 1000);
       } else {
         // Handle specific error codes
@@ -129,8 +139,19 @@ const LoginForm = () => {
           description: 'Đang chuyển hướng...',
         });
         
+        // Check user role and redirect accordingly
+        const userRole = result.data?.user?.role;
+        console.log('[LoginForm] Google login result:', result);
+        console.log('[LoginForm] Google login - User role:', userRole);
+        
         setTimeout(() => {
-          window.location.href = ROUTES.HOME;
+          if (userRole === 'ADMIN') {
+            console.log('[LoginForm] Redirecting to admin dashboard');
+            window.location.href = '/admin/dashboard';
+          } else {
+            console.log('[LoginForm] Redirecting to home');
+            window.location.href = ROUTES.HOME;
+          }
         }, 1000);
       } else {
         setAlert({
@@ -187,7 +208,21 @@ const LoginForm = () => {
 
       if (result.success) {
         setAlert({ type: 'success', message: 'Đăng nhập Facebook thành công', description: 'Đang chuyển hướng...' });
-        setTimeout(() => window.location.href = ROUTES.HOME, 900);
+        
+        // Check user role and redirect accordingly
+        const userRole = result.data?.user?.role;
+        console.log('[LoginForm] Facebook login result:', result);
+        console.log('[LoginForm] Facebook login - User role:', userRole);
+        
+        setTimeout(() => {
+          if (userRole === 'ADMIN') {
+            console.log('[LoginForm] Redirecting to admin dashboard');
+            window.location.href = '/admin/dashboard';
+          } else {
+            console.log('[LoginForm] Redirecting to home');
+            window.location.href = ROUTES.HOME;
+          }
+        }, 900);
       } else {
         setAlert({ type: 'error', message: 'Đăng nhập Facebook thất bại', description: result.message });
       }

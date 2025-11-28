@@ -19,6 +19,13 @@ export const OrderProvider = ({ children }) => {
     try {
       const response = await orderService.getMyOrders();
       console.log('📦 fetchOrders response:', response);
+      console.log('📦 fetchOrders response.data:', response.data);
+      if (response.data && response.data.length > 0) {
+        console.log('📦 First order items:', response.data[0].items);
+        if (response.data[0].items && response.data[0].items.length > 0) {
+          console.log('📦 First item status:', response.data[0].items[0].status);
+        }
+      }
       // Backend returns ResponseDTO { status, error, message, data }
       if (response && !response.error && (response.status === 200 || response.status === 201)) {
         setOrders(response.data || []);
@@ -46,6 +53,12 @@ export const OrderProvider = ({ children }) => {
     try {
       const response = await orderService.getOrderDetail(orderId);
       console.log('📦 fetchOrderDetail response:', response);
+      console.log('📦 fetchOrderDetail response.data:', response.data);
+      console.log('📦 fetchOrderDetail response.data.items:', response.data?.items);
+      if (response.data?.items && response.data.items.length > 0) {
+        console.log('📦 FIRST ITEM DETAILS:', JSON.stringify(response.data.items[0], null, 2));
+        console.log('📦 FIRST ITEM ID:', response.data.items[0].id);
+      }
       if (response && !response.error && (response.status === 200 || response.status === 201)) {
         setCurrentOrder(response.data);
         return response.data;
@@ -86,6 +99,35 @@ export const OrderProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('❌ createOrder error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể tạo đơn hàng';
+      setError(errorMsg);
+      toast.error(errorMsg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Create multiple orders for multi-shop checkout
+   */
+  const createMultiShopOrders = useCallback(async (orderData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await orderService.createMultiShopOrders(orderData);
+      console.log('📦 createMultiShopOrders response:', response);
+      if (response && !response.error && (response.status === 200 || response.status === 201)) {
+        toast.success(response.message || 'Đặt hàng từ nhiều shop thành công!');
+        return response.data;
+      } else {
+        const errorMsg = response?.message || 'Không thể tạo đơn hàng';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      console.error('❌ createMultiShopOrders error:', err);
       const errorMsg = err.response?.data?.message || err.message || 'Không thể tạo đơn hàng';
       setError(errorMsg);
       toast.error(errorMsg);
@@ -160,6 +202,7 @@ export const OrderProvider = ({ children }) => {
     fetchOrders,
     fetchOrderDetail,
     createOrder,
+    createMultiShopOrders,
     cancelOrder,
     filterOrdersByStatus,
     setCurrentOrder

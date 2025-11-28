@@ -1,106 +1,188 @@
 /* 📁 src/components/admin/layout/Sidebar.css */
-.sidebar {
+/* ============================================
+   ADMIN SIDEBAR STYLES
+   Prefix: admin-sidebar-* to avoid conflicts
+   ============================================ */
+
+.admin-sidebar {
   @apply h-screen bg-white flex flex-col shadow-lg fixed left-0 top-0 overflow-y-auto border-r border-gray-200;
   transition: width 0.3s ease-in-out;
 }
 
 /* Trạng thái mở (mặc định) */
-.sidebar:not(.collapsed) {
+.admin-sidebar:not(.admin-sidebar-collapsed) {
   width: 16rem; /* 256px = w-64 */
 }
 
 /* Trạng thái thu gọn */
-.sidebar.collapsed {
+.admin-sidebar.admin-sidebar-collapsed {
   width: 5rem; /* 80px = w-20 */
 }
 
-.sidebar-header {
+.admin-sidebar-header {
   @apply px-4 py-4 border-b border-gray-200;
   height: 64px;
   display: flex;
   align-items: center;
 }
 
-.sidebar-menu-text {
+.admin-sidebar-menu-text {
   @apply text-xs font-medium text-gray-500 uppercase tracking-wider;
 }
 
-.toggle-btn {
+.admin-sidebar-toggle-btn {
   @apply p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 border-none bg-transparent cursor-pointer;
 }
 
-.sidebar-nav {
+.admin-sidebar-nav {
   @apply flex flex-col p-4 gap-1 flex-1;
 }
 
-.sidebar-link {
+.admin-sidebar-link {
   @apply flex items-center justify-between gap-3 p-3 rounded-lg hover:bg-gray-50 transition-all duration-200 text-gray-700 w-full text-left border-none bg-transparent cursor-pointer;
+  position: relative;
 }
 
-.sidebar.collapsed .sidebar-link {
+.admin-sidebar-link:hover {
+  background-color: rgba(243, 244, 246, 0.8);
+  transform: translateX(2px);
+}
+
+.admin-sidebar.admin-sidebar-collapsed .admin-sidebar-link {
   @apply justify-center;
 }
 
-.sidebar-link.active {
+.admin-sidebar-link.active {
   @apply bg-green-50 text-green-700 font-medium;
+  box-shadow: 0 1px 3px 0 rgba(34, 197, 94, 0.1);
 }
 
-.sidebar-link.active svg {
+.admin-sidebar-link.active svg {
   @apply text-green-600;
 }
 
-/* ===== DROPDOWN SLIDE ===== */
-.dropdown-slide {
+/* Border indicator cho active menu */
+.admin-sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #22c55e, #16a34a);
+  border-radius: 0 4px 4px 0;
+}
+
+/* ===== ADMIN DROPDOWN SLIDE ===== */
+.admin-dropdown-slide {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.4s ease-in-out;
-  @apply ml-6 flex flex-col;
+  opacity: 0;
+  transition: max-height 0.3s ease-in-out, opacity 0.25s ease-in-out, margin-top 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+  padding-left: 0;
 }
 
-.dropdown-slide.open {
-  max-height: 200px;
+.admin-dropdown-slide.open {
+  max-height: 300px; /* Tăng lên để chứa nhiều items hơn */
+  opacity: 1;
+  margin-top: 0.5rem; /* 8px space from parent */
 }
 
-.dropdown-item {
-  @apply flex items-center gap-2 p-2 rounded-md hover:bg-gray-50 text-sm transition-all duration-200 text-gray-600 ml-4 border-none bg-transparent cursor-pointer;
+.admin-dropdown-item {
+  display: flex;
+  flex-direction: row; /* ✅ FORCE: Icon LEFT, Text RIGHT */
+  align-items: center;
+  gap: 0.75rem; /* 12px spacing between icon and text */
+  padding: 0.5rem 0.75rem; /* py-2 px-3 */
+  margin-left: 2.5rem; /* Indent để thể hiện là sub-menu */
+  margin-bottom: 0.25rem; /* Spacing between items */
+  border-radius: 0.375rem; /* rounded-md */
+  font-size: 0.875rem; /* text-sm */
+  color: #4b5563; /* text-gray-600 */
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: calc(100% - 2.5rem); /* Full width minus indent */
+  text-align: left;
+  transition: all 0.2s ease-in-out;
+  min-height: 36px;
+  text-decoration: none; /* Remove underline for Link */
 }
 
-.dropdown-item:hover {
-  @apply text-gray-700;
+.admin-dropdown-item:hover {
+  color: #374151; /* text-gray-700 */
+  background-color: #f3f4f6; /* bg-gray-100 */
 }
 
-.dropdown-item.active {
-  @apply bg-green-50 text-green-700 font-medium;
+.admin-dropdown-item.active {
+  background-color: #f0fdf4; /* bg-green-50 */
+  color: #15803d; /* text-green-700 */
+  font-weight: 500; /* font-medium */
 }
 
-.dropdown-item.active svg {
-  @apply text-green-600;
+.admin-dropdown-item.active svg {
+  color: #16a34a; /* text-green-600 */
 }
 
-.sidebar-footer {
+/* Icon trong dropdown item - ALWAYS LEFT */
+.admin-dropdown-item-icon {
+  display: inline-flex; /* ✅ Inline flex to keep in same row */
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px; /* Fixed width for alignment */
+  height: 20px;
+  order: 1; /* ✅ Force icon first */
+}
+
+.admin-dropdown-item-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.admin-dropdown-item-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  line-height: 1.25rem; /* Better vertical alignment */
+  order: 2; /* ✅ Force text second */
+}
+
+/* Hover effect cho dropdown */
+.admin-dropdown-item:hover .admin-dropdown-item-icon svg {
+  transform: scale(1.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.admin-sidebar-footer {
   @apply mt-auto p-4 border-t border-gray-200 flex items-center justify-between;
 }
 
-.user-info {
+.admin-user-info {
   @apply flex items-center gap-3;
 }
 
-.user-avatar {
+.admin-user-avatar {
   @apply w-8 h-8 rounded-full;
 }
 
-.user-details {
+.admin-user-details {
   @apply flex flex-col;
 }
 
-.user-name {
+.admin-user-name {
   @apply text-sm font-medium text-gray-900;
 }
 
-.user-email {
+.admin-user-email {
   @apply text-xs text-gray-500;
 }
 
-.logout-btn {
+.admin-logout-btn {
   @apply p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 border-none bg-transparent cursor-pointer;
 }
