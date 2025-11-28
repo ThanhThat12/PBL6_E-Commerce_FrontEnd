@@ -392,6 +392,11 @@
   color: #991b1b;
 }
 
+.admin-vouchers-status-upcoming {
+  background: #fef3c7;
+  color: #d97706;
+}
+
 .admin-vouchers-status-inactive {
   background: #f1f5f9;
   color: #475569;

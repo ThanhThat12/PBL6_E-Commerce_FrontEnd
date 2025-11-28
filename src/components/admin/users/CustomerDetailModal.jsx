@@ -234,7 +234,7 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
             </div>
             <div>
               <h2 className="admin-customer-detail-modal-title">{customer.username || 'N/A'}</h2>
-              <p className="admin-customer-detail-modal-subtitle">Customer ID: #{customer.id}</p>
+              <p className="admin-customer-detail-modal-subtitle">User ID: #{customer.id}</p>
             </div>
           </div>
           <div className="admin-customer-detail-modal-header-actions">

@@ -3,7 +3,7 @@ import { Search, Eye, Trash2, Users, CheckCircle, Clock, XCircle, ChevronLeft, C
 import SellerDetailModal from './SellerDetailModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import Toast from '../common/Toast';
-import { getSellersPage, getSellerStats, getSellerDetail, getSellersByStatus, deleteUser } from '../../../services/adminService';
+import { getSellersPage, getSellerStats, getSellerDetail, getSellersByStatus, getSellersPageByStatus, deleteUser } from '../../../services/adminService';
 import './SellersTable.css';
 
 const SellersTable = () => {
@@ -87,44 +87,16 @@ const SellersTable = () => {
     }
   };
 
-  const fetchSellersByStatus = async (status) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getSellersByStatus(status);
-      
-      if (response.status === 200 && response.data) {
-        const transformedData = response.data.map(seller => ({
-          id: seller.id,
-          name: seller.shopName || 'N/A',
-          email: seller.email || 'N/A',
-          phone: seller.phoneNumber || 'N/A',
-          status: seller.status || 'Pending',
-          joinDate: seller.createdAt || new Date().toISOString(),
-          products: seller.totalProducts || 0,
-          sales: formatCurrency(seller.revenue || 0),
-          totalSales: seller.revenue || 0,
-          rating: 0,
-          avatar: seller.avatar || null,
-          category: 'General'
-        }));
-        
-        setSellersData(transformedData);
-      }
-    } catch (err) {
-      console.error('Error fetching sellers by status:', err);
-      setError('Failed to load sellers. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const fetchSellers = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log(`📡 [SellersTable] Fetching sellers page ${currentPage}...`);
-      const response = await getSellersPage(currentPage, pageSize);
+      console.log(`📡 [SellersTable] Fetching sellers page ${currentPage} with status filter: ${statusFilter}...`);
+      
+      // Sử dụng API có phân trang theo status
+      const response = await getSellersPageByStatus(statusFilter, currentPage, pageSize);
       
       if (response.status === 200 && response.data) {
         // Response structure: ResponseDTO<Page<ListSellerUserDTO>>
@@ -159,7 +131,7 @@ const SellersTable = () => {
         }));
         
         setSellersData(mappedSellers);
-        console.log(`📊 [SellersTable] Loaded ${mappedSellers.length} sellers, Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
+        console.log(`📊 [SellersTable] Loaded ${mappedSellers.length} sellers with filter '${statusFilter}', Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
       } else {
         console.warn('⚠️ [SellersTable] Unexpected response format:', response);
         setSellersData([]);
@@ -340,12 +312,11 @@ const SellersTable = () => {
     setSelectedSeller(null);
   };
 
-  // Filter sellers based on search and status
+  // Filter sellers based on search only (status filtering is done server-side)
   const filteredSellers = sellersData.filter(seller => {
     const matchesSearch = seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          seller.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || seller.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   // Show loading state
