@@ -479,14 +479,23 @@ const PaymentPage = () => {
         // Prepare checkout confirm request
         const confirmData = {
           shopId: parseInt(shopId),
-          addressId: parseInt(shippingAddress?.addressId || shippingAddress?.id),
+          addressId: parseInt(shippingAddress?.addressId || shippingAddress?.id), // Đảm bảo truyền addressId
           serviceId: parseInt(selectedService.service_id),
           serviceTypeId: parseInt(selectedService.service_type_id),
           cartItemIds: cartItemIds.map(id => parseInt(id)),
           paymentMethod: paymentMethod,
-          note: orderNotes || ''
+          note: orderNotes || '',
+          // Bổ sung đầy đủ thông tin địa chỉ nhận hàng
+          receiverName: shippingAddress?.toName || shippingAddress?.contactName || '',
+          receiverPhone: shippingAddress?.toPhone || shippingAddress?.contactPhone || '',
+          receiverAddress: shippingAddress?.toAddress || shippingAddress?.full_address || shippingAddress?.fullAddress || '',
+          province: shippingAddress?.provinceName || shippingAddress?.province || '',
+          district: shippingAddress?.districtName || shippingAddress?.district || '',
+          ward: shippingAddress?.wardName || shippingAddress?.ward || ''
         };
 
+        // Log confirmData trước khi gửi lên backend
+        console.log('[ORDER PAYLOAD] confirmData:', confirmData);
         // sending confirmData
 
         try {
