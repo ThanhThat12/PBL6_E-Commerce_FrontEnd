@@ -363,11 +363,11 @@ const AdminsTable = () => {
               <tr key={index} className="table-row">
                 <td className="admin-info">
                   <div className="admin-avatar-container">
-                    <img 
-                      src={admin.avatar} 
+                    {/* <img 
+                      // src={admin.avatar} 
                       alt={admin.name}
                       className="admin-avatar"
-                    />
+                    /> */}
                     <div className="admin-details">
                       <div className="admin-name">{admin.name}</div>
                       <div className="admin-id">ID: {admin.id}</div>
