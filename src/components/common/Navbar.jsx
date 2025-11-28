@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
+import { useNotifications } from "../../hooks/useNotifications";
 import { getCategories } from "../../services/homeService";
 import { 
   Bars3Icon,
@@ -13,6 +14,7 @@ import {
 // Import các component con
 import SearchBar from './Navbar/SearchBar';
 import CartButton from './Navbar/CartButton';
+import NotificationButton from './Navbar/NotificationButton';
 import UserMenu from './Navbar/UserMenu';
 import CategoryMenu from './Navbar/CategoryMenu';
 import MobileMenu from './Navbar/MobileMenu';
@@ -40,6 +42,12 @@ export default function NavbarNew({ isHomePage = false }) {
   
   const { user, logout } = useAuth(); // Sử dụng AuthContext
   const { cartCount } = useCart(); // Sử dụng CartContext
+  const { 
+    notifications, 
+    markAsRead, 
+    clearAll,
+    unreadCount 
+  } = useNotifications(user?.id); // Sử dụng NotificationContext
 
   // Scroll effect
   useEffect(() => {
@@ -169,6 +177,15 @@ export default function NavbarNew({ isHomePage = false }) {
               
               {/* Cart Button */}
               <CartButton itemCount={cartCount} />
+              
+              {/* Notification Button - Only show when logged in */}
+              {user && (
+                <NotificationButton 
+                  notifications={notifications}
+                  onMarkAsRead={markAsRead}
+                  onClearAll={clearAll}
+                />
+              )}
               
               {/* User Menu */}
               <UserMenu user={user} onLogout={handleLogout} />

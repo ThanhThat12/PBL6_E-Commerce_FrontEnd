@@ -36,7 +36,7 @@
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.3.0",
-  "@ant-design/icons": "^5.0.1",
+    "@ant-design/icons": "^5.0.1",
     "sockjs-client": "^1.6.1",
     "web-vitals": "^2.1.4",
     "yet-another-react-lightbox": "^3.25.0",

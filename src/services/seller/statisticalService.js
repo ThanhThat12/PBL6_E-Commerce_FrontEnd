@@ -62,16 +62,6 @@ export const getShopAnalytics = async (year) => {
  * @param {object} params - optional params { limit }
  * @returns {Promise<Array>} list of buyers
  */
-export const getTopBuyers = async (params = {}) => {
-  try {
-    const response = await api.get('/seller/top-buyers', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching top buyers:', error);
-    throw error;
-  }
-};
-
 /**
  * Get completed orders monthly statistics
  * @returns {Promise<Array>} Array of { year, month, orderCount }
