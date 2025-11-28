@@ -433,10 +433,10 @@ const SellersTable = () => {
 
                 <td className="seller-info">
                   <div className="seller-avatar-container">
-                    <img 
+                    {/* <img 
                       src={seller.avatar} 
                       className="seller-avatar"
-                    />
+                    /> */}
                     <div className="seller-details">
                       <div className="seller-name">{seller.name}</div>
                     </div>
