@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Select, Tag, Space, Popconfirm, message } from 'antd';
-import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
+import { Table, Button, Input, Select, Tag, Space, Popconfirm, message, Modal } from 'antd';
+import { EditOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { Link, useNavigate } from 'react-router-dom';
 import productListService from '../../services/seller/productListService';
-import { updateProductStatus } from '../../services/seller/productService';
+import { toggleProductStatus } from '../../services/seller/productService';
+import { generatePlaceholder } from '../../utils/placeholderImage';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -13,6 +14,7 @@ const { Option } = Select;
  * Display all products with filters and actions
  */
 const ProductList = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -24,6 +26,8 @@ const ProductList = () => {
     keyword: '',
     status: '',
   });
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -66,9 +70,9 @@ const ProductList = () => {
     }
   };
 
-  const handleStatusChange = async (productId, newStatus) => {
+  const handleStatusChange = async (productId) => {
     try {
-      await updateProductStatus(productId, newStatus);
+      await toggleProductStatus(productId);
       message.success('Cập nhật trạng thái thành công');
       fetchProducts();
     } catch (error) {
@@ -77,17 +81,29 @@ const ProductList = () => {
     }
   };
 
+  const handleViewDetail = (product) => {
+    setSelectedProduct(product);
+    setDetailModalVisible(true);
+  };
+
+  const handleEdit = (productId) => {
+    navigate(`/seller/products/edit/${productId}`);
+  };
+
   const columns = [
     {
       title: 'Hình ảnh',
       dataIndex: 'mainImage',
       key: 'mainImage',
       width: 80,
-      render: (image) => (
-        <img 
-          src={image || 'https://via.placeholder.com/50'} 
-          alt="Product" 
+      render: (image, record) => (
+        <img
+          src={image || generatePlaceholder('No Image', 50, 50, 'f3f4f6', '9ca3af')}
+          alt={record.name || 'Product'}
           className="w-12 h-12 object-cover rounded"
+          onError={(e) => {
+            e.target.src = generatePlaceholder('Error', 50, 50, 'fee2e2', 'dc2626');
+          }}
         />
       ),
     },
@@ -140,10 +156,14 @@ const ProductList = () => {
       title: 'Trạng thái',
       dataIndex: 'isActive',
       key: 'status',
-      render: (isActive) => (
-        <Tag color={isActive ? 'green' : 'orange'}>
-          {isActive ? 'Hoạt động' : 'Chờ duyệt'}
-        </Tag>
+      render: (isActive, record) => (
+        <Button
+          size="small"
+          type={isActive ? 'primary' : 'default'}
+          onClick={() => handleStatusChange(record.id)}
+        >
+          {isActive ? 'Hoạt động' : 'Tạm ngưng'}
+        </Button>
       ),
     },
     {
@@ -156,7 +176,15 @@ const ProductList = () => {
             type="link"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => {/* TODO: Navigate to edit page */}}
+            onClick={() => handleEdit(record.id)}
+            title="Chỉnh sửa"
+          />
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={() => handleViewDetail(record)}
+            title="Xem chi tiết"
           />
           <Popconfirm
             title="Bạn có chắc muốn xóa sản phẩm này?"
@@ -171,10 +199,10 @@ const ProductList = () => {
               size="small"
             />
           </Popconfirm>
-      </Space>
-    ),
-  },
-];
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -237,6 +265,115 @@ const ProductList = () => {
           }}
         />
       </div>
+
+      {/* Product Detail Modal */}
+      <Modal
+        title="Chi tiết sản phẩm"
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setDetailModalVisible(false)}>
+            Đóng
+          </Button>,
+          <Button key="edit" type="primary" onClick={() => {
+            setDetailModalVisible(false);
+            handleEdit(selectedProduct?.id);
+          }}>
+            Chỉnh sửa
+          </Button>,
+        ]}
+        width={800}
+      >
+        {selectedProduct && (
+          <div className="space-y-4">
+            {/* Product Image */}
+            {selectedProduct.mainImage && (
+              <div className="text-center">
+                <img
+                  src={selectedProduct.mainImage}
+                  alt={selectedProduct.name}
+                  className="max-w-full h-auto max-h-64 object-contain mx-auto rounded-lg"
+                />
+              </div>
+            )}
+
+            {/* Product Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <strong>Tên sản phẩm:</strong>
+                <p>{selectedProduct.name}</p>
+              </div>
+              <div>
+                <strong>Danh mục:</strong>
+                <p>{selectedProduct.categoryName || 'N/A'}</p>
+              </div>
+              <div>
+                <strong>Giá:</strong>
+                <p>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedProduct.price || selectedProduct.basePrice || 0)}</p>
+              </div>
+              <div>
+                <strong>Kho hàng:</strong>
+                <p className={selectedProduct.stock > 0 ? 'text-green-600' : 'text-red-600'}>
+                  {selectedProduct.stock}
+                </p>
+              </div>
+              <div>
+                <strong>SKU:</strong>
+                <p>{selectedProduct.sku || selectedProduct.variants?.[0]?.sku || '-'}</p>
+              </div>
+              <div>
+                <strong>Trạng thái:</strong>
+                <p>
+                  <Tag color={selectedProduct.isActive ? 'green' : 'orange'}>
+                    {selectedProduct.isActive ? 'Hoạt động' : 'Tạm ngưng'}
+                  </Tag>
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            {selectedProduct.description && (
+              <div>
+                <strong>Mô tả:</strong>
+                <p className="mt-2 text-gray-600">{selectedProduct.description}</p>
+              </div>
+            )}
+
+            {/* Variants */}
+            {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+              <div>
+                <strong>Biến thể:</strong>
+                <div className="mt-2 space-y-2">
+                  {selectedProduct.variants.map((variant, idx) => (
+                    <div key={idx} className="p-2 bg-gray-50 rounded">
+                      <span className="font-medium">{variant.sku}</span>
+                      <span className="ml-4">Giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(variant.price)}</span>
+                      <span className="ml-4">Kho: {variant.stock}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Gallery Images */}
+            {selectedProduct.galleryImages && selectedProduct.galleryImages.length > 0 && (
+              <div>
+                <strong>Ảnh sản phẩm:</strong>
+                <div className="mt-2 grid grid-cols-4 gap-2">
+                  {selectedProduct.galleryImages.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={typeof img === 'string' ? img : img.url}
+                      alt={`Gallery ${idx + 1}`}
+                      className="w-full h-24 object-cover rounded"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

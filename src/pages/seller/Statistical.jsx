@@ -69,12 +69,6 @@ const Statistical = () => {
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      
-      const params = {
-        startDate: dateRange[0]?.format('YYYY-MM-DD'),
-        endDate: dateRange[1]?.format('YYYY-MM-DD'),
-        groupBy: groupBy,
-      };
 
       const [revenue, sales] = await Promise.all([
         getRevenueStats(params),
@@ -170,28 +164,7 @@ const Statistical = () => {
   };
 
   const handleExport = async () => {
-    try {
-      const params = {
-        startDate: dateRange[0]?.format('YYYY-MM-DD'),
-        endDate: dateRange[1]?.format('YYYY-MM-DD'),
-        type: 'revenue',
-      };
-
-      const blob = await exportReport(params);
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `report-${Date.now()}.xlsx`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-      
-      message.success('Xuất báo cáo thành công');
-    } catch (error) {
-      console.error('Error exporting report:', error);
-      message.error('Không thể xuất báo cáo');
-    }
+    message.warning('Tính năng xuất báo cáo đang được phát triển');
   };
 
   if (loading) {
@@ -206,8 +179,8 @@ const Statistical = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Thống kê</h1>
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<DownloadOutlined />}
           onClick={handleExport}
         >

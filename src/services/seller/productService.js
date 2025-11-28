@@ -1,19 +1,31 @@
 /**
  * Product Service for Seller
  * API calls for product management (CRUD, variants, images)
+ * 
+ * Backend Endpoints:
+ * - POST /api/products (create - JSON only, no images)
+ * - PUT /api/products/{id} (update - JSON with ProductUpdateDTO)
+ * - DELETE /api/products/{id} (delete)
+ * - GET /api/products/{id} (get by ID)
+ * - GET /api/products/my-products (list seller's products with optional isActive filter)
+ * 
+ * Image Upload (separate endpoints via ProductImageController):
+ * - POST /api/products/{id}/images/main
+ * - POST /api/products/{id}/images/gallery
+ * - POST /api/products/{id}/images/gallery/batch-variants
  */
 import api from '../api';
 
-const BASE_URL = '/seller/products';
+const BASE_URL = '/products';
 
 /**
- * Get all products for seller
- * @param {object} params - Query params { page, size, keyword, categoryId, status }
+ * Get all products for seller's shop
+ * @param {object} params - Query params { page, size, sortBy, sortDir, isActive }
  * @returns {Promise<object>} { content: [], totalElements, totalPages, currentPage }
  */
 export const getProducts = async (params = {}) => {
   try {
-    const response = await api.get(BASE_URL, { params });
+    const response = await api.get(`${BASE_URL}/my-products`, { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -37,15 +49,16 @@ export const getProductById = async (productId) => {
 };
 
 /**
- * Create new product with variants
- * @param {FormData} formData - Product data (images, variants, details)
- * @returns {Promise<object>} Created product
+ * Create new product (JSON only, no images)
+ * Images should be uploaded separately after product creation
+ * @param {object} productData - { name, description, basePrice, categoryId, variants }
+ * @returns {Promise<object>} Created product with ID
  */
-export const createProduct = async (formData) => {
+export const createProduct = async (productData) => {
   try {
-    const response = await api.post(BASE_URL, formData, {
+    const response = await api.post(BASE_URL, productData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': 'application/json',
       },
     });
     return response.data;
@@ -56,16 +69,25 @@ export const createProduct = async (formData) => {
 };
 
 /**
- * Update product
+ * Update product using ProductUpdateDTO
  * @param {number} productId
- * @param {FormData} formData - Updated product data
+ * @param {object} updateData - ProductUpdateDTO shape:
+ *   {
+ *     name?: string,
+ *     description?: string,
+ *     basePrice?: number,
+ *     categoryId?: number,
+ *     variantsToAdd?: [...],
+ *     variantIdsToRemove?: [...],
+ *     variantsToUpdate?: [{ id, sku?, price?, stock? }]
+ *   }
  * @returns {Promise<object>} Updated product
  */
-export const updateProduct = async (productId, formData) => {
+export const updateProduct = async (productId, updateData) => {
   try {
-    const response = await api.put(`${BASE_URL}/${productId}`, formData, {
+    const response = await api.put(`${BASE_URL}/${productId}`, updateData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': 'application/json',
       },
     });
     return response.data;
@@ -90,19 +112,16 @@ export const deleteProduct = async (productId) => {
 };
 
 /**
- * Update product status (ACTIVE, INACTIVE, OUT_OF_STOCK)
+ * Toggle product status (Admin only - uses PATCH /api/products/{id}/status)
  * @param {number} productId
- * @param {string} status
  * @returns {Promise<object>} Updated product
  */
-export const updateProductStatus = async (productId, status) => {
+export const toggleProductStatus = async (productId) => {
   try {
-    const response = await api.patch(`${BASE_URL}/${productId}/status`, null, {
-      params: { status }
-    });
+    const response = await api.patch(`${BASE_URL}/${productId}/status`);
     return response.data;
   } catch (error) {
-    console.error('Error updating product status:', error);
+    console.error('Error toggling product status:', error);
     throw error;
   }
 };

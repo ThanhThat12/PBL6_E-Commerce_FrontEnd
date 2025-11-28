@@ -1,18 +1,23 @@
 /**
  * Dashboard Service for Seller
  * API calls for seller dashboard statistics
+ * 
+ * Backend Endpoints:
+ * - GET /api/seller/shop/analytics?year=2025
+ * - GET /api/seller/top-buyers
+ * - GET /api/products/my-shop/all
  */
 import api from '../api';
 
-const BASE_URL = '/seller/dashboard';
-
 /**
- * Get dashboard statistics
- * @returns {Promise<object>} { totalRevenue, totalOrders, totalProducts, totalCustomers }
+ * Get dashboard statistics from shop analytics
+ * @param {number} year - Year for analytics (optional)
+ * @returns {Promise<object>} { totalRevenue, totalOrders, monthlyRevenue }
  */
-export const getDashboardStats = async () => {
+export const getDashboardStats = async (year) => {
   try {
-    const response = await api.get(`${BASE_URL}/stats`);
+    const params = year ? { year } : {};
+    const response = await api.get('/seller/shop/analytics', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -21,15 +26,14 @@ export const getDashboardStats = async () => {
 };
 
 /**
- * Get revenue statistics by time range
- * @param {string} timeRange - "week", "month", "year"
- * @returns {Promise<object>} Revenue data for charts
+ * Get revenue statistics by year
+ * @param {number} year - Year for revenue stats (default: current year)
+ * @returns {Promise<object>} { totalRevenue, totalOrders, monthlyRevenue: [{month, revenue, orderCount}] }
  */
-export const getRevenueStats = async (timeRange = 'month') => {
+export const getRevenueStats = async (year) => {
   try {
-    const response = await api.get(`${BASE_URL}/revenue`, {
-      params: { timeRange }
-    });
+    const params = year ? { year } : {};
+    const response = await api.get('/seller/shop/analytics', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching revenue stats:', error);
@@ -44,7 +48,7 @@ export const getRevenueStats = async (timeRange = 'month') => {
  */
 export const getRecentOrders = async (limit = 5) => {
   try {
-    const response = await api.get(`${BASE_URL}/recent-orders`, {
+    const response = await api.get('/seller/orders', {
       params: { limit }
     });
     return response.data;
@@ -56,12 +60,14 @@ export const getRecentOrders = async (limit = 5) => {
 
 /**
  * Get top selling products
+ * Note: This endpoint is not yet implemented in the backend
  * @param {number} limit - Number of products to fetch (default: 5)
  * @returns {Promise<Array>} Top products
  */
 export const getTopProducts = async (limit = 5) => {
   try {
-    const response = await api.get(`${BASE_URL}/top-products`, {
+    // TODO: Replace with actual backend endpoint when available
+    const response = await api.get('/seller/top-products', {
       params: { limit }
     });
     return response.data;
