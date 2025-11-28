@@ -305,6 +305,8 @@ const VouchersTable = () => {
         return 'admin-vouchers-status-badge admin-vouchers-status-active';
       case 'EXPIRED':
         return 'admin-vouchers-status-badge admin-vouchers-status-expired';
+      case 'UPCOMING':
+        return 'admin-vouchers-status-badge admin-vouchers-status-upcoming';
       case 'INACTIVE':
         return 'admin-vouchers-status-badge admin-vouchers-status-inactive';
       default:
@@ -380,6 +382,7 @@ const VouchersTable = () => {
                 <th>Min Order Value</th>
                 <th>Usage Limit</th>
                 <th>Used Count</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -410,6 +413,11 @@ const VouchersTable = () => {
                     <td>
                       <span className="admin-vouchers-used-badge">{voucher.usedCount}</span>
                     </td>
+                    <td>
+                      <span className={getStatusBadgeClass(voucher.status)}>
+                        {voucher.status}
+                      </span>
+                    </td>
                     <td className="admin-vouchers-action-cell">
                       <VoucherActions
                         voucher={voucher}
@@ -421,7 +429,7 @@ const VouchersTable = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="admin-vouchers-empty-state-row">
+                  <td colSpan="8" className="admin-vouchers-empty-state-row">
                     <div className="admin-vouchers-empty-state">
                       <Tags size={48} />
                       <h3>No vouchers found</h3>

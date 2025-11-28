@@ -202,6 +202,38 @@ export const getSellersByStatus = async (status) => {
   }
 };
 
+/**
+ * Get sellers by status filter with pagination
+ * Backend endpoint: GET /api/admin/users/sellers/status?status={status}&page={page}&size={size}
+ * Returns: ResponseDTO<Page<ListSellerUserDTO>>
+ * @param {string} status - ACTIVE, PENDING, INACTIVE, ALL or null for all
+ * @param {number} page - Page number (default 0)
+ * @param {number} size - Page size (default 10)
+ */
+export const getSellersPageByStatus = async (status = 'ALL', page = 0, size = 10) => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString()
+    });
+    
+    if (status && status !== 'ALL' && status !== 'All') {
+      params.append('status', status.toUpperCase());
+    } else {
+      params.append('status', 'ALL');
+    }
+    
+    const url = `/admin/users/sellers/status?${params.toString()}`;
+    console.log('📡 [adminService] Calling GET ' + url);
+    const response = await apiClient.get(url);
+    console.log('✅ [adminService] Sellers page by status response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminService] Error fetching sellers page by status:', error);
+    throw error;
+  }
+};
+
 // ============ Admin APIs ============
 
 /**
@@ -575,6 +607,7 @@ export default {
   getSellerDetail,
   getSellerStats,
   getSellersByStatus,
+  getSellersPageByStatus,
 
   getAdmins,
   getAdminsPage,
