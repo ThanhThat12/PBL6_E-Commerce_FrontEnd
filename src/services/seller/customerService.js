@@ -1,67 +1,38 @@
 /**
  * Customer Service for Seller
- * API calls for customer management and insights
+ * API calls for customer management and analytics
+ * 
+ * Backend Endpoints:
+ * - GET /api/seller/top-buyers
+ * - GET /api/seller/top-buyers/limit/{limit}
  */
 import api from '../api';
 
-const BASE_URL = '/seller/customers';
-
 /**
- * Get all customers for seller
- * @param {object} params - { page, size, keyword }
- * @returns {Promise<object>} { content: [], totalElements, totalPages }
+ * Get top buyers (customers who purchased the most)
+ * @returns {Promise<Array>} List of top buyers
  */
-export const getCustomers = async (params = {}) => {
+export const getTopBuyers = async () => {
   try {
-    const response = await api.get(BASE_URL, { params });
+    const response = await api.get('/seller/top-buyers');
     return response.data;
   } catch (error) {
-    console.error('Error fetching customers:', error);
+    console.error('Error fetching top buyers:', error);
     throw error;
   }
 };
 
 /**
- * Get customer by ID
- * @param {number} customerId
- * @returns {Promise<object>} Customer details
+ * Get top buyers with limit
+ * @param {number} limit - Maximum number of buyers to return
+ * @returns {Promise<Array>} List of top buyers
  */
-export const getCustomerById = async (customerId) => {
+export const getTopBuyersWithLimit = async (limit) => {
   try {
-    const response = await api.get(`${BASE_URL}/${customerId}`);
+    const response = await api.get(`/seller/top-buyers/limit/${limit}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching customer:', error);
-    throw error;
-  }
-};
-
-/**
- * Get customer purchase history
- * @param {number} customerId
- * @param {object} params - { page, size }
- * @returns {Promise<object>} { orders: [], totalSpent, orderCount }
- */
-export const getCustomerPurchaseHistory = async (customerId, params = {}) => {
-  try {
-    const response = await api.get(`${BASE_URL}/${customerId}/orders`, { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching customer purchase history:', error);
-    throw error;
-  }
-};
-
-/**
- * Get customer statistics
- * @returns {Promise<object>} { totalCustomers, newCustomers, activeCustomers }
- */
-export const getCustomerStats = async () => {
-  try {
-    const response = await api.get(`${BASE_URL}/stats`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching customer stats:', error);
+    console.error('Error fetching top buyers with limit:', error);
     throw error;
   }
 };

@@ -6,6 +6,7 @@ import { FiTrash2, FiMinus, FiPlus, FiAlertCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useCart from '../../hooks/useCart';
 import useCartStore from '../../store/cartStore';
+import { getProductImage } from '../../utils/placeholderImage';
 
 /**
  * CartItemCard
@@ -107,28 +108,28 @@ const CartItemCard = ({ item }) => {
       )}
 
       {/* Product Image - Clickable */}
-      <Link 
+      <Link
         to={`/products/${item.productId}`}
         className="w-24 h-24 flex-shrink-0 rounded-md overflow-hidden bg-neutral-100 hover:opacity-80 transition-opacity"
       >
-        {item.productImage ? (
-          <img
-            src={item.productImage}
-            alt={item.productName}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
-            No Image
-          </div>
-        )}
+        <img
+          src={getProductImage({
+            mainImage: item.productMainImage || item.mainImage,
+            image: item.productImage || item.image
+          })}
+          alt={item.productName}
+          className="w-full h-full object-cover"
+          loading="lazy"
+          onError={(e) => {
+            e.target.onerror = null;
+          }}
+        />
       </Link>
 
       {/* Product Info */}
       <div className="flex-1 min-w-0">
         {/* Product Name - Clickable */}
-        <Link 
+        <Link
           to={`/products/${item.productId}`}
           className="font-semibold text-neutral-900 mb-1 hover:text-primary-600 transition-colors inline-block"
         >
