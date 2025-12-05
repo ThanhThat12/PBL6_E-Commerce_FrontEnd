@@ -134,6 +134,7 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
     if (formData.toName && formData.toPhone && formData.toAddress && 
         formData.provinceId && formData.districtId && formData.wardCode) {
       const addressData = {
+        addressId: formData.addressId || null, // Include addressId for manual address
         toName: formData.toName,
         toPhone: formData.toPhone, 
         toAddress: formData.toAddress,
@@ -147,8 +148,8 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       setItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS, addressData, true);
     }
   }, [formData.toName, formData.toPhone, formData.toAddress, 
-      formData.provinceId, formData.districtId, formData.wardCode, 
-      formData.toDistrictId, formData.toWardCode, onAddressChange]);
+      formData.provinceId, formData.districtId, formData.wardCode, formData.addressId, 
+      formData.toDistrictId, formData.toWardCode]); // onAddressChange removed to prevent infinite loop
 
   // Handle province selection
   const handleProvinceChange = (e) => {
@@ -277,7 +278,7 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
     onAddressChange(addressData);
     setItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS, addressData, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onAddressChange]);
+  }, []); // onAddressChange removed to prevent infinite loop
 
   // Fetch saved addresses
   useEffect(() => {
