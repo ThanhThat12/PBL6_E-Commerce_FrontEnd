@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import { useAuth } from '../../context/AuthContext';
-import addressService from '../../services/addressService';
+// addressService not used directly - using userService for address operations
 // Use GHN master data for province/district/ward to avoid CORS and to match GHN shipping IDs
 import userService from '../../services/userService';
 import { toast } from 'react-hot-toast';

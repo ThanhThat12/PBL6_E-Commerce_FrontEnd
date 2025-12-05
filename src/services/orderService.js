@@ -122,14 +122,7 @@ const orderService = {
    * @param {Object} orderData - Order data with items from multiple shops
    * @returns {Promise} Multi-shop order result with order IDs and total amount
    */
-  createMultiShopOrders: async (orderData) => {
-    try {
-      const response = await api.post(`${API_ENDPOINTS.ORDER.CREATE}/multi-shop`, orderData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
+  // Duplicate removed - using the one above
 
   /**
    * Get all orders for current user

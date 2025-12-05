@@ -69,10 +69,32 @@ export const API_ENDPOINTS = {
     GET_PRIMARY_ATTRIBUTE: (id) => `products/${id}/images/primary-attribute`,
   },
 
+  // Search
+  SEARCH: {
+    SUGGESTIONS: 'search/suggestions',
+    TRENDING: 'search/trending',
+    TRACK: 'search/track',
+    TRACK_CLICK: 'search/track-click',
+    HISTORY: 'search/history',
+    FACETS: 'search/facets',
+    SHOPS: 'search/shops',
+  },
+
   // Category
   CATEGORY: {
     GET_ALL: 'categories',
     GET_BY_ID: (id) => `categories/${id}`,
+  },
+
+  // Product Attributes (Color, Size, Material, etc.)
+  PRODUCT_ATTRIBUTE: {
+    GET_ALL: 'product-attributes',
+    GET_BY_ID: (id) => `product-attributes/${id}`,
+  },
+
+  // Shop
+  SHOP: {
+    GET_BY_ID: (id) => `shops/${id}`,
   },
 
   // Order (fixed: added missing ORDER endpoints)

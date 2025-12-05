@@ -1,7 +1,7 @@
 // 📁 src/components/admin/layout/Header.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Search, Settings, LogOut, User } from "lucide-react";
+import { Bell, Search, LogOut, User } from "lucide-react";
 
 const Header = () => {
   const navigate = useNavigate();

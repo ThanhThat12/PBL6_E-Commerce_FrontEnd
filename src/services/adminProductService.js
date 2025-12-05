@@ -153,7 +153,7 @@ export const searchProducts = async (name, page = 0, size = 10) => {
   }
 };
 
-export default {
+const adminProductService = {
   getProductsWithPaging,
   getProductStats,
   getProductsByCategory,
@@ -161,3 +161,5 @@ export default {
   deleteProduct,
   searchProducts
 };
+
+export default adminProductService;

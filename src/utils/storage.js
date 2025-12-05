@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from './constants';
-import { broadcastLogin, broadcastLogout, broadcastTokenRefresh, broadcastUserUpdate } from './storageSync';
+import { broadcastLogin, broadcastLogout, broadcastUserUpdate } from './storageSync';
+// Note: broadcastTokenRefresh available in storageSync but not currently used
 
 /**
  * Storage wrapper for localStorage
@@ -60,7 +61,7 @@ export const getAccessToken = () => {
  * @param {string} token
  * @param {boolean} remember
  */
-export const saveRefreshToken = (token, remember = false) => {
+export const saveRefreshToken = (token, _remember = false) => {
   localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
 };
 

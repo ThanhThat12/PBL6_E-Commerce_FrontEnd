@@ -7,7 +7,7 @@ import {
   SettingOutlined,
   HomeOutlined 
 } from '@ant-design/icons';
-import { Avatar, Dropdown, Badge, Button } from 'antd';
+import { Avatar, Dropdown, Badge } from 'antd';
 import { useAuth } from '../../../context/AuthContext';
 
 /**

@@ -213,9 +213,10 @@ const Orders = () => {
               {items.slice(0, 2).map((item, index) => (
                 <div key={index} className="flex items-center">
                   <img 
-                    src={item.productImage || 'https://via.placeholder.com/50'} 
+                    src={item.mainImage || item.productImage || 'https://via.placeholder.com/50'} 
                     alt={item.productName}
                     className="w-12 h-12 object-cover rounded mr-3"
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/50'; }}
                   />
                   <div className="flex-1">
                     <div className="text-sm font-medium">{item.productName}</div>
@@ -315,6 +316,7 @@ const Orders = () => {
     },
   ];
 
+  // eslint-disable-next-line no-unused-vars
   const getOrderCount = (status) => {
     if (!orders) return 0;
     if (status === 'ALL') return orders.length;
@@ -484,8 +486,8 @@ const Orders = () => {
                 {selectedOrder.items?.map(item => (
                   <li key={item.id} className="mb-2">
                     <div className="flex items-center">
-                      {item.productImage && (
-                        <img src={item.productImage} alt={item.productName} className="w-12 h-12 object-cover mr-3" />
+                      {(item.mainImage || item.productImage) && (
+                        <img src={item.mainImage || item.productImage} alt={item.productName} className="w-12 h-12 object-cover mr-3" onError={(e) => { e.target.style.display = 'none'; }} />
                       )}
                       <div>
                         <div className="font-medium">{item.productName}</div>

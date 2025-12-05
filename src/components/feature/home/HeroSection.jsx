@@ -64,6 +64,7 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
     }, autoPlayInterval);
 
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPlayInterval, displayBanners.length]);
 
   const handlePrev = () => {

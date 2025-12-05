@@ -92,7 +92,7 @@ const ReturnItemCard = ({ refund, onUpdate }) => {
           {orderItem.productName && (
             <div className="flex gap-4 mb-4">
               <img
-                src={orderItem.productImage || '/placeholder.png'}
+                src={orderItem.mainImage || orderItem.productImage || '/placeholder.png'}
                 alt={orderItem.productName}
                 className="w-24 h-24 object-cover rounded-lg"
                 onError={(e) => {

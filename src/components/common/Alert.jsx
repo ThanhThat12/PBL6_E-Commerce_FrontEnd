@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { FiCheckCircle, FiXCircle, FiAlertTriangle, FiInfo, FiX } from 'react-icons/fi';
 
 /**
@@ -24,12 +24,12 @@ const Alert = ({
 }) => {
   const [visible, setVisible] = useState(true);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setVisible(false);
     if (onClose) {
       setTimeout(onClose, 300); // Wait for animation
     }
-  };
+  }, [onClose]);
 
   // Auto close
   useEffect(() => {
