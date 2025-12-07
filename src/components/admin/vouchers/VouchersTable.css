@@ -170,7 +170,7 @@
 /* Stats Grid */
 .admin-vouchers-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -516,13 +516,28 @@
   }
 
   .admin-vouchers-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
   }
 }
 
 @media (max-width: 768px) {
   .admin-vouchers-stats-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .admin-vouchers-stat-card {
+    padding: 20px;
+  }
+
+  .admin-vouchers-stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .admin-vouchers-stat-value {
+    font-size: 24px;
   }
 
   .admin-vouchers-table {
@@ -532,5 +547,34 @@
   .admin-vouchers-table th,
   .admin-vouchers-table td {
     padding: 12px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-vouchers-stats-grid {
+    gap: 8px;
+  }
+
+  .admin-vouchers-stat-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .admin-vouchers-stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .admin-vouchers-stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .admin-vouchers-stat-label {
+    font-size: 12px;
+  }
+
+  .admin-vouchers-stat-value {
+    font-size: 20px;
   }
 }

@@ -193,12 +193,12 @@ const VouchersTable = () => {
       icon: <CheckCircle size={24} />,
       color: 'green',
     },
-    {
-      title: 'Expired Vouchers',
-      value: stats.expiredVouchers.toLocaleString(),
-      icon: <Calendar size={24} />,
-      color: 'yellow',
-    },
+    // {
+    //   title: 'Expired Vouchers',
+    //   value: stats.expiredVouchers.toLocaleString(),
+    //   icon: <Calendar size={24} />,
+    //   color: 'yellow',
+    // },
     {
       title: 'Used Vouchers',
       value: stats.usedVouchers.toLocaleString(),
@@ -380,7 +380,7 @@ const VouchersTable = () => {
                 <th>Discount Type</th>
                 <th>Discount Value</th>
                 <th>Min Order Value</th>
-                <th>Usage Limit</th>
+                <th>Quantity</th>
                 <th>Used Count</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -475,9 +475,6 @@ const VouchersTable = () => {
         </div>
         
         <div className="pagination-info">
-          <span style={{ marginRight: '12px', color: '#64748b', fontSize: '14px' }}>
-            Page {currentPage + 1} of {totalPages || 1} | Total: {totalElements} vouchers
-          </span>
           <button 
             className="pagination-nav"
             onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
@@ -491,11 +488,12 @@ const VouchersTable = () => {
       {/* Voucher Detail Modal */}
       {showDetailModal && selectedVoucher && (
         <VoucherDetailModal
-          voucher={selectedVoucher}
+          voucherId={selectedVoucher.id}
           onClose={() => {
             setShowDetailModal(false);
             setSelectedVoucher(null);
           }}
+          onUpdate={handleUpdateVoucher}
         />
       )}
 

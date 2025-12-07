@@ -161,12 +161,12 @@
   color: #1e40af;
 }
 
-.status-shipped {
+.status-shipping {
   background: #e0e7ff;
   color: #5b21b6;
 }
 
-.status-delivered {
+.status-completed {
   background: #d1fae5;
   color: #065f46;
 }

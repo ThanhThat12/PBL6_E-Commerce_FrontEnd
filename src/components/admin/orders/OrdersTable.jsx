@@ -286,19 +286,6 @@ const OrdersTable = () => {
           </select>
         </div>
 
-        <div className="items-per-page">
-          <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={10}>10 per page</option>
-            <option value={25}>25 per page</option>
-            <option value={50}>50 per page</option>
-          </select>
-        </div>
       </div>
 
       {/* Orders Table */}

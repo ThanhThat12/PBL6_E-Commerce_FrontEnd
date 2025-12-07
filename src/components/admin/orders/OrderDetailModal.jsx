@@ -18,11 +18,11 @@ const OrderDetailModal = ({ order, onClose }) => {
 
   const getStatusClass = (status) => {
     const statusClasses = {
-      'Pending': 'status-pending',
-      'Processing': 'status-processing',
-      'Shipped': 'status-shipped',
-      'Delivered': 'status-delivered',
-      'Cancelled': 'status-cancelled'
+      'PENDING': 'status-pending',
+      'PROCESSING': 'status-processing',
+      'SHIPPING': 'status-shipping',
+      'COMPLETED': 'status-completed',
+      'CANCELLED': 'status-cancelled'
     };
     return statusClasses[status] || 'status-pending';
   };

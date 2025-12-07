@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Ticket, Tag, DollarSign, ShoppingCart, Package, Calendar } from 'lucide-react';
+import { X, Ticket, Tag, DollarSign, ShoppingCart, Calendar } from 'lucide-react';
 import { createVoucher } from '../../../services/adminVoucherService';
 import Toast from '../common/Toast';
 import './AddVoucherModal.css';
@@ -8,12 +8,15 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     code: '',
     description: '',
-    discountAmount: '',
-    discountType: 'PERCENTAGE',
+    discountType: 'FIXED_AMOUNT',
+    discountValue: '',
+    maxDiscountAmount: '',
     minOrderValue: '',
-    quantity: '',
+    usageLimit: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    status: 'ACTIVE',
+    applicableType: 'ALL'
   });
 
   const [errors, setErrors] = useState({});
@@ -49,38 +52,50 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Code validation - uppercase + numbers only, max 10 characters
+    // Code validation
     if (!formData.code.trim()) {
       newErrors.code = 'Voucher code is required';
-    } else if (formData.code.length > 10) {
-      newErrors.code = 'Code must be maximum 10 characters';
-    } else if (!/^[A-Z0-9]+$/.test(formData.code)) {
-      newErrors.code = 'Code must contain only uppercase letters and numbers';
+    } else if (formData.code.length < 3 || formData.code.length > 50) {
+      newErrors.code = 'Code must be between 3 and 50 characters';
     }
 
-    // Description validation - optional (can be empty)
-
-    // Discount amount validation - must be >= 0 (integer)
-    if (!formData.discountAmount && formData.discountAmount !== 0) {
-      newErrors.discountAmount = 'Discount amount is required';
-    } else if (parseInt(formData.discountAmount) < 0) {
-      newErrors.discountAmount = 'Discount amount must be at least 0';
-    } else if (!Number.isInteger(Number(formData.discountAmount))) {
-      newErrors.discountAmount = 'Discount amount must be a whole number';
+    // Description validation - required, max 500 chars
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.length > 500) {
+      newErrors.description = 'Description cannot exceed 500 characters';
     }
 
-    // Min order value validation - must be >= 0 (integer)
-    if (formData.minOrderValue && parseInt(formData.minOrderValue) < 0) {
-      newErrors.minOrderValue = 'Minimum order value must be at least 0';
-    } else if (formData.minOrderValue && !Number.isInteger(Number(formData.minOrderValue))) {
-      newErrors.minOrderValue = 'Minimum order value must be a whole number';
+    // Discount value validation
+    if (!formData.discountValue) {
+      newErrors.discountValue = 'Discount value is required';
+    } else if (parseFloat(formData.discountValue) <= 0) {
+      newErrors.discountValue = 'Discount value must be greater than 0';
+    } else if (formData.discountType === 'PERCENTAGE' && parseFloat(formData.discountValue) > 100) {
+      newErrors.discountValue = 'Percentage cannot exceed 100';
     }
 
-    // Quantity validation
-    if (!formData.quantity) {
-      newErrors.quantity = 'Quantity is required';
-    } else if (parseInt(formData.quantity) <= 0) {
-      newErrors.quantity = 'Quantity must be greater than 0';
+    // Max discount amount - required for PERCENTAGE
+    if (formData.discountType === 'PERCENTAGE') {
+      if (!formData.maxDiscountAmount) {
+        newErrors.maxDiscountAmount = 'Max discount amount is required for percentage type';
+      } else if (parseFloat(formData.maxDiscountAmount) <= 0) {
+        newErrors.maxDiscountAmount = 'Max discount amount must be greater than 0';
+      }
+    }
+
+    // Min order value validation
+    if (!formData.minOrderValue) {
+      newErrors.minOrderValue = 'Minimum order value is required';
+    } else if (parseFloat(formData.minOrderValue) < 0) {
+      newErrors.minOrderValue = 'Minimum order value cannot be negative';
+    }
+
+    // Usage limit validation
+    if (!formData.usageLimit) {
+      newErrors.usageLimit = 'Usage limit is required';
+    } else if (parseInt(formData.usageLimit) < 1) {
+      newErrors.usageLimit = 'Usage limit must be at least 1';
     }
 
     // Start date validation
@@ -115,16 +130,22 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
     try {
       console.log('➕ [AddVoucherModal] Creating voucher with data:', formData);
       
-      // Prepare create DTO
+      // Prepare create DTO matching AdminVoucherCreateDTO
       const voucherData = {
-        code: formData.code.toUpperCase(), // Ensure uppercase
-        description: formData.description.trim() || null, // Có thể null
-        discountAmount: parseInt(formData.discountAmount),
-        minOrderValue: formData.minOrderValue ? parseInt(formData.minOrderValue) : 0,
-        quantity: parseInt(formData.quantity),
+        code: formData.code.toUpperCase(),
+        description: formData.description.trim(),
+        discountType: formData.discountType,
+        discountValue: parseFloat(formData.discountValue),
+        maxDiscountAmount: formData.discountType === 'PERCENTAGE' ? parseFloat(formData.maxDiscountAmount) : null,
+        minOrderValue: parseFloat(formData.minOrderValue),
+        usageLimit: parseInt(formData.usageLimit),
         startDate: formData.startDate,
-        endDate: formData.endDate
+        endDate: formData.endDate,
+        status: formData.status,
+        applicableType: formData.applicableType
       };
+      
+      console.log('📤 [AddVoucherModal] Sending voucher data:', voucherData);
       
       // Call API to create voucher
       const response = await createVoucher(voucherData);
@@ -140,10 +161,10 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
       setTimeout(() => {
         // Notify parent to refresh data
         if (onSubmit) {
-          onSubmit(formData.code);
+          onSubmit(response.data);
         }
         onClose();
-      }, 1000);
+      }, 1500);
       
     } catch (error) {
       console.error('❌ [AddVoucherModal] Error creating voucher:', error);
@@ -180,11 +201,11 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
         {/* Form */}
         <form className="admin-voucher-add-form" onSubmit={handleSubmit}>
           <div className="admin-voucher-form-content">
-            {/* Voucher Code */}
+            {/* Row 1: Code (full width) */}
             <div className="admin-voucher-form-group">
               <label className="admin-voucher-form-label">
-                <Tag size={18} />
-                Voucher Code *
+                <Tag size={16} />
+                Voucher Code 
               </label>
               <input
                 type="text"
@@ -192,55 +213,114 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
                 value={formData.code}
                 onChange={handleChange}
                 className={`admin-voucher-form-input ${errors.code ? 'error' : ''}`}
-                style={{ textTransform: 'uppercase' }}
-                maxLength={10}
-                placeholder="e.g. SALE2024"
+                maxLength={50}
               />
               {errors.code && <span className="admin-voucher-error-text">{errors.code}</span>}
             </div>
 
-            {/* Description */}
+            {/* Row 2: Description (full width) */}
             <div className="admin-voucher-form-group">
               <label className="admin-voucher-form-label">
-                <Ticket size={18} />
-                Description (Optional)
+                <Ticket size={16} />
+                Description 
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 className={`admin-voucher-form-textarea ${errors.description ? 'error' : ''}`}
-                rows="3"
-                placeholder="Enter voucher description..."
+                rows={3}
+                maxLength={500}
               />
               {errors.description && <span className="admin-voucher-error-text">{errors.description}</span>}
             </div>
 
-            {/* Discount Type and Amount */}
+            {/* Row 3: Discount Type & Status */}
             <div className="admin-voucher-form-row">
-
               <div className="admin-voucher-form-group">
                 <label className="admin-voucher-form-label">
-                  <DollarSign size={18} />
-                  Discount Amount (VND) *
+                  <DollarSign size={16} />
+                  Discount Type 
                 </label>
-                <input
-                  type="number"
-                  name="discountAmount"
-                  value={formData.discountAmount}
+                <select
+                  name="discountType"
+                  value={formData.discountType}
                   onChange={handleChange}
-                  className={`admin-voucher-form-input ${errors.discountAmount ? 'error' : ''}`}
-                  min="0"
-                  step="1"
-                  placeholder="0"
-                />
-                {errors.discountAmount && <span className="admin-voucher-error-text">{errors.discountAmount}</span>}
+                  className="admin-voucher-form-select"
+                >
+                  <option value="FIXED_AMOUNT">Fixed Amount</option>
+                  <option value="PERCENTAGE">Percentage</option>
+                </select>
               </div>
 
               <div className="admin-voucher-form-group">
                 <label className="admin-voucher-form-label">
-                  <ShoppingCart size={18} />
-                  Min Order Value (VND)
+                  <Tag size={16} />
+                  Status 
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="admin-voucher-form-select"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="UPCOMING">Upcoming</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Row 4: Discount Value & Max Discount (conditional) */}
+            <div className="admin-voucher-form-row">
+              <div className="admin-voucher-form-group">
+                <label className="admin-voucher-form-label">
+                  <DollarSign size={16} />
+                  {formData.discountType === 'PERCENTAGE' ? 'Discount Percentage (%)' : 'Discount Amount'} 
+                </label>
+                <input
+                  type="number"
+                  name="discountValue"
+                  value={formData.discountValue}
+                  onChange={handleChange}
+                  className={`admin-voucher-form-input ${errors.discountValue ? 'error' : ''}`}
+                  min="0"
+                  step={formData.discountType === 'PERCENTAGE' ? '0.01' : '1'}
+                />
+                {errors.discountValue && <span className="admin-voucher-error-text">{errors.discountValue}</span>}
+              </div>
+
+              {formData.discountType === 'PERCENTAGE' && (
+                <div className="admin-voucher-form-group">
+                  <label className="admin-voucher-form-label">
+                    <DollarSign size={16} />
+                    Max Discount Amount 
+                  </label>
+                  <input
+                    type="number"
+                    name="maxDiscountAmount"
+                    value={formData.maxDiscountAmount}
+                    onChange={handleChange}
+                    className={`admin-voucher-form-input ${errors.maxDiscountAmount ? 'error' : ''}`}
+                    min="0"
+                    step="1"
+                  />
+                  {errors.maxDiscountAmount && <span className="admin-voucher-error-text">{errors.maxDiscountAmount}</span>}
+                </div>
+              )}
+
+              {formData.discountType === 'FIXED_AMOUNT' && (
+                <div className="admin-voucher-form-group">
+                  {/* Empty placeholder to maintain grid layout */}
+                </div>
+              )}
+            </div>
+
+            {/* Row 5: Min Order Value & Usage Limit */}
+            <div className="admin-voucher-form-row">
+              <div className="admin-voucher-form-group">
+                <label className="admin-voucher-form-label">
+                  <ShoppingCart size={16} />
+                  Minimum Order Value 
                 </label>
                 <input
                   type="number"
@@ -248,42 +328,41 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
                   value={formData.minOrderValue}
                   onChange={handleChange}
                   className={`admin-voucher-form-input ${errors.minOrderValue ? 'error' : ''}`}
+        
                   min="0"
                   step="1"
-                  placeholder="0"
                 />
                 {errors.minOrderValue && <span className="admin-voucher-error-text">{errors.minOrderValue}</span>}
               </div>
-            </div>
 
-            {/*Quantity */}
-            <div className="admin-voucher-form-row">
               <div className="admin-voucher-form-group">
                 <label className="admin-voucher-form-label">
-                  <Package size={18} />
-                  Quantity *
+                  <Ticket size={16} />
+                  Usage Limit 
                 </label>
                 <input
                   type="number"
-                  name="quantity"
-                  value={formData.quantity}
+                  name="usageLimit"
+                  value={formData.usageLimit}
                   onChange={handleChange}
-                  className={`admin-voucher-form-input ${errors.quantity ? 'error' : ''}`}
+                  className={`admin-voucher-form-input ${errors.usageLimit ? 'error' : ''}`}
+         
                   min="1"
+                  step="1"
                 />
-                {errors.quantity && <span className="admin-voucher-error-text">{errors.quantity}</span>}
+                {errors.usageLimit && <span className="admin-voucher-error-text">{errors.usageLimit}</span>}
               </div>
             </div>
 
-            {/* Start Date and End Date */}
+            {/* Row 6: Start Date & End Date */}
             <div className="admin-voucher-form-row">
               <div className="admin-voucher-form-group">
                 <label className="admin-voucher-form-label">
-                  <Calendar size={18} />
-                  Start Date *
+                  <Calendar size={16} />
+                  Start Date 
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleChange}
@@ -294,11 +373,11 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
 
               <div className="admin-voucher-form-group">
                 <label className="admin-voucher-form-label">
-                  <Calendar size={18} />
-                  End Date *
+                  <Calendar size={16} />
+                  End Date 
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   name="endDate"
                   value={formData.endDate}
                   onChange={handleChange}
