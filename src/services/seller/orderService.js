@@ -46,6 +46,8 @@ const orderService = {
           orderCode: order.id,
           createdAt: order.createdAt || order.created_at,
           method: order.paymentMethod || order.method || 'Unknown',
+          paymentMethod: order.paymentMethod || order.method || 'Unknown',
+          paymentStatus: order.paymentStatus || 'UNPAID',
           // keep backend status code so Select can use it (e.g., 'PENDING', 'COMPLETED')
           status: order.status,
           // friendly label if needed elsewhere

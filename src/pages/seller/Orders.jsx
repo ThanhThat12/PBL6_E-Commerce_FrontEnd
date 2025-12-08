@@ -61,6 +61,7 @@ const Orders = () => {
         // Không filter status ở đây, luôn lấy tất cả
       };
       const response = await getOrders(params);
+      console.log('📦 Orders data:', response.content?.[0]); // Debug first order
       setAllOrders(response.content || []);
       setOrders(response.content || []);
       setPagination({
@@ -343,7 +344,9 @@ const Orders = () => {
             }).format(amount)}
           </div>
           <div className="text-xs text-gray-500">
-            {record.paymentMethod === 'COD' ? 'Thanh toán COD' : 'Đã thanh toán'}
+            {record.paymentStatus === 'PAID' 
+              ? (record.paymentMethod === 'COD' ? 'COD - Đã thanh toán' : 'Đã thanh toán')
+              : (record.paymentMethod === 'COD' ? 'COD - Chưa thanh toán' : 'Chưa thanh toán')}
           </div>
         </div>
       ),

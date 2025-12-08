@@ -29,14 +29,25 @@ const Dashboard = () => {
       
       // Fetch all data in parallel
       const currentYear = new Date().getFullYear();
-      const [statsData, revenueData, ordersData] = await Promise.all([
+      const [statsData, revenueResponse, ordersData] = await Promise.all([
         getDashboardStats(),
-        getRevenueStats(currentYear), // Use current year instead of 'month'
+        getRevenueStats(currentYear),
         getRecentOrders(5),
       ]);
 
       setStats(statsData);
-      setRevenueData(revenueData);
+      
+      // Extract and transform monthlyRevenue array from response
+      const revenuePayload = revenueResponse?.data || revenueResponse || {};
+      const monthlyRevenue = revenuePayload?.monthlyRevenue || [];
+      const transformedData = Array.isArray(monthlyRevenue) 
+        ? monthlyRevenue.map(item => ({
+            date: item.monthName || `Tháng ${item.month}`,
+            revenue: item.revenue || 0
+          }))
+        : [];
+      setRevenueData(transformedData);
+      
       setRecentOrders(ordersData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
