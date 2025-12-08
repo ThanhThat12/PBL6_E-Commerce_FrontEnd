@@ -39,6 +39,7 @@ const PaymentPage = () => {
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [detectedShopId, setDetectedShopId] = useState(null);
   const [fetchedAddressId, setFetchedAddressId] = useState(null); // Track which addressId was used for fetching
+  const [walletBalance, setWalletBalance] = useState(0); // Wallet balance for SportyPay
 
   // Get shopId from checkoutItems (assuming all items are from the same shop)
   const shopId = useMemo(() => {
@@ -143,6 +144,41 @@ const PaymentPage = () => {
       });
     }
   }, [fetchCart]);
+
+  // Fetch wallet balance
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const response = await api.get('/wallet/balance');
+        console.log('💰 Full API response:', response);
+        console.log('💰 Response data:', response.data);
+        
+        if (response.data && response.data.data) {
+          // Structure: { status, data: { balance, userId, username } }
+          const balance = response.data.data.balance || 0;
+          console.log('💰 Extracted balance:', balance);
+          console.log('💰 Balance type:', typeof balance);
+          setWalletBalance(Number(balance));
+          console.log('💰 Wallet balance set to:', Number(balance));
+        } else if (response.data && typeof response.data.balance === 'number') {
+          // Alternative structure: { balance, userId, username }
+          const balance = response.data.balance || 0;
+          console.log('💰 Extracted balance (alt structure):', balance);
+          setWalletBalance(Number(balance));
+          console.log('💰 Wallet balance set to:', Number(balance));
+        } else {
+          console.warn('⚠️ Invalid response structure:', response.data);
+          setWalletBalance(0);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching wallet balance:', error);
+        // Don't show error toast, just log it
+        setWalletBalance(0);
+      }
+    };
+
+    fetchWalletBalance();
+  }, []);
 
   // Redirect if no checkout items
   useEffect(() => {
@@ -609,39 +645,49 @@ const PaymentPage = () => {
       } else if (paymentMethod === 'SPORTYPAY') {
         console.log('💳 Processing SportyPay payment for multiple orders...');
 
-        // Tính tổng tiền của tất cả đơn hàng
-        const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-
         try {
-          const walletResponse = await api.post('/wallet/withdraw', {
-            amount: Math.round(totalAmount),
-            description: `Thanh toán ${createdOrders.length} đơn hàng qua SportyPay`
-          });
+          // Xử lý từng order riêng biệt với API mới
+          let successCount = 0;
+          let failedOrders = [];
 
-          console.log('💸 Wallet response:', walletResponse);
+          for (const order of createdOrders) {
+            try {
+              console.log(`💰 Processing payment for order #${order.orderId}`);
+              
+              const paymentResponse = await api.post('/checkout/pay-with-wallet', {
+                orderId: order.orderId
+              });
 
-          if (walletResponse.status === 200) {
-            toast.success('Thanh toán bằng ví SportyPay thành công!');
-
-            // Update tất cả order status sau khi thanh toán thành công
-            for (const order of createdOrders) {
-              try {
-                await api.post(`/orders/${order.orderId}/update-after-payment`, {});
-                console.log(`✅ Order ${order.orderId} updated after wallet payment`);
-              } catch (updateError) {
-                console.error(`⚠️ Error updating order ${order.orderId}:`, updateError);
-              }
+              console.log(`✅ Payment successful for order #${order.orderId}:`, paymentResponse);
+              successCount++;
+              
+            } catch (paymentError) {
+              console.error(`❌ Payment failed for order #${order.orderId}:`, paymentError);
+              failedOrders.push({
+                orderId: order.orderId,
+                error: paymentError.response?.data?.error || paymentError.message
+              });
             }
-
-            console.log('✅ Cart will be cleared by backend for purchased items');
-            await refreshCartAndNavigate('/orders');
-          } else {
-            toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
-            await refreshCartAndNavigate('/orders');
           }
+
+          // Hiển thị kết quả
+          if (successCount === createdOrders.length) {
+            toast.success(`Thanh toán thành công ${successCount} đơn hàng qua SportyPay!`);
+            console.log('✅ All orders paid successfully');
+          } else if (successCount > 0) {
+            toast.warning(`Đã thanh toán ${successCount}/${createdOrders.length} đơn hàng. Vui lòng kiểm tra lại.`);
+            console.warn('⚠️ Some orders failed:', failedOrders);
+          } else {
+            toast.error('Không thể thanh toán đơn hàng. Vui lòng kiểm tra số dư ví.');
+            console.error('❌ All payments failed:', failedOrders);
+          }
+
+          console.log('✅ Cart will be cleared by backend for purchased items');
+          await refreshCartAndNavigate('/orders');
+          
         } catch (walletError) {
           console.error('❌ SportyPay error:', walletError);
-          toast.error('Lỗi thanh toán bằng ví SportyPay');
+          toast.error('Lỗi thanh toán bằng ví SportyPay: ' + (walletError.response?.data?.error || walletError.message));
           await refreshCartAndNavigate('/orders');
         }
       } else {
@@ -889,6 +935,7 @@ const PaymentPage = () => {
                 <PaymentMethodSelector
                   selectedMethod={paymentMethod}
                   onMethodChange={setPaymentMethod}
+                  walletBalance={walletBalance}
                 />
               </div>
 
