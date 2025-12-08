@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
-import { toast } from 'react-toastify';
 
 // Automatically use https if page is loaded over https
 const WS_URL = window.location.protocol === 'https:' 
@@ -10,9 +9,13 @@ const WS_URL = window.location.protocol === 'https:'
 
 /**
  * Custom hook để quản lý notifications với WebSocket
- * Subscribe to /topic/orderws/{userId}
+ * Subscribe to /topic/orderws/{userId} for buyers
+ * Subscribe to /topic/sellerws/{sellerId} for sellers
+ * 
+ * @param {number} userId - User ID
+ * @param {string} role - User role: 'BUYER' or 'SELLER' (default: 'BUYER')
  */
-export function useNotifications(userId) {
+export function useNotifications(userId, role = 'BUYER') {
   const [notifications, setNotifications] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const [stompClient, setStompClient] = useState(null);
@@ -20,7 +23,8 @@ export function useNotifications(userId) {
   // Load notifications from localStorage
   useEffect(() => {
     if (userId) {
-      const stored = localStorage.getItem(`notifications_${userId}`);
+      const storageKey = `notifications_${role}_${userId}`;
+      const stored = localStorage.getItem(storageKey);
       if (stored) {
         try {
           setNotifications(JSON.parse(stored));
@@ -29,14 +33,15 @@ export function useNotifications(userId) {
         }
       }
     }
-  }, [userId]);
+  }, [userId, role]);
 
   // Save notifications to localStorage
   useEffect(() => {
     if (userId && notifications.length > 0) {
-      localStorage.setItem(`notifications_${userId}`, JSON.stringify(notifications));
+      const storageKey = `notifications_${role}_${userId}`;
+      localStorage.setItem(storageKey, JSON.stringify(notifications));
     }
-  }, [userId, notifications]);
+  }, [userId, role, notifications]);
 
   // Connect to WebSocket
   useEffect(() => {
@@ -45,12 +50,18 @@ export function useNotifications(userId) {
       return;
     }
 
-    console.log('🔌 Connecting to WebSocket for user:', userId);
+    // Determine channel based on role
+    const channelPrefix = role === 'SELLER' ? 'sellerws' : 'orderws';
+    const channel = `/topic/${channelPrefix}/${userId}`;
+    const connectionId = Math.random().toString(36).substr(2, 9);
+
+    console.log(`🔌 [${role}] [${connectionId}] Connecting to WebSocket for user:`, userId);
     console.log('🔌 WebSocket URL:', WS_URL);
-    console.log('🔌 Will subscribe to: /topic/orderws/' + userId);
+    console.log('🔌 Will subscribe to:', channel);
     
     const socket = new SockJS(WS_URL);
     const client = Stomp.over(socket);
+    let subscription = null;
 
     // Disable debug logs in production
     client.debug = (str) => {
@@ -62,82 +73,82 @@ export function useNotifications(userId) {
     client.connect(
       {},
       () => {
-        console.log('✅ WebSocket connected');
+        console.log(`✅ [${role}] [${connectionId}] WebSocket connected`);
         setIsConnected(true);
         setStompClient(client);
 
-        // Subscribe to user's notification channel
-        const channel = `/topic/orderws/${userId}`;
-        console.log('📡 Subscribing to channel:', channel);
+        // Subscribe to notification channel
+        console.log(`📡 [${connectionId}] Subscribing to channel:`, channel);
         
-        const subscription = client.subscribe(
+        subscription = client.subscribe(
           channel,
           (message) => {
             try {
               const notification = JSON.parse(message.body);
-              console.log('📬 Received notification:', notification);
-              console.log('📬 Notification type:', notification.type);
-              console.log('📬 Message:', notification.message);
+              console.log(`📬 [${connectionId}] Received notification:`, notification);
+              console.log(`   Type: ${notification.type}, Message: ${notification.message}`);
 
-              // Add notification to list
+              // Add notification to list (avoid duplicates)
+              const now = Date.now();
               const newNotification = {
-                id: Date.now(),
+                id: `${now}_${Math.random()}`, // Unique ID
                 ...notification,
                 read: false,
+                timestamp: now, // Add timestamp in milliseconds for timeAgo calculation
+                receivedAt: new Date().toISOString() // Add received timestamp
               };
 
-              setNotifications((prev) => [newNotification, ...prev]);
-
-              // Show toast notification
-              const emoji = getEmojiForType(notification.type);
-              toast.info(
-                <div>
-                  <span className="text-lg mr-2">{emoji}</span>
-                  {notification.message}
-                </div>,
-                {
-                  position: 'top-right',
-                  autoClose: 5000,
-                  hideProgressBar: false,
-                  closeOnClick: true,
-                  pauseOnHover: true,
-                  draggable: true,
+              setNotifications((prev) => {
+                // Check if notification already exists (by message and type)
+                const isDuplicate = prev.some(n => 
+                  n.message === newNotification.message && 
+                  n.type === newNotification.type &&
+                  // Check if received within last 2 seconds (handle rapid duplicates)
+                  n.receivedAt && Math.abs(new Date(n.receivedAt) - new Date(newNotification.receivedAt)) < 2000
+                );
+                
+                if (isDuplicate) {
+                  console.log(`⚠️ [${connectionId}] Duplicate notification detected, skipping`);
+                  return prev;
                 }
-              );
+                
+                console.log(`✅ [${connectionId}] Adding new notification`);
+                return [newNotification, ...prev];
+              });
 
+              // NOTE: Toast notifications are now handled by the parent components
+              // (SellerLayout for sellers, buyer pages for buyers) to avoid duplicates
+              
               // Play notification sound (optional)
               playNotificationSound();
             } catch (error) {
-              console.error('Error parsing notification:', error);
+              console.error(`❌ [${connectionId}] Error parsing notification:`, error);
             }
           }
         );
-
-        // Cleanup subscription on disconnect
-        return () => {
-          subscription.unsubscribe();
-        };
       },
       (error) => {
-        console.error('❌ WebSocket connection error:', error);
+        console.error(`❌ [${connectionId}] WebSocket connection error:`, error);
         setIsConnected(false);
-        
-        // Retry connection after 5 seconds
-        setTimeout(() => {
-          console.log('🔄 Retrying WebSocket connection...');
-        }, 5000);
       }
     );
 
-    // Cleanup on unmount
+    // Cleanup on unmount or dependency change
     return () => {
+      console.log(`🔌 [${connectionId}] Cleaning up WebSocket connection`);
+      
+      if (subscription) {
+        subscription.unsubscribe();
+        console.log(`📡 [${connectionId}] Unsubscribed from channel`);
+      }
+      
       if (client && client.connected) {
         client.disconnect(() => {
-          console.log('🔌 WebSocket disconnected');
+          console.log(`🔌 [${connectionId}] WebSocket disconnected`);
         });
       }
     };
-  }, [userId]);
+  }, [userId, role]);
 
   // Mark notification as read
   const markAsRead = useCallback((notificationId) => {
@@ -159,9 +170,10 @@ export function useNotifications(userId) {
   const clearAll = useCallback(() => {
     setNotifications([]);
     if (userId) {
-      localStorage.removeItem(`notifications_${userId}`);
+      const storageKey = `notifications_${role}_${userId}`;
+      localStorage.removeItem(storageKey);
     }
-  }, [userId]);
+  }, [userId, role]);
 
   // Delete single notification
   const deleteNotification = useCallback((notificationId) => {
@@ -172,6 +184,7 @@ export function useNotifications(userId) {
 
   return {
     notifications,
+    connected: isConnected, // Alias for compatibility
     isConnected,
     markAsRead,
     markAllAsRead,
@@ -182,17 +195,6 @@ export function useNotifications(userId) {
 }
 
 // Helper functions
-function getEmojiForType(type) {
-  const emojiMap = {
-    ORDER_CONFIRMED: '✅',
-    ORDER_SHIPPING: '🚚',
-    ORDER_COMPLETED: '🎉',
-    ORDER_CANCELLED: '❌',
-    ORDER_STATUS_UPDATE: '📋',
-  };
-  return emojiMap[type] || '🔔';
-}
-
 function playNotificationSound() {
   try {
     const audio = new Audio('/notification-sound.mp3');
@@ -205,3 +207,5 @@ function playNotificationSound() {
     // Sound not available
   }
 }
+
+export default useNotifications;
