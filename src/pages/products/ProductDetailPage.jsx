@@ -12,10 +12,11 @@ import { ReviewSection } from '../../components/review';
 import { getProductById, getProductImages } from '../../services/productService';
 import useCart from '../../hooks/useCart';
 import useAuth from '../../hooks/useAuth';
+import { getProductImage } from '../../utils/placeholderImage';
 
 /**
- * ProductDetailPage
- * Product details with variant selection and add to cart
+ * ProductDetailPage - Shopee Style
+ * Enhanced product details with shop information and reviews
  */
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -27,7 +28,8 @@ const ProductDetailPage = () => {
   const [selectedImage, setSelectedImage] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [productImages, setProductImages] = useState(null); // {mainImage, galleryImages, primaryAttribute, variantImages}
+  const [productImages, setProductImages] = useState(null);
+  const [imageGallery, setImageGallery] = useState([]);
   const [adding, setAdding] = useState(false);
   const { user, isAuthenticated, hasRole } = useAuth();
 
@@ -41,7 +43,21 @@ const ProductDetailPage = () => {
         if (response && response.data) {
           const productData = response.data;
           setProduct(productData);
-          setSelectedImage(productData.mainImage || '/placeholder-product.jpg');
+          
+          // Setup initial image
+          const mainImageUrl = getProductImage(productData);
+          setSelectedImage(mainImageUrl);
+          
+          // Setup initial gallery with main image and additional images
+          const initialGallery = [mainImageUrl];
+          if (productData.images && productData.images.length > 0) {
+            productData.images.forEach(img => {
+              if (img.imageUrl && img.imageUrl !== mainImageUrl) {
+                initialGallery.push(img.imageUrl);
+              }
+            });
+          }
+          setImageGallery(initialGallery);
           
           // Auto-select first available variant
           if (productData.variants && productData.variants.length > 0) {
@@ -49,7 +65,7 @@ const ProductDetailPage = () => {
             setSelectedVariant(firstAvailable);
           }
 
-          // Load product images (main, gallery, variant-specific)
+          // Load product images
           try {
             const imagesResponse = await getProductImages(id);
             if (imagesResponse && imagesResponse.data) {
@@ -77,11 +93,14 @@ const ProductDetailPage = () => {
     loadProduct();
   }, [id, navigate]);
 
-  // Update displayed image when variant selection changes (Shopee-style behavior)
+  // Update image and gallery when variant changes
   useEffect(() => {
     if (!selectedVariant || !product) {
       return;
     }
+
+    let newSelectedImage = null;
+    let newGallery = [];
 
     // Check if product has primary attribute for variant images
     if (productImages && productImages.primaryAttribute) {
@@ -92,15 +111,46 @@ const ProductDetailPage = () => {
 
       // Look up variant image
       if (primaryAttrValue && productImages.variantImages && productImages.variantImages[primaryAttrValue]) {
-        const variantImageUrl = productImages.variantImages[primaryAttrValue].imageUrl;
-        setSelectedImage(variantImageUrl);
+        const variantImage = productImages.variantImages[primaryAttrValue];
+        newSelectedImage = variantImage.imageUrl;
+        
+        // Build gallery with variant image first
+        newGallery = [variantImage.imageUrl];
+        
+        // Add main image if different
+        const mainImg = productImages.mainImage || product.mainImage;
+        if (mainImg && mainImg !== variantImage.imageUrl) {
+          newGallery.push(mainImg);
+        }
+        
+        // Add other product images
+        if (product.images && product.images.length > 0) {
+          product.images.forEach(img => {
+            if (img.imageUrl && img.imageUrl !== variantImage.imageUrl && img.imageUrl !== mainImg) {
+              newGallery.push(img.imageUrl);
+            }
+          });
+        }
+        
+        setSelectedImage(newSelectedImage);
+        setImageGallery(newGallery);
         return;
       }
     }
 
-    // Fallback to main image
+    // Fallback to main image and rebuild gallery
     const fallbackImage = productImages?.mainImage || product.mainImage || '/placeholder-product.jpg';
     setSelectedImage(fallbackImage);
+    
+    const fallbackGallery = [fallbackImage];
+    if (product.images && product.images.length > 0) {
+      product.images.forEach(img => {
+        if (img.imageUrl && img.imageUrl !== fallbackImage) {
+          fallbackGallery.push(img.imageUrl);
+        }
+      });
+    }
+    setImageGallery(fallbackGallery);
   }, [selectedVariant, productImages, product]);
 
   const handleQuantityChange = (delta) => {
@@ -113,32 +163,18 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = async () => {
-    // Check if product is active
-    if (!product.isActive) {
-      toast.error('Sản phẩm này hiện không khả dụng');
-      return;
-    }
-
     if (!selectedVariant) {
       toast.error('Vui lòng chọn phiên bản sản phẩm');
       return;
     }
 
-    // Check stock
-    if (selectedVariant.stock === 0) {
-      toast.error('Sản phẩm đã hết hàng');
+    if (!product.isActive) {
+      toast.error('Sản phẩm hiện không khả dụng');
       return;
     }
 
-    // Validate quantity vs stock
-    if (quantity > selectedVariant.stock) {
-      toast.error(`Chỉ còn ${selectedVariant.stock} sản phẩm trong kho`);
-      return;
-    }
-
-    // Validate quantity range
-    if (quantity < 1 || quantity > 100) {
-      toast.error('Số lượng phải từ 1 đến 100');
+    if (selectedVariant.stock < quantity) {
+      toast.error('Số lượng vượt quá hàng có sẵn');
       return;
     }
 
@@ -146,7 +182,6 @@ const ProductDetailPage = () => {
     try {
       await addItemToCart(selectedVariant.id, quantity);
       toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
-      setQuantity(1); // Reset quantity after successful add
     } catch (error) {
       console.error('Add to cart error:', error);
       if (error.response?.status === 404) {
@@ -162,13 +197,12 @@ const ProductDetailPage = () => {
   };
 
 
-
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
-          <Loading size="lg" text="Đang tải sản phẩm..." />
+          <Loading />
         </div>
         <Footer />
       </div>
@@ -181,8 +215,8 @@ const ProductDetailPage = () => {
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-600 mb-4">Không tìm thấy sản phẩm</p>
-            <Button onClick={() => navigate('/products')}>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy sản phẩm</h2>
+            <Button onClick={() => navigate('/products')} variant="primary">
               Quay lại danh sách sản phẩm
             </Button>
           </div>
@@ -233,32 +267,21 @@ const ProductDetailPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Navbar */}
       <Navbar />
-
-      {/* Main Content */}
+      
       <main className="flex-1">
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-2 text-sm">
-            <Link to="/" className="text-gray-600 hover:text-primary-600 no-underline">
-              Trang chủ
-            </Link>
-            <FiChevronRight className="w-4 h-4 text-gray-400" />
-            <Link to="/products" className="text-gray-600 hover:text-primary-600 no-underline">
-              Sản phẩm
-            </Link>
-            <FiChevronRight className="w-4 h-4 text-gray-400" />
-            {product.category && (
-              <>
-                <span className="text-gray-600">{product.category.name}</span>
-                <FiChevronRight className="w-4 h-4 text-gray-400" />
-              </>
-            )}
-            <span className="text-gray-900 font-medium">{product.name}</span>
+        {/* Breadcrumb */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <nav className="flex items-center space-x-2 text-sm">
+              <Link to="/" className="text-gray-500 hover:text-primary-600">Trang chủ</Link>
+              <FiChevronRight className="w-4 h-4 text-gray-400" />
+              <Link to="/products" className="text-gray-500 hover:text-primary-600">Sản phẩm</Link>
+              <FiChevronRight className="w-4 h-4 text-gray-400" />
+              <span className="text-gray-900 truncate">{product.name}</span>
+            </nav>
           </div>
         </div>
-      </div>
 
       {/* Product Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -274,38 +297,27 @@ const ProductDetailPage = () => {
               />
             </div>
 
-            {/* Thumbnail Images */}
-            {product.images && product.images.length > 0 && (
+            {/* Thumbnail Images - Show variant-aware gallery */}
+            {imageGallery && imageGallery.length > 1 && (
               <div className="grid grid-cols-4 gap-4">
-                <button
-                  onClick={() => setSelectedImage(product.mainImage)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImage === product.mainImage
-                      ? 'border-primary-500 ring-2 ring-primary-200'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <img
-                    src={product.mainImage}
-                    alt="Main"
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-                
-                {product.images.map((img, index) => (
+                {imageGallery.map((imgUrl, index) => (
                   <button
-                    key={index}
-                    onClick={() => setSelectedImage(img.imageUrl)}
+                    key={`gallery-${index}-${imgUrl}`}
+                    onClick={() => setSelectedImage(imgUrl)}
                     className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                      selectedImage === img.imageUrl
+                      selectedImage === imgUrl
                         ? 'border-primary-500 ring-2 ring-primary-200'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <img
-                      src={img.imageUrl}
-                      alt={`${product.name} ${index + 1}`}
+                      src={imgUrl}
+                      alt={`${product.name} - Ảnh ${index + 1}`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/placeholder-product.jpg';
+                      }}
                     />
                   </button>
                 ))}

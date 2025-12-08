@@ -89,14 +89,13 @@ const orderService = {
   },
 
   /**
-   * Create a new order
+   * Create a new order 
    * @param {Object} orderData - Order data
    * @returns {Promise} Order response
    */
   createOrder: async (orderData) => {
     try {
       const response = await api.post(API_ENDPOINTS.ORDER.CREATE, orderData);
-      // api interceptor already returns response.data (ResponseDTO)
       return response;
     } catch (error) {
       throw error;
@@ -106,7 +105,7 @@ const orderService = {
   /**
    * Create multiple orders for multi-shop checkout
    * @param {Object} orderData - Order data
-   * @returns {Promise} Multi-shop order response with orderIds array
+   * @returns {Promise} Multi-shop order response
    */
   createMultiShopOrders: async (orderData) => {
     try {
@@ -116,13 +115,6 @@ const orderService = {
       throw error;
     }
   },
-
-  /**
-   * Get all orders for the current user
-   * @param {Object} orderData - Order data with items from multiple shops
-   * @returns {Promise} Multi-shop order result with order IDs and total amount
-   */
-  // Duplicate removed - using the one above
 
   /**
    * Get all orders for current user

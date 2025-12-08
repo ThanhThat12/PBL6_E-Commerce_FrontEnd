@@ -162,9 +162,7 @@ img {
   transition: opacity 0.3s ease-in-out;
 }
 
-img[loading="lazy"] {
-  opacity: 0;
-}
+
 
 img[loading="lazy"].loaded {
   opacity: 1;

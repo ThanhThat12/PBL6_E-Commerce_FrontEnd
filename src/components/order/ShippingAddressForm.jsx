@@ -36,6 +36,8 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
     province: '',
     district: '',
     ward: '',
+    provinceId: null,
+    districtId: null,
     toDistrictId: '',
     toWardCode: ''
   });
@@ -127,6 +129,28 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
     loadWards();
   }, [formData.districtCode]);
 
+  // Send address data when form is complete
+  useEffect(() => {
+    if (formData.toName && formData.toPhone && formData.toAddress && 
+        formData.provinceId && formData.districtId && formData.wardCode) {
+      const addressData = {
+        addressId: formData.addressId || null, // Include addressId for manual address
+        toName: formData.toName,
+        toPhone: formData.toPhone, 
+        toAddress: formData.toAddress,
+        provinceId: formData.provinceId,
+        districtId: formData.districtId,
+        wardCode: formData.wardCode,
+        toDistrictId: formData.toDistrictId,
+        toWardCode: formData.toWardCode
+      };
+      onAddressChange(addressData);
+      setItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS, addressData, true);
+    }
+  }, [formData.toName, formData.toPhone, formData.toAddress, 
+      formData.provinceId, formData.districtId, formData.wardCode, formData.addressId, 
+      formData.toDistrictId, formData.toWardCode]); // onAddressChange removed to prevent infinite loop
+
   // Handle province selection
   const handleProvinceChange = (e) => {
     const provinceCode = e.target.value;
@@ -136,8 +160,10 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       ...prev,
       provinceCode,
       province: provinceName,
+      provinceId: parseInt(provinceCode) || null,
       districtCode: '',
       district: '',
+      districtId: null,
       wardCode: '',
       ward: '',
       toDistrictId: '',
@@ -160,6 +186,7 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       ...prev,
       districtCode,
       district: districtName,
+      districtId: parseInt(districtCode) || null,
       toDistrictId: districtCode,
       wardCode: '',
       ward: '',
@@ -238,19 +265,20 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       toAddress: fullAddressDisplay,
       toDistrictId: address.districtId?.toString() || '',
       toWardCode: address.wardCode || '',
-      province: provinceName,
-      district: districtName,
-      ward: wardName,
+      // Use ID fields instead of text
+      provinceId: address.provinceId || parseInt(address.provinceCode) || null,
+      districtId: address.districtId || parseInt(address.districtCode) || null,
+      wardCode: address.wardCode || '',
+      // Keep these for backward compatibility
       provinceCode: address.provinceId || address.provinceCode || '',
       districtCode: address.districtId || address.districtCode || '',
-      wardCode: address.wardCode || ''
     };
 
     setFormData(addressData);
     onAddressChange(addressData);
     setItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS, addressData, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onAddressChange]);
+  }, []); // onAddressChange removed to prevent infinite loop
 
   // Fetch saved addresses
   useEffect(() => {
@@ -287,6 +315,8 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       province: '',
       district: '',
       ward: '',
+      provinceId: null,
+      districtId: null,
       toDistrictId: '',
       toWardCode: ''
     });

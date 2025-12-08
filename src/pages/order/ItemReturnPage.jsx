@@ -94,6 +94,7 @@ const ItemReturnPage = () => {
         imageUrls: [] // Will be populated after image upload
       };
 
+      console.log('📦 Sending return request:', requestData);
       await api.post('/orders/items/return', requestData);
       
       toast.success('Yêu cầu trả hàng đã được gửi thành công!');
@@ -104,7 +105,9 @@ const ItemReturnPage = () => {
       navigate('/orders?tab=RETURN');
     } catch (error) {
       console.error('Error submitting return request:', error);
-      toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu trả hàng');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Không thể gửi yêu cầu trả hàng');
     } finally {
       setLoading(false);
     }

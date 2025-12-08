@@ -76,7 +76,7 @@ const MyShop = () => {
         description: data.description,
         shopPhone: data.shopPhone,
         shopEmail: data.shopEmail,
-        address: data.address,
+        address: data.fullAddress,  // Backend returns fullAddress, not address
         ghnShopId: data.ghnShopId,
         ghnToken: data.ghnToken,
       });
@@ -212,16 +212,27 @@ const MyShop = () => {
     try {
       setLoading(true);
 
+      // Find selected province/district/ward names
+      const selectedProvince = provinces.find(p => p.id === values.provinceId);
+      const selectedDistrict = districts.find(d => d.id === values.districtId);
+      const selectedWard = wards.find(w => w.id === values.wardCode);
+
       // Build update data (JSON)
       const updateData = {
         name: values.name,
         description: values.description || '',
         shopPhone: values.shopPhone || '',
         shopEmail: values.shopEmail || '',
-        address: values.address || '',
+        // Address fields - backend expects fullAddress, not address
+        fullAddress: values.address || '',
         provinceId: values.provinceId ? parseInt(values.provinceId) : null,
         districtId: values.districtId ? parseInt(values.districtId) : null,
         wardCode: values.wardCode || '',
+        provinceName: selectedProvince?.name || '',
+        districtName: selectedDistrict?.name || '',
+        wardName: selectedWard?.name || '',
+        contactPhone: values.shopPhone || '',  // Use shopPhone as contactPhone
+        contactName: shopData?.ownerFullName || '',  // Use owner name as contactName
         ghnShopId: values.ghnShopId || '',
         ghnToken: values.ghnToken || '',
       };
@@ -288,7 +299,7 @@ const MyShop = () => {
   // Build full address
   const getFullAddress = () => {
     const parts = [];
-    if (shopData?.address) parts.push(shopData.address);
+    if (shopData?.fullAddress) parts.push(shopData.fullAddress);  // Use fullAddress from backend
     if (shopData?.wardName) parts.push(shopData.wardName);
     if (shopData?.districtName) parts.push(shopData.districtName);
     if (shopData?.provinceName) parts.push(shopData.provinceName);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { toast } from 'react-toastify';
@@ -21,6 +21,7 @@ import useOrderNotification from '../../hooks/useOrderNotification';
  * Complete payment page with shipping address, payment method selection, and order summary
  */
 const PaymentPage = () => {
+  console.log('🔄 PaymentPage Render');
   const navigate = useNavigate();
   const { cartItems: _cartItems, loading: cartLoading, fetchCart } = useCart(); // eslint-disable-line no-unused-vars
 
@@ -28,7 +29,8 @@ const PaymentPage = () => {
   const [shippingAddress, setShippingAddress] = useState(null);
   const [orderNotes, setOrderNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [_weightGrams] = useState(500); // eslint-disable-line no-unused-vars
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [weightGrams] = useState(500);
   const [ghnServices, setGhnServices] = useState({}); // Available services by shop
   const [selectedServices, setSelectedServices] = useState({}); // Selected service for each shop
   const [shopShippingFees, setShopShippingFees] = useState({}); // Shipping fees by shop
@@ -36,6 +38,7 @@ const PaymentPage = () => {
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [detectedShopId, setDetectedShopId] = useState(null);
+  const [fetchedAddressId, setFetchedAddressId] = useState(null); // Track which addressId was used for fetching
 
   // Get shopId from checkoutItems (assuming all items are from the same shop)
   const shopId = useMemo(() => {
@@ -158,14 +161,22 @@ const PaymentPage = () => {
   }, [checkoutItems]);
 
   // Handle shipping address change
-  const handleAddressChange = (addressData) => {
+  const handleAddressChange = useCallback((addressData) => {
     setShippingAddress(addressData);
-  };
+  }, []); // No dependencies - just update state
 
   // Fetch GHN services when address changes
   useEffect(() => {
+    const addressId = shippingAddress?.addressId || shippingAddress?.id;
+    const hasRequiredData = shippingAddress && addressId && itemsByShop.length > 0;
+    
+    // Skip if already fetching or no required data
+    if (!hasRequiredData || loadingServices) return;
+    
     const loadServices = async () => {
-      const addressId = shippingAddress?.addressId || shippingAddress?.id;
+      console.log('[GHN Services] shippingAddress:', shippingAddress);
+      console.log('[GHN Services] extracted addressId:', addressId);
+      setLoadingServices(true);
       // GHN service fetch: run only when all required data present
       if (shippingAddress && addressId && itemsByShop.length > 0) {
         // Fetch GHN services for each shop
@@ -217,10 +228,11 @@ const PaymentPage = () => {
         // required conditions not met - nothing to fetch
       }
       // GHN service fetch finished
+      setLoadingServices(false);
     };
     loadServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shippingAddress, itemsByShop]);
+  }, [shippingAddress?.addressId, itemsByShop.length]); // Only re-run when addressId or number of shops changes
 
   // Handle service selection for a shop
   const handleServiceSelect = async (shopId, service) => {
@@ -278,21 +290,21 @@ const PaymentPage = () => {
   };
 
   // Handle voucher apply
-  const handleVoucherApply = (voucher) => {
+  const handleVoucherApply = useCallback((voucher) => {
     // Apply voucher without noisy logs
     setAppliedVoucher(voucher);
 
     if (voucher) {
       // Nếu là voucher miễn phí ship
       if (voucher.type === 'SHIPPING') {
-        setVoucherDiscount(Math.min(voucher.discount, shippingFee));
+        setVoucherDiscount(prev => Math.min(voucher.discount, shippingFee));
       } else {
         setVoucherDiscount(voucher.discount);
       }
     } else {
       setVoucherDiscount(0);
     }
-  };
+  }, [shippingFee]); // Depends on shippingFee for SHIPPING voucher calculation
 
   // Calculate totals - sử dụng useMemo để tự động tính lại khi checkoutItems thay đổi
   const { subtotal, total: _total, finalTotal } = useMemo(() => { // eslint-disable-line no-unused-vars

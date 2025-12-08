@@ -134,9 +134,10 @@ const CheckoutPage = () => {
         receiverName: shippingAddress.toName,
         receiverPhone: shippingAddress.toPhone,
         receiverAddress: shippingAddress.toAddress,
-        province: shippingAddress.province,
-        district: shippingAddress.district,
-        ward: shippingAddress.ward,
+        // Use ID fields instead of text
+        provinceId: shippingAddress.provinceId,
+        districtId: shippingAddress.districtId,
+        wardCode: shippingAddress.wardCode,
         toDistrictId: shippingAddress.toDistrictId,
         toWardCode: shippingAddress.toWardCode,
         weightGrams: weightGrams,
