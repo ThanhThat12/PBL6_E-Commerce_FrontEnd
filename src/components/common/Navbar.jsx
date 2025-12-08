@@ -47,7 +47,7 @@ export default function NavbarNew({ isHomePage = false }) {
     markAsRead, 
     clearAll,
     unreadCount: _unreadCount // eslint-disable-line no-unused-vars
-  } = useNotifications(user?.id); // Sử dụng NotificationContext
+  } = useNotificationContext(); // Sử dụng NotificationContext
 
   // Scroll effect
   useEffect(() => {
