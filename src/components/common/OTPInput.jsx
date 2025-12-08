@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 /**
  * OTPInput Component
@@ -119,13 +119,13 @@ const OTPInput = ({
   /**
    * Clear OTP
    */
-  const clearOtp = () => {
+  const clearOtp = useCallback(() => {
     setOtp(Array(length).fill(''));
     if (onChange) {
       onChange('');
     }
     inputRefs.current[0]?.focus();
-  };
+  }, [length, onChange]);
 
   // Expose clearOtp method
   useEffect(() => {

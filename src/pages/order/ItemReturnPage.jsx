@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { useOrder } from '../../context/OrderContext';
@@ -29,11 +29,7 @@ const ItemReturnPage = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
 
   useEffect(() => {
-    console.log('===[ItemReturnPage] Full location.state:', location.state);
-    console.log('===[ItemReturnPage] Extracted values:', { orderItemId, productName, variantName, price, maxQuantity });
-    
     if (!orderItemId || orderItemId === 'undefined' || isNaN(orderItemId)) {
-      console.error('===[ItemReturnPage] Invalid orderItemId, redirecting to /orders');
       toast.error('Thông tin sản phẩm không hợp lệ. Vui lòng thử lại.');
       navigate('/orders');
     }

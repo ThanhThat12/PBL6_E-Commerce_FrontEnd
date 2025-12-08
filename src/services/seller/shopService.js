@@ -3,8 +3,9 @@
  * API calls for shop profile management
  * 
  * Backend Endpoints:
- * - GET /api/seller/shop (get shop)
- * - PUT /api/seller/shop (update shop)
+ * - GET /api/seller/shop (get basic shop info)
+ * - GET /api/seller/shop/detail (get full shop details including KYC)
+ * - PUT /api/seller/shop (update shop - returns ShopDetailDTO)
  * - GET /api/seller/shop/analytics?year=2025 (get analytics)
  * - POST /api/seller/register (register as seller)
  */
@@ -13,8 +14,8 @@ import api from '../api';
 const BASE_URL = '/seller/shop';
 
 /**
- * Get shop profile
- * @returns {Promise<object>} Shop profile data
+ * Get basic shop profile
+ * @returns {Promise<object>} Shop profile data (ShopDTO)
  */
 export const getShopProfile = async () => {
   try {
@@ -27,15 +28,41 @@ export const getShopProfile = async () => {
 };
 
 /**
- * Update shop profile
- * @param {FormData} formData - Shop data (name, description, logo, banner)
- * @returns {Promise<object>} Updated shop profile
+ * Get full shop details (for seller management page)
+ * @returns {Promise<object>} Full shop details (ShopDetailDTO) including KYC, GHN, address IDs
  */
-export const updateShopProfile = async (formData) => {
+export const getShopDetail = async () => {
   try {
-    const response = await api.put(BASE_URL, formData, {
+    const response = await api.get(`${BASE_URL}/detail`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching shop detail:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update shop profile (JSON body, not FormData)
+ * @param {object} shopData - Shop update data
+ * @param {string} shopData.name - Shop name
+ * @param {string} [shopData.description] - Shop description
+ * @param {string} [shopData.shopPhone] - Shop phone
+ * @param {string} [shopData.shopEmail] - Shop email
+ * @param {string} [shopData.logoUrl] - Logo URL (from Cloudinary)
+ * @param {string} [shopData.logoPublicId] - Logo public ID
+ * @param {string} [shopData.bannerUrl] - Banner URL (from Cloudinary)
+ * @param {string} [shopData.bannerPublicId] - Banner public ID
+ * @param {string} [shopData.address] - Street address
+ * @param {number} [shopData.provinceId] - GHN Province ID
+ * @param {number} [shopData.districtId] - GHN District ID
+ * @param {string} [shopData.wardCode] - GHN Ward Code
+ * @returns {Promise<object>} Updated shop profile (ShopDetailDTO)
+ */
+export const updateShopProfile = async (shopData) => {
+  try {
+    const response = await api.put(BASE_URL, shopData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': 'application/json',
       },
     });
     return response.data;

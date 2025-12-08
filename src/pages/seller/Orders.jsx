@@ -411,6 +411,7 @@ const Orders = () => {
     },
   ];
 
+  // eslint-disable-next-line no-unused-vars
   const getOrderCount = (status) => {
     if (!allOrders) return 0;
     if (status === 'ALL') return allOrders.length;

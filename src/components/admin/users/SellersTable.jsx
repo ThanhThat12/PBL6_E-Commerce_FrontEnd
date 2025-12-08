@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Users, CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, Trash2, Users, CheckCircle, Clock, XCircle } from 'lucide-react';
 import SellerDetailModal from './SellerDetailModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import Toast from '../common/Toast';
-import { getSellersPage, getSellerStats, getSellerDetail, getSellersByStatus, getSellersPageByStatus, deleteUser } from '../../../services/adminService';
+import { getSellerStats, getSellerDetail, getSellersPageByStatus, deleteUser } from '../../../services/adminService';
 import './SellersTable.css';
 
 const SellersTable = () => {
@@ -33,12 +33,14 @@ const SellersTable = () => {
   useEffect(() => {
     fetchSellers();
     fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]); // Re-fetch when page changes
 
   // Fetch sellers when status filter changes
   useEffect(() => {
     setCurrentPage(0); // Reset to first page when filter changes
     fetchSellers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const fetchStats = async () => {
@@ -144,7 +146,10 @@ const SellersTable = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
+  // _formatCurrency - kept for future use
+  // eslint-disable-next-line no-unused-vars
+  // eslint-disable-next-line no-unused-vars
+  const _formatCurrency = (amount) => {
     if (!amount) return '0';
     return amount.toLocaleString('en-US', { maximumFractionDigits: 2 });
   };
@@ -433,10 +438,10 @@ const SellersTable = () => {
 
                 <td className="seller-info">
                   <div className="seller-avatar-container">
-                    <img 
+                    {/* <img 
                       src={seller.avatar} 
                       className="seller-avatar"
-                    />
+                    /> */}
                     <div className="seller-details">
                       <div className="seller-name">{seller.name}</div>
                     </div>

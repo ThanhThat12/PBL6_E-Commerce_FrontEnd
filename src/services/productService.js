@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 /**
  * Transform backend product data to component format
  */
+// eslint-disable-next-line no-unused-vars
 const transformProduct = (product) => {
   if (!product) return null;
 
@@ -92,8 +93,6 @@ export const getProducts = async (page = 0, size = 12) => {
       params: { page, size }
     });
 
-    console.log('🔍 getProducts raw response:', response);
-
     // api interceptor returns response.data, which is ResponseDTO
     // ResponseDTO structure: { status, error, message, data: Page<ProductDTO> }
     return response; // Return full ResponseDTO
@@ -114,7 +113,6 @@ export const getProducts = async (page = 0, size = 12) => {
 export const getProductById = async (id) => {
   try {
     const response = await api.get(API_ENDPOINTS.PRODUCT.GET_BY_ID(id));
-    console.log('🔍 getProductById raw response:', response);
     return response; // Return full ResponseDTO
   } catch (error) {
     if (error.response?.status === 404) {
@@ -143,7 +141,6 @@ export const searchProducts = async (filters = {}) => {
       }
     });
 
-    console.log('🔍 searchProducts raw response:', response);
     return response; // Return full ResponseDTO
   } catch (error) {
     throw error;
@@ -163,7 +160,6 @@ export const getProductsByCategory = async (categoryId, page = 0, size = 12) => 
       params: { page, size }
     });
 
-    console.log('🔍 getProductsByCategory raw response:', response);
     return response; // Return full ResponseDTO
   } catch (error) {
     throw error;
@@ -177,7 +173,6 @@ export const getProductsByCategory = async (categoryId, page = 0, size = 12) => 
 export const getCategories = async () => {
   try {
     const response = await api.get('categories');
-    console.log('📦 getCategories response:', response);
 
     const categories = response?.data || [];
     const transformed = categories.map(transformCategory).filter(c => c !== null);
@@ -262,12 +257,10 @@ export const createCategory = async (categoryData) => {
 export const getProductImages = async (productId) => {
   try {
     const response = await api.get(`/products/${productId}/images`);
-    console.log('🖼️ getProductImages response:', response);
     // api interceptor returns response.data which is ResponseDTO
     // ResponseDTO.data contains ProductImagesResponse
     return response; // Return full response for consistent handling
   } catch (error) {
-    console.error('Failed to get product images:', error);
     throw error;
   }
 };

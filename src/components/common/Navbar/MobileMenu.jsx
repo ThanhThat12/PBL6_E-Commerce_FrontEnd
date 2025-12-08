@@ -301,20 +301,22 @@ const MobileMenu = ({
                   )}
                 </Link>
               ))}
-                {/* Become Vendor Button for Mobile Sidebar */}
-                <Link
-                  to="/become-vendor"
-                  onClick={handleLinkClick}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-secondary-500 hover:bg-secondary-600 transition-colors group mt-2"
-                >
-                  <span className="flex items-center gap-2 text-sm font-bold text-white">
-                    {/* Vendor Icon */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 7l2 12h14l2-12M5 7V5a2 2 0 012-2h10a2 2 0 012 2v2" />
-                    </svg>
-                    Kênh người bán
-                  </span>
-                </Link>
+                {/* Become Vendor / Seller Channel Button for Mobile Sidebar */}
+                {user && (
+                  <Link
+                    to={user?.roleId === 1 || user?.role === 'SELLER' ? "/seller/dashboard" : "/seller/register"}
+                    onClick={handleLinkClick}
+                    className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-secondary-500 hover:bg-secondary-600 transition-colors group mt-2"
+                  >
+                    <span className="flex items-center gap-2 text-sm font-bold text-white">
+                      {/* Vendor Icon */}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 7l2 12h14l2-12M5 7V5a2 2 0 012-2h10a2 2 0 012 2v2" />
+                      </svg>
+                      {user?.roleId === 1 || user?.role === 'SELLER' ? "Kênh người bán" : "Bán hàng cùng SportZone"}
+                    </span>
+                  </Link>
+                )}
             </div>
           </div>
         )}

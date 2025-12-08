@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Tags, Calendar, Package, DollarSign, Store, Edit2, Save, XCircle, Hash, Percent, AlertCircle } from 'lucide-react';
 import Toast from '../common/Toast';
-import { getVoucherDetail, updateVoucher } from '../../../services/adminVoucherService';
+import { getVoucherDetail } from '../../../services/adminVoucherService';
 import './VoucherDetailModal.css';
 
 const VoucherDetailModal = ({ voucher, onClose, onUpdate }) => {
@@ -96,6 +96,7 @@ const VoucherDetailModal = ({ voucher, onClose, onUpdate }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing, onClose]);
 
   if (!voucher) return null;

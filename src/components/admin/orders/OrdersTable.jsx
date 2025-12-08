@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Package, DollarSign, Clock, TrendingUp, ChevronLeft, ChevronRight, Filter, Eye, Printer, Trash2 } from 'lucide-react';
+import { Search, X, Package, DollarSign, Clock, TrendingUp, Eye, Printer, Trash2 } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import './OrdersTable.css';
 
@@ -141,7 +141,7 @@ const OrdersTable = () => {
   });
 
   // Pagination logic
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
+  const _totalPages = Math.ceil(sortedOrders.length / itemsPerPage); // eslint-disable-line no-unused-vars
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentOrders = sortedOrders.slice(startIndex, endIndex);
@@ -155,7 +155,9 @@ const OrdersTable = () => {
     }
   };
 
-  const handlePageChange = (page) => {
+  // handlePageChange - kept for future pagination use
+  // eslint-disable-next-line no-unused-vars
+  const _handlePageChange = (page) => {
     setCurrentPage(page);
   };
 

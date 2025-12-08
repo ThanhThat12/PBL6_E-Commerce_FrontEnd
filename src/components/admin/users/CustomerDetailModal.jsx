@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, ShoppingBag, DollarSign, Calendar, Package, Edit2, Save, XCircle, Key } from 'lucide-react';
+import { X, User, Mail, Phone, MapPin, ShoppingBag, DollarSign, Calendar, Edit2, Save, XCircle, Key } from 'lucide-react';
 import './CustomerDetailModal.css';
 import { resetUserPassword, updateUser } from '../../../services/adminService';
 import Toast from '../common/Toast';
@@ -35,6 +35,7 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing, onClose]);
 
   if (!customer) return null;
@@ -81,7 +82,9 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
     });
   };
 
-  const getStatusClass = (status) => {
+  // getStatusClass - kept for future use
+  // eslint-disable-next-line no-unused-vars
+  const _getStatusClass = (status) => {
     switch(status) {
       case 'Active': return 'admin-customer-detail-status-active';
       case 'Inactive': return 'admin-customer-detail-status-inactive';

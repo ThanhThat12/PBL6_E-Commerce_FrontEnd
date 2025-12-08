@@ -170,7 +170,7 @@ export default function RefundApprovalList() {
                   {refund.orderItem && (
                     <div className="flex gap-3 p-3 bg-gray-50 rounded-lg">
                       <img 
-                        src={refund.orderItem.productImage || '/placeholder.png'}
+                        src={refund.orderItem.mainImage || refund.orderItem.productImage || '/placeholder.png'}
                         alt={refund.orderItem.productName}
                         className="w-16 h-16 object-cover rounded border border-gray-200"
                       />

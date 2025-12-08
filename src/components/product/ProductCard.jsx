@@ -1,39 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiShoppingCart, FiHeart, FiPackage, FiStar } from 'react-icons/fi';
+import { FiHeart, FiStar, FiMapPin } from 'react-icons/fi';
 import { getProductImage } from '../../utils/placeholderImage';
 
 /**
  * ProductCard Component
  * Modern product card with improved design
+ * Shows: base price, shop province, sold count, average rating
  * 
  * @param {Object} product - Product data
- * @param {Function} onAddToCart - Add to cart handler
  * @param {Function} onWishlist - Add to wishlist handler
  */
-const ProductCard = ({ product, onAddToCart, onWishlist }) => {
-  // Calculate price range from variants
-  const prices = product.variants?.map(v => v.price) || [product.basePrice];
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
-  const hasVariants = product.variants && product.variants.length > 1;
-  const hasPriceRange = minPrice !== maxPrice;
+const ProductCard = ({ product, onWishlist }) => {
+  // Get base price
+  const basePrice = product.basePrice || product.price || 0;
+  
+  // Get rating info
+  const averageRating = product.rating || product.averageRating || 0;
+  const reviewCount = product.reviewCount || product.totalReviews || 0;
+  const soldCount = product.soldCount || 0;
+  
+  // Shop info
+  const shopProvince = product.shopProvince || '';
 
-  // Calculate total stock
+  // Calculate total stock from variants
   const totalStock = product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || product.stock || 0;
-
-  // Find cheapest variant for "Add to Cart"
-  const cheapestVariant = product.variants?.reduce((min, v) =>
-    v.price < min.price ? v : min
-    , product.variants[0]) || {};
-
-  const handleAddToCart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onAddToCart) {
-      onAddToCart(product, cheapestVariant);
-    }
-  };
 
   const handleWishlist = (e) => {
     e.preventDefault();
@@ -41,6 +32,14 @@ const ProductCard = ({ product, onAddToCart, onWishlist }) => {
     if (onWishlist) {
       onWishlist(product);
     }
+  };
+
+  // Format sold count for display (e.g., 1.2k)
+  const formatSoldCount = (count) => {
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1) + 'k';
+    }
+    return count.toString();
   };
 
   return (
@@ -72,18 +71,12 @@ const ProductCard = ({ product, onAddToCart, onWishlist }) => {
         <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
           {!product.isActive && (
             <span className="bg-gray-800/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
-              Inactive
+              Ngừng bán
             </span>
           )}
           {totalStock === 0 && (
             <span className="bg-red-500/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
-              Sold Out
-            </span>
-          )}
-          {hasVariants && (
-            <span className="bg-blue-500/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-              <FiPackage className="w-3 h-3" />
-              {product.variants.length} Options
+              Hết hàng
             </span>
           )}
         </div>
@@ -98,33 +91,15 @@ const ProductCard = ({ product, onAddToCart, onWishlist }) => {
             <FiHeart className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Quick Add to Cart - Only show if in stock */}
-        {totalStock > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
-            <button
-              onClick={handleAddToCart}
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 shadow-xl"
-            >
-              <FiShoppingCart className="w-5 h-5" />
-              <span>Add to Cart</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Product Info */}
       <div className="p-4 flex flex-col flex-1">
-        {/* Category & Shop */}
-        <div className="flex items-center justify-between mb-2">
+        {/* Category */}
+        <div className="mb-2">
           <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
             {product.category?.name || product.categoryName || 'Uncategorized'}
           </span>
-          {product.shopName && (
-            <span className="text-xs text-gray-500 font-medium truncate max-w-[120px]">
-              {product.shopName}
-            </span>
-          )}
         </div>
 
         {/* Product Name */}
@@ -132,69 +107,54 @@ const ProductCard = ({ product, onAddToCart, onWishlist }) => {
           {product.name}
         </h3>
 
-        {/* Rating */}
-        {(product.averageRating || product.totalReviews) && (
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <FiStar
-                  key={star}
-                  className={`w-4 h-4 ${star <= Math.round(product.averageRating || 0)
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'text-gray-300'
-                    }`}
-                />
-              ))}
-            </div>
+        {/* Rating & Sold */}
+        <div className="flex items-center gap-3 mb-2">
+          {/* Rating */}
+          <div className="flex items-center gap-1">
+            <FiStar className={`w-4 h-4 ${averageRating > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
             <span className="text-sm font-semibold text-gray-700">
-              {product.averageRating ? product.averageRating.toFixed(1) : '0.0'}
+              {averageRating > 0 ? averageRating.toFixed(1) : '0.0'}
             </span>
-            {product.totalReviews > 0 && (
-              <span className="text-xs text-gray-400">
-                ({product.totalReviews})
-              </span>
+            {reviewCount > 0 && (
+              <span className="text-xs text-gray-400">({reviewCount})</span>
             )}
+          </div>
+          
+          {/* Separator */}
+          <span className="text-gray-300">|</span>
+          
+          {/* Sold Count */}
+          <span className="text-sm text-gray-500">
+            Đã bán {formatSoldCount(soldCount)}
+          </span>
+        </div>
+
+        {/* Shop Location */}
+        {shopProvince && (
+          <div className="flex items-center gap-1 mb-3 text-gray-500">
+            <FiMapPin className="w-3.5 h-3.5" />
+            <span className="text-xs truncate">{shopProvince}</span>
           </div>
         )}
 
-        {/* Spacer to push price and stock to bottom */}
+        {/* Spacer to push price to bottom */}
         <div className="flex-1" />
 
-        {/* Price */}
+        {/* Price - Base Price only */}
         <div className="mb-3">
-          {hasPriceRange ? (
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-primary-600">
-                {minPrice.toLocaleString('vi-VN')}₫
-              </span>
-              <span className="text-sm text-gray-400 font-medium">-</span>
-              <span className="text-xl font-bold text-primary-600">
-                {maxPrice.toLocaleString('vi-VN')}₫
-              </span>
-            </div>
-          ) : (
-            <span className="text-2xl font-bold text-primary-600">
-              {minPrice.toLocaleString('vi-VN')}₫
-            </span>
-          )}
+          <span className="text-xl font-bold text-red-500">
+            ₫{basePrice.toLocaleString('vi-VN')}
+          </span>
         </div>
 
-        {/* Stock & Variants Info */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        {/* Stock Info */}
+        <div className="flex items-center pt-3 border-t border-gray-100">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${totalStock > 0 ? 'bg-green-500' : 'bg-red-500'
-              }`} />
-            <span className={`text-xs font-medium ${totalStock > 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-              {totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}
+            <div className={`w-2 h-2 rounded-full ${totalStock > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className={`text-xs font-medium ${totalStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {totalStock > 0 ? 'Còn hàng' : 'Hết hàng'}
             </span>
           </div>
-
-          {hasVariants && (
-            <span className="text-xs text-gray-500 font-medium">
-              {product.variants.length} variants
-            </span>
-          )}
         </div>
       </div>
     </Link>

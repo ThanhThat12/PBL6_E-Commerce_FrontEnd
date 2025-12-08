@@ -7,8 +7,6 @@ import {
   Users,
   Settings,
   LogOut,
-  BarChart2,
-  FileText,
   Package,
   ChevronDown,
   ChevronUp,
@@ -16,14 +14,10 @@ import {
   UserCheck,
   Shield,
   Menu,
-  Layers,
-  Tags,
-  Folder,
   LayoutGrid,
-  Grid3x3,
-  Gift,
   CreditCard,
-  X
+  X,
+  ClipboardCheck
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -105,6 +99,7 @@ const Sidebar = ({ onToggle }) => {
         { name: "Admins", icon: <Shield size={16} />, path: "/admin/users/admins" },
       ],
     },
+    { name: "Duyệt Seller", icon: <ClipboardCheck size={20} />, path: "/admin/seller-registrations" },
     { name: "Products", icon: <ShoppingBag size={20} />, path: "/admin/products" },
     { name: "Categories", icon: <LayoutGrid size={20} />, path: "/admin/categories" },
     { name: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
@@ -177,7 +172,7 @@ const Sidebar = ({ onToggle }) => {
                     className={`admin-dropdown-item ${
                       isActive(sub.path) ? "active" : ""
                     }`}
-                    onClick={(e) => {
+                    onClick={(_e) => {
                       console.log('🔹 [Sidebar] Link clicked:', sub.path);
                       console.log('🔹 [Sidebar] Current location:', location.pathname);
                     }}

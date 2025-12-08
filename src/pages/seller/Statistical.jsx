@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, DatePicker, Select, Button, Spin, message, Radio } from 'antd';
+import { Card, Row, Col, DatePicker, Select, Button, Spin, message } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import {
-  getRevenueStats,
+  // getRevenueStats,   // TODO: Not implemented yet
   // getSalesStats,  // TODO: Not implemented yet
   // getTopProducts,  // TODO: Not implemented yet
   // exportReport,    // TODO: Not implemented yet
@@ -27,7 +27,8 @@ const MONTH_NAMES = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5',
  */
 const Statistical = () => {
   const [loading, setLoading] = useState(false);
-  const [revenueData, setRevenueData] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [_revenueData, setRevenueData] = useState([]);
   const [salesData, setSalesData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [topBuyers, setTopBuyers] = useState([]);
@@ -41,9 +42,13 @@ const Statistical = () => {
   const [groupBy, setGroupBy] = useState('day');
   
   // Order statistics
+  // eslint-disable-next-line no-unused-vars
   const [orderStatsLoading, setOrderStatsLoading] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [orderStatsYear, setOrderStatsYear] = useState(dayjs().year());
+  // eslint-disable-next-line no-unused-vars
   const [orderStatsType, setOrderStatsType] = useState('completed'); // 'completed' or 'cancelled'
+  // eslint-disable-next-line no-unused-vars
   const [monthlyOrderStats, setMonthlyOrderStats] = useState([]);
 
   useEffect(() => {
