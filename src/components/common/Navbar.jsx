@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotificationContext } from "../../context/NotificationContext";
 import { getCategories } from "../../services/homeService";
 import { 
   Bars3Icon,

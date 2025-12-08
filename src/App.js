@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { OrderProvider } from './context/OrderContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ROUTES, GOOGLE_CLIENT_ID } from './utils/constants';
 
 // Pages
@@ -66,9 +67,10 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <AuthProvider>
-          <CartProvider>
-            <OrderProvider>
-            <Routes>
+          <NotificationProvider>
+            <CartProvider>
+              <OrderProvider>
+              <Routes>
               {/* Public Routes */}
               <Route path={ROUTES.HOME} element={<Homepage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
@@ -229,6 +231,7 @@ function App() {
               <Route path="customers" element={<SellerPages.Customers />} />
               <Route path="vouchers" element={<SellerPages.VoucherManagement />} />
               <Route path="refunds" element={<SellerPages.Refunds />} />
+              <Route path="notifications" element={<SellerPages.Notifications />} />
             </Route>
             {/* ================================================= */}
 
@@ -278,8 +281,9 @@ function App() {
               draggable
               pauseOnHover
             />
-            </OrderProvider>
-          </CartProvider>
+              </OrderProvider>
+            </CartProvider>
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>

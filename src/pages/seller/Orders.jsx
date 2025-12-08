@@ -14,7 +14,6 @@ import {
   STATUS_LABELS 
 } from '../../services/seller/orderService';
 
-const { confirm } = Modal;
 const { RangePicker } = DatePicker;
 
 /**
@@ -181,24 +180,19 @@ const Orders = () => {
     }
   };
 
-  const handleCancelOrder = (orderId) => {
-    confirm({
-      title: 'Xác nhận hủy đơn hàng',
-      content: 'Bạn có chắc chắn muốn hủy đơn hàng này?',
-      okText: 'Hủy đơn',
-      okType: 'danger',
-      cancelText: 'Quay lại',
-      onOk: async () => {
-        try {
-          await cancelOrder(orderId);
-          message.success('Đã hủy đơn hàng');
-          fetchOrders();
-        } catch (error) {
-          console.error('Error cancelling order:', error);
-          message.error('Không thể hủy đơn hàng');
-        }
-      },
-    });
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+      return;
+    }
+    
+    try {
+      await cancelOrder(orderId);
+      message.success('Đã hủy đơn hàng');
+      fetchOrders();
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      message.error(error.response?.data?.message || 'Không thể hủy đơn hàng');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -241,13 +235,39 @@ const Orders = () => {
       );
     }
 
-    // Đang xử lý: Đã đóng gói/Giao cho ship (không cho hủy)
+    // Đang xử lý: Giao cho ship hoặc Hủy đơn
     if (status === ORDER_STATUS.PROCESSING) {
       return (
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Button
+            type="primary"
+            size="small"
+            icon={<SendOutlined />}
+            onClick={() => handleShipOrder(id)}
+            block
+          >
+            Giao hàng
+          </Button>
+          <Button
+            danger
+            size="small"
+            icon={<CloseOutlined />}
+            onClick={() => handleCancelOrder(id)}
+            block
+          >
+            Hủy đơn
+          </Button>
+        </Space>
+      );
+    }
+
+    // Đang giao: Không có action
+    if (status === ORDER_STATUS.SHIPPING) {
+      return (
         <Button
-          type="primary"
+          type="default"
           size="small"
-          icon={<SendOutlined />}
+          disabled
           onClick={() => handleShipOrder(id)}
           block
         >

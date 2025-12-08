@@ -14,3 +14,4 @@ export { default as Statistical } from './Statistical';
 export { default as Customers } from './Customers';
 export { default as VoucherManagement } from './VoucherManagement';
 export { default as Refunds } from './Refunds';
+export { default as Notifications } from './Notifications';
