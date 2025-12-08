@@ -358,10 +358,10 @@
 .location-text {
   color: #374151;
   font-size: 13px;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 250px;
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 /* Loading and Error States */

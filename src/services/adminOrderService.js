@@ -62,7 +62,22 @@ export const getAdminOrderDetail = async (orderId) => {
   }
 };
 
+/**
+ * Get order statistics for admin dashboard
+ * @returns {Promise} Response with stats (totalOrders, pendingOrders, completedOrders, totalRevenue)
+ */
+export const getAdminOrderStats = async () => {
+  try {
+    const response = await apiClient.get('/admin/orders/stats');
+    return response;
+  } catch (error) {
+    console.error('Error fetching order stats:', error);
+    throw error;
+  }
+};
+
 export default {
   getAdminOrders,
-  getAdminOrderDetail
+  getAdminOrderDetail,
+  getAdminOrderStats
 };

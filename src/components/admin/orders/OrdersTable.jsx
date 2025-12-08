@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X, Package, DollarSign, Clock, TrendingUp, ChevronLeft, ChevronRight, Filter, Eye, Printer, Trash2 } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
-import { getAdminOrders } from '../../../services/adminOrderService';
+import { getAdminOrders, getAdminOrderStats } from '../../../services/adminOrderService';
 import './OrdersTable.css';
 
 const OrdersTable = () => {
@@ -18,11 +18,36 @@ const OrdersTable = () => {
     size: 10,
     number: 0
   });
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    totalRevenue: 0
+  });
 
   // Fetch orders from API
   useEffect(() => {
     fetchOrders();
   }, [currentPage]);
+
+  // Fetch stats on mount
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      console.log('📊 Fetching order stats...');
+      const response = await getAdminOrderStats();
+      
+      if (response.status === 200 && response.data && response.data.data) {
+        console.log('✅ Stats loaded:', response.data.data);
+        setStats(response.data.data);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching stats:', err);
+    }
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -54,14 +79,6 @@ const OrdersTable = () => {
       setLoading(false);
     }
   };
-
-  // Stats calculations based on API data
-  const totalOrders = pagination.totalElements;
-  const pendingOrders = orders.filter(order => order.status === 'PENDING').length;
-  const completedOrders = orders.filter(order => order.status === 'COMPLETED').length;
-  const totalRevenue = orders
-    .filter(order => order.status !== 'CANCELLED')
-    .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
   // Format currency VND
   const formatCurrency = (amount) => {
@@ -129,7 +146,7 @@ const OrdersTable = () => {
   const statsData = [
     { 
       title: 'Total Orders', 
-      value: totalOrders.toLocaleString(), 
+      value: stats.totalOrders.toLocaleString(), 
       icon: <Package size={24} />, 
       color: 'blue',
       description: 'All orders received',
@@ -138,7 +155,7 @@ const OrdersTable = () => {
     },
     { 
       title: 'Pending Orders', 
-      value: pendingOrders, 
+      value: stats.pendingOrders, 
       icon: <Clock size={24} />, 
       color: 'orange',
       description: 'Awaiting processing',
@@ -147,7 +164,7 @@ const OrdersTable = () => {
     },
     { 
       title: 'Completed Orders', 
-      value: completedOrders, 
+      value: stats.completedOrders, 
       icon: <TrendingUp size={24} />, 
       color: 'green',
       description: 'Successfully delivered',
@@ -156,7 +173,7 @@ const OrdersTable = () => {
     },
     { 
       title: 'Total Revenue', 
-      value: formatCurrency(totalRevenue), 
+      value: formatCurrency(stats.totalRevenue), 
       icon: <DollarSign size={24} />, 
       color: 'purple',
       description: 'Revenue generated',
@@ -210,22 +227,13 @@ const OrdersTable = () => {
           )}
         </div>
 
-        <div className="filter-container">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="status-filter"
-          >
-            <option value="">All Status</option>
-            <option value="PENDING">Pending</option>
-            <option value="PROCESSING">Processing</option>
-            <option value="SHIPPING">Shipping</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-        </div>
-
+      {/* Hiển thị lọc trạng thái đơn hàng */}
+      <div>
+        
       </div>
+
+    </div>
+
 
       {/* Orders Table */}
       <div className="table-container">
@@ -304,13 +312,13 @@ const OrdersTable = () => {
                         >
                           <Eye size={16} />
                         </button>
-                        <button 
+                        {/* <button 
                           className="action-btn delete-btn"
                           title="Delete Order"
                           onClick={() => handleDelete(order)}
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
