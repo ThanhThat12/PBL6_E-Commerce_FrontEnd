@@ -69,7 +69,7 @@ const AddAdminModal = ({ onClose, onSubmit }) => {
     // Phone validation
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^[\d\s\-\+\(\)]+$/.test(formData.phoneNumber)) {
+    } else if (!/^[\d\s\-+()]+$/.test(formData.phoneNumber)) {
       newErrors.phoneNumber = 'Invalid phone number format';
     }
 

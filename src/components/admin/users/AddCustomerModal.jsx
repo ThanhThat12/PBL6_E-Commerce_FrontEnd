@@ -67,7 +67,7 @@ const AddCustomerModal = ({ onClose, onSubmit }) => {
     // Phone validation
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else if (!/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
+    } else if (!/^[\d\s\-+()]+$/.test(formData.phone)) {
       newErrors.phone = 'Invalid phone number format';
     }
 

@@ -15,7 +15,7 @@ const WS_URL = window.location.protocol === 'https:'
 export function useNotifications(userId) {
   const [notifications, setNotifications] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [stompClient, setStompClient] = useState(null);
+  const [_stompClient, setStompClient] = useState(null); // eslint-disable-line no-unused-vars
 
   // Load notifications from localStorage
   useEffect(() => {

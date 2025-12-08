@@ -31,6 +31,9 @@ const ProductActions = ({ product, onView, onEdit, onDuplicate, onDelete, onUpda
       // case 'promote':
       //   console.log('Promote product:', product);
       //   break;
+      default:
+        console.log('Unknown action:', action);
+        break;
     }
   };
 

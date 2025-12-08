@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, X, SlidersHorizontal } from 'lucide-react';
+import { Search, X, SlidersHorizontal } from 'lucide-react';
 import './ProductFilters.css';
 
 const ProductFilters = ({ onSearch, onFilter, searchTerm, setSearchTerm }) => {

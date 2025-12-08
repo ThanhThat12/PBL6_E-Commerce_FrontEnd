@@ -52,12 +52,32 @@ const CartPage = () => {
   // Cleanup pending MoMo orders when user returns to cart
   usePendingOrderCleanup();
 
-  // Khôi phục selectedItems từ localStorage khi vào trang cart, không auto-select all
+  // Auto-select item when coming from "Mua ngay" button
   useEffect(() => {
     if (!hasInitialized && cartItems && cartItems.length > 0) {
       setHasInitialized(true);
+      
+      // Check if we need to auto-select an item (from "Mua ngay")
+      const autoSelectFlag = sessionStorage.getItem('autoSelectVariantId');
+      
+      if (autoSelectFlag) {
+        // Select the newest cart item (last item added - highest ID)
+        const newestItem = cartItems.reduce((max, item) => 
+          (item.id > max.id) ? item : max
+        , cartItems[0]);
+        
+        if (newestItem && !selectedItems.includes(newestItem.id)) {
+          useCartStore.getState().toggleItemSelection(newestItem.id);
+          // Clean up flag after selection
+          setTimeout(() => {
+            sessionStorage.removeItem('autoSelectVariantId');
+          }, 100);
+        } else {
+          sessionStorage.removeItem('autoSelectVariantId');
+        }
+      }
     }
-  }, [cartItems, hasInitialized]);
+  }, [cartItems, hasInitialized, selectedItems]);
 
   const allSelected = cartItems.length > 0 && selectedItems.length === cartItems.length;
 

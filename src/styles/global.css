@@ -9,3 +9,13 @@
 .animate-slide-in {
     animation: slide-in 0.3s ease-out;
 }
+
+/* Style đồng bộ cho tab label */
+.tab-label {
+  font-size: 16px;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

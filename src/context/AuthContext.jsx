@@ -17,8 +17,8 @@ import {
 import { handleAuthError, requiresReAuthentication } from '../utils/authErrorHandler';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
-import { onAuthChange, SYNC_EVENTS } from '../utils/storageSync';
-import { mapAuthoritiesToRole, getRoleName } from '../utils/jwtUtils';
+import { onAuthChange } from '../utils/storageSync';
+// mapAuthoritiesToRole and getRoleName moved to separate utility
 
 // Create Auth Context
 export const AuthContext = createContext(null);

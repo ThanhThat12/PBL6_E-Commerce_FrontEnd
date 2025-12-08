@@ -35,9 +35,14 @@ export const PRODUCT_PLACEHOLDER = generatePlaceholder('No Image', 400, 400);
 
 /**
  * Get product image with fallback
- * @param {Object} product - Product object
+ * Priority: mainImage > productMainImage > image > productImage > placeholder
+ * @param {Object} product - Product object (or item with product data)
  * @returns {string} Image URL or placeholder
  */
 export const getProductImage = (product) => {
-  return product?.mainImage || product?.image || PRODUCT_PLACEHOLDER;
+  return product?.mainImage 
+    || product?.productMainImage 
+    || product?.image 
+    || product?.productImage 
+    || PRODUCT_PLACEHOLDER;
 };

@@ -34,10 +34,14 @@ export const login = async ({ username, password, rememberMe = false }) => {
       
       // Check if user is ADMIN
       if (user && user.role === 'ADMIN') {
-        // Save to adminToken and adminUser for admin panel
+        // Save to both standard keys AND admin-specific keys
+        // Standard keys are needed for api.js to work
+        saveAuthData({ token, refreshToken, user }, rememberMe);
+        // Also save admin-specific keys for backwards compatibility
         localStorage.setItem('adminToken', token);
+        localStorage.setItem('adminRefreshToken', refreshToken);
         localStorage.setItem('adminUser', JSON.stringify(user));
-        console.log('[authService] ADMIN user logged in, saved to adminToken');
+        console.log('[authService] ADMIN user logged in, saved to both standard and admin keys');
       } else {
         // Save auth data normally for regular users
         saveAuthData({ token, refreshToken, user }, rememberMe);

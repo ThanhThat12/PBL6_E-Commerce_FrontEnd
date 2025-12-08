@@ -35,9 +35,11 @@ const ProductImageManagement = () => {
   const [images, setImages] = useState(null); // ProductImagesResponse
   
   // Operation tracking
-  const [pendingOperations, setPendingOperations] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [_pendingOperations, _setPendingOperations] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [hasUnsavedChanges, _setHasUnsavedChanges] = useState(false);
 
   // Error handling
   const [errors, setErrors] = useState([]);
@@ -94,8 +96,7 @@ const ProductImageManagement = () => {
       setUploading(true);
       const response = await ImageUploadService.uploadProductMain(
         productId,
-        file,
-        (progress) => console.log(`Main image upload: ${progress}%`)
+        file
       );
 
       if (response?.success) {
@@ -103,13 +104,12 @@ const ProductImageManagement = () => {
         await fetchProductImages(); // Refresh images
       }
     } catch (error) {
-      console.error('Main image upload error:', error);
       message.error(error.message || 'Lỗi khi tải ảnh chính');
       setErrors((prev) => [...prev, { type: 'main', message: error.message }]);
     } finally {
       setUploading(false);
     }
-  }, [productId]);
+  }, [productId, fetchProductImages]);
 
   /**
    * Handle main image deletion
@@ -124,12 +124,11 @@ const ProductImageManagement = () => {
         await fetchProductImages();
       }
     } catch (error) {
-      console.error('Main image delete error:', error);
       message.error(error.message || 'Lỗi khi xóa ảnh chính');
     } finally {
       setUploading(false);
     }
-  }, [productId]);
+  }, [productId, fetchProductImages]);
 
   /**
    * Handle gallery images upload (batch)
@@ -139,8 +138,7 @@ const ProductImageManagement = () => {
       setUploading(true);
       const response = await ImageUploadService.uploadProductGallery(
         productId,
-        files,
-        (progress) => console.log(`Gallery upload: ${progress}%`)
+        files
       );
 
       if (response?.success) {
@@ -148,13 +146,12 @@ const ProductImageManagement = () => {
         await fetchProductImages();
       }
     } catch (error) {
-      console.error('Gallery upload error:', error);
       message.error(error.message || 'Lỗi khi tải ảnh gallery');
       setErrors((prev) => [...prev, { type: 'gallery', message: error.message }]);
     } finally {
       setUploading(false);
     }
-  }, [productId]);
+  }, [productId, fetchProductImages]);
 
   /**
    * Handle gallery image deletion
@@ -169,12 +166,11 @@ const ProductImageManagement = () => {
         await fetchProductImages();
       }
     } catch (error) {
-      console.error('Gallery delete error:', error);
       message.error(error.message || 'Lỗi khi xóa ảnh gallery');
     } finally {
       setUploading(false);
     }
-  }, [productId]);
+  }, [productId, fetchProductImages]);
 
   /**
    * Handle gallery images reordering
@@ -194,7 +190,7 @@ const ProductImageManagement = () => {
     } finally {
       setUploading(false);
     }
-  }, [productId]);
+  }, [productId, fetchProductImages]);
 
   /**
    * Handle variant image upload (single)
@@ -205,8 +201,7 @@ const ProductImageManagement = () => {
       const response = await ImageUploadService.uploadVariantImage(
         productId,
         file,
-        attributeValue,
-        (progress) => console.log(`Variant ${attributeValue} upload: ${progress}%`)
+        attributeValue
       );
 
       if (response?.success) {
@@ -214,13 +209,12 @@ const ProductImageManagement = () => {
         await fetchProductImages();
       }
     } catch (error) {
-      console.error('Variant upload error:', error);
       message.error(error.message || `Lỗi khi tải ảnh biến thể "${attributeValue}"`);
       setErrors((prev) => [...prev, { type: 'variant', attributeValue, message: error.message }]);
     } finally {
       setUploading(false);
     }
-  }, [productId]);
+  }, [productId, fetchProductImages]);
 
   /**
    * Handle variant image deletion
@@ -235,12 +229,11 @@ const ProductImageManagement = () => {
         await fetchProductImages();
       }
     } catch (error) {
-      console.error('Variant delete error:', error);
       message.error(error.message || `Lỗi khi xóa ảnh biến thể "${attributeValue}"`);
     } finally {
       setUploading(false);
     }
-  }, [productId]);
+  }, [productId, fetchProductImages]);
 
   /**
    * Navigate back to product list

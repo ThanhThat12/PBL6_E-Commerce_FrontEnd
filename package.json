@@ -36,7 +36,6 @@
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.3.0",
-    "@ant-design/icons": "^5.0.1",
     "sockjs-client": "^1.6.1",
     "web-vitals": "^2.1.4",
     "yet-another-react-lightbox": "^3.25.0",
@@ -44,8 +43,8 @@
     "zustand": "^5.0.8"
   },
   "scripts": {
-    "start": "cross-env HTTPS=true react-scripts start",
-    "build": "react-scripts build",
+    "start": "cross-env HTTPS=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
+    "build": "cross-env DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

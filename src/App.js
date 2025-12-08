@@ -22,6 +22,9 @@ import PaymentResultPage from './pages/order/PaymentResultPage';
 import ProductListPage from './pages/products/ProductListPage';
 import ProductDetailPage from './pages/products/ProductDetailPage';
 
+// Shop Pages
+import ShopDetailPage from './pages/shops/ShopDetailPage';
+
 // Cart Page
 import CartPage from './pages/cart/CartPage';
 
@@ -33,6 +36,8 @@ import ItemReturnPage from './pages/order/ItemReturnPage';
 import ProfilePage from './pages/user/ProfilePage';
 import AddressManagementPage from './pages/user/AddressManagementPage';
 import ChangePasswordPage from './pages/user/ChangePasswordPage';
+import SellerRegistrationPage from './pages/user/SellerRegistrationPage';
+import RegistrationStatusPage from './pages/user/RegistrationStatusPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -54,6 +59,7 @@ import Admins from "./pages/admin/Users/Admins";
 import SettingsPage from "./pages/admin/Settings/SettingsPage";
 import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
 import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
+import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
 function App() {
   return (
@@ -72,6 +78,9 @@ function App() {
               {/* Product Routes (Public) */}
               <Route path="/products" element={<ProductListPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
+              
+              {/* Shop Routes (Public) */}
+              <Route path="/shops/:shopId" element={<ShopDetailPage />} />
               
               
               {/* Protected Routes */}
@@ -174,9 +183,29 @@ function App() {
             <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><Customers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><Sellers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
+            <Route path="/admin/seller-registrations" element={<ProtectedRouteAdmin><SellerRegistrationsPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
+
+                        {/* ================= SELLER REGISTRATION ROUTES ================= */}
+            <Route 
+              path="/seller/register" 
+              element={
+                <ProtectedRoute>
+                  <SellerRegistrationPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/registration-status" 
+              element={
+                <ProtectedRoute>
+                  <RegistrationStatusPage />
+                </ProtectedRoute>
+              } 
+            />
+            {/* ============================================================= */}
 
             {/* ================= SELLER ROUTES ================= */}
             <Route 
