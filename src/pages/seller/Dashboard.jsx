@@ -28,9 +28,10 @@ const Dashboard = () => {
       setLoading(true);
       
       // Fetch all data in parallel
+      const currentYear = new Date().getFullYear();
       const [statsData, revenueData, ordersData] = await Promise.all([
         getDashboardStats(),
-        getRevenueStats('month'),
+        getRevenueStats(currentYear), // Use current year instead of 'month'
         getRecentOrders(5),
       ]);
 

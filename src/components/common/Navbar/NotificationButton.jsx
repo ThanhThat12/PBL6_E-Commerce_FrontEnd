@@ -33,6 +33,8 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
 
   // Format time ago
   const timeAgo = (timestamp) => {
+    if (!timestamp) return 'Vừa xong'; // Handle undefined/null timestamp
+    
     const now = Date.now();
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60000);

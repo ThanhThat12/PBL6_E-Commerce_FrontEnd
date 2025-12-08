@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket HTTPS Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+  </head>
+  <body>
+    <h1>WebSocket HTTPS Test</h1>
+
+    <div>
+      <h3>Connection Status:</h3>
+      <div id="status">🔴 Disconnected</div>
+    </div>
+
+    <div>
+      <h3>Test Notification:</h3>
+      <input type="number" id="userId" placeholder="User ID" value="1" />
+      <button onclick="testNotification()">Send Test Notification</button>
+    </div>
+
+    <div>
+      <h3>Messages:</h3>
+      <div
+        id="messages"
+        style="
+          height: 300px;
+          overflow-y: scroll;
+          border: 1px solid #ccc;
+          padding: 10px;
+        "
+      ></div>
+    </div>
+
+    <script>
+      let stompClient = null;
+
+      function connect() {
+        console.log("🔌 Connecting to WebSocket...");
+        const WS_URL = "https://localhost:8081/ws";
+
+        const socket = new SockJS(WS_URL);
+        stompClient = Stomp.over(socket);
+
+        stompClient.debug = (str) => {
+          console.log("STOMP:", str);
+          addMessage("DEBUG: " + str);
+        };
+
+        stompClient.connect(
+          {},
+          function (frame) {
+            console.log("✅ Connected: " + frame);
+            document.getElementById("status").innerHTML = "🟢 Connected";
+            addMessage("✅ Connected to WebSocket");
+
+            // Subscribe to test channel
+            const userId = document.getElementById("userId").value;
+            const channel = "/topic/orderws/" + userId;
+
+            stompClient.subscribe(channel, function (message) {
+              console.log("📬 Received: ", message.body);
+              const notification = JSON.parse(message.body);
+              addMessage(
+                "📬 Notification: " +
+                  notification.message +
+                  " (Type: " +
+                  notification.type +
+                  ")"
+              );
+            });
+
+            addMessage("📡 Subscribed to: " + channel);
+          },
+          function (error) {
+            console.error("❌ Connection error:", error);
+            document.getElementById("status").innerHTML = "🔴 Connection Error";
+            addMessage("❌ Connection error: " + error);
+
+            // Retry after 5 seconds
+            setTimeout(connect, 5000);
+          }
+        );
+      }
+
+      function testNotification() {
+        const userId = document.getElementById("userId").value;
+
+        fetch(`https://localhost:8081/api/test/notification/${userId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("✅ Test API response:", data);
+            addMessage("✅ Test notification sent via API");
+          })
+          .catch((error) => {
+            console.error("❌ Test API error:", error);
+            addMessage("❌ Test API error: " + error.message);
+          });
+      }
+
+      function addMessage(message) {
+        const messagesDiv = document.getElementById("messages");
+        const messageDiv = document.createElement("div");
+        messageDiv.textContent =
+          new Date().toLocaleTimeString() + " - " + message;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Auto connect when page loads
+      window.onload = function () {
+        addMessage("🌐 Starting WebSocket test...");
+        connect();
+      };
+    </script>
+  </body>
+</html>

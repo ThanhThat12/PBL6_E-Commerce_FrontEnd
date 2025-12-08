@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotificationContext } from "../../context/NotificationContext";
 import { getCategories } from "../../services/homeService";
 import { 
   Bars3Icon,
@@ -46,7 +46,7 @@ export default function NavbarNew({ isHomePage = false }) {
     notifications, 
     markAsRead, 
     clearAll,
-    unreadCount 
+    unreadCount: _unreadCount // eslint-disable-line no-unused-vars
   } = useNotifications(user?.id); // Sử dụng NotificationContext
 
   // Scroll effect
@@ -190,10 +190,11 @@ export default function NavbarNew({ isHomePage = false }) {
               {/* User Menu */}
               <UserMenu user={user} onLogout={handleLogout} />
                             
-              {/* Seller Channel - Only show for SELLER role */}
+              {/* Seller Channel - Show for logged-in users */}
+              {/* SELLER goes to dashboard, BUYER goes to registration */}
               {user && (
                 <Link
-                  to="/seller/dashboard"
+                  to={user?.roleId === 1 || user?.role === 'SELLER' ? "/seller/dashboard" : "/seller/register"}
                   className="
                     hidden
                     md:flex
@@ -211,12 +212,14 @@ export default function NavbarNew({ isHomePage = false }) {
                     group
                     no-underline
                   "
-                  aria-label="Kênh người bán"
+                  aria-label={user?.roleId === 1 || user?.role === 'SELLER' ? "Kênh người bán" : "Đăng ký bán hàng"}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1.5 9h-11L5 11z" />
                   </svg>
-                  <span className="hidden lg:inline">Kênh người bán</span>
+                  <span className="hidden lg:inline">
+                    {user?.roleId === 1 || user?.role === 'SELLER' ? "Kênh người bán" : "Bán hàng cùng SportZone"}
+                  </span>
                 </Link>
               )}
               

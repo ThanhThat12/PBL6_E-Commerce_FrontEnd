@@ -7,10 +7,13 @@ import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 import ProductCard from '../../components/product/ProductCard';
 import ProductFilter from '../../components/product/ProductFilter';
+import NoResultsFound from '../../components/product/NoResultsFound';
 import Loading from '../../components/common/Loading';
 import Button from '../../components/common/Button';
-import { getProducts, searchProducts, getProductsByCategory } from '../../services/productService';
+import { getProducts, searchProducts } from '../../services/productService';
 import { getCategories } from '../../services/homeService';
+import { getFacetedFilters, trackSearch, trackSearchClick, searchShops } from '../../services/searchService';
+import ShopCard from '../../components/shop/ShopCard';
 import useCart from '../../hooks/useCart';
 
 /**
@@ -19,7 +22,7 @@ import useCart from '../../hooks/useCart';
  */
 const ProductListPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const _navigate = useNavigate(); // eslint-disable-line no-unused-vars
   const { addToCart: addItemToCart } = useCart();
 
   const [products, setProducts] = useState([]);
@@ -31,7 +34,7 @@ const ProductListPage = () => {
     priceMax: searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')) : undefined,
     minRating: searchParams.get('minRating') ? parseFloat(searchParams.get('minRating')) : undefined,
   });
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('keyword') || '');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
   const [sortBy, setSortBy] = useState('newest'); // name, price-asc, price-desc, newest
 
@@ -39,7 +42,15 @@ const ProductListPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, _setPageSize] = useState(12); // eslint-disable-line no-unused-vars
+
+  // Faceted filters
+  const [facets, setFacets] = useState(null);
+  const [facetsLoading, setFacetsLoading] = useState(false);
+
+  // Shop search results
+  const [matchingShops, setMatchingShops] = useState([]);
+  const [shopsLoading, setShopsLoading] = useState(false);
 
   // Load categories
   useEffect(() => {
@@ -54,6 +65,51 @@ const ProductListPage = () => {
     };
     loadCategories();
   }, []);
+
+  // Load faceted filters
+  useEffect(() => {
+    const loadFacets = async () => {
+      setFacetsLoading(true);
+      try {
+        const facetData = await getFacetedFilters({
+          keyword: searchQuery,
+          categoryId: filters.categoryId,
+          minPrice: filters.priceMin,
+          maxPrice: filters.priceMax,
+          minRating: filters.minRating
+        });
+        setFacets(facetData);
+      } catch (error) {
+        console.error('Failed to load facets:', error);
+      } finally {
+        setFacetsLoading(false);
+      }
+    };
+    loadFacets();
+  }, [searchQuery, filters.categoryId, filters.priceMin, filters.priceMax, filters.minRating]);
+
+  // Load matching shops when search query changes
+  useEffect(() => {
+    const loadMatchingShops = async () => {
+      if (!searchQuery || searchQuery.trim().length < 2) {
+        setMatchingShops([]);
+        return;
+      }
+      
+      setShopsLoading(true);
+      try {
+        const shops = await searchShops(searchQuery, 5);
+        setMatchingShops(shops);
+      } catch (error) {
+        console.error('Failed to load matching shops:', error);
+        setMatchingShops([]);
+      } finally {
+        setShopsLoading(false);
+      }
+    };
+    
+    loadMatchingShops();
+  }, [searchQuery]);
 
   // Load products
   useEffect(() => {
@@ -174,7 +230,12 @@ const ProductListPage = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(0);
-    setSearchParams(searchQuery ? { search: searchQuery } : {});
+    setSearchParams(searchQuery ? { keyword: searchQuery } : {});
+    
+    // Track search
+    if (searchQuery.trim()) {
+      trackSearch(searchQuery.trim(), 0);
+    }
   };
 
   const handleFilterChange = (newFilters) => {
@@ -187,7 +248,7 @@ const ProductListPage = () => {
     if (newFilters.priceMin) params.minPrice = newFilters.priceMin;
     if (newFilters.priceMax) params.maxPrice = newFilters.priceMax;
     if (newFilters.minRating) params.minRating = newFilters.minRating;
-    if (searchQuery) params.search = searchQuery;
+    if (searchQuery) params.keyword = searchQuery;
     setSearchParams(params);
   };
 
@@ -205,6 +266,11 @@ const ProductListPage = () => {
 
   const handleAddToCart = async (product, variant) => {
     try {
+      // Track click if from search
+      if (searchQuery) {
+        trackSearchClick(searchQuery, product.id);
+      }
+      
       // Check if product is active
       if (!product.isActive) {
         toast.error('Sản phẩm này hiện không khả dụng');
@@ -239,7 +305,7 @@ const ProductListPage = () => {
     }
   };
 
-  const handleWishlist = (product) => {
+  const handleWishlist = (_product) => {
     toast.info('Tính năng yêu thích đang phát triển!');
   };
 
@@ -250,86 +316,108 @@ const ProductListPage = () => {
 
       {/* Main Content */}
       <main className="flex-1">
-        {/* Header */}
-        <div className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-gray-900">Sản phẩm</h1>
-            <p className="text-gray-600 mt-1">
-              Khám phá bộ sưu tập phụ kiện thể thao của chúng tôi
-            </p>
+        {/* Hero Header */}
+        <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-primary-700 relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
+          </div>
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                🎾 Sản Phẩm Thể Thao
+              </h1>
+              <p className="text-primary-100 text-lg max-w-2xl mx-auto mb-8">
+                Khám phá bộ sưu tập phụ kiện thể thao chất lượng cao của chúng tôi
+              </p>
+              
+              {/* Enhanced Search Bar */}
+              <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-6 h-6" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Tìm kiếm sản phẩm..."
+                      className="w-full pl-14 pr-4 py-4 text-lg border-0 rounded-xl shadow-lg focus:ring-4 focus:ring-primary-300 transition-all"
+                    />
+                  </div>
+                  <Button type="submit" variant="secondary" className="px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
+                    Tìm kiếm
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mb-8">
-            <div className="flex gap-3">
-              <div className="flex-1 relative">
-                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <Button type="submit" variant="primary">
-                Search
-              </Button>
-            </div>
-          </form>
-
           <div className="flex gap-8">
             {/* Sidebar Filters */}
-            <div className="w-64 flex-shrink-0 hidden lg:block">
-              <ProductFilter
-                categories={categories}
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearFilters}
-              />
+            <div className="w-72 flex-shrink-0 hidden lg:block">
+              <div className="sticky top-24">
+                <ProductFilter
+                  categories={categories}
+                  filters={filters}
+                  facets={facets}
+                  facetsLoading={facetsLoading}
+                  onFilterChange={handleFilterChange}
+                  onClearFilters={handleClearFilters}
+                />
+              </div>
             </div>
 
             {/* Main Content */}
             <div className="flex-1">
               {/* Toolbar */}
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-                <div className="flex items-center justify-between">
+              <div className="bg-white rounded-2xl shadow-lg p-4 mb-6 border border-gray-100">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4">
-                    <p className="text-sm text-gray-600">
-                      {totalElements > 0 ? (
-                        <>Hiển thị {products.length} trong số {totalElements} sản phẩm</>
-                      ) : (
-                        <>Không tìm thấy sản phẩm nào</>
-                      )}
-                    </p>
+                    <div className="flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-xl">
+                      <span className="text-primary-600 font-bold text-lg">{totalElements}</span>
+                      <span className="text-gray-600 text-sm">sản phẩm</span>
+                    </div>
+                    {(filters.categoryId || filters.priceMin || filters.priceMax || searchQuery) && (
+                      <button
+                        onClick={handleClearFilters}
+                        className="text-sm text-red-500 hover:text-red-600 font-medium flex items-center gap-1 hover:underline"
+                      >
+                        ✕ Xóa bộ lọc
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-4">
                     {/* Sort */}
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
-                    >
-                      <option value="newest">Mới nhất</option>
-                      <option value="name">Tên A-Z</option>
-                      <option value="price-asc">Giá: Thấp đến cao</option>
-                      <option value="price-desc">Giá: Cao đến thấp</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500 font-medium">Sắp xếp:</span>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                      >
+                        <option value="newest">Mới nhất</option>
+                        <option value="name">Tên A-Z</option>
+                        <option value="price-asc">Giá: Thấp → Cao</option>
+                        <option value="price-desc">Giá: Cao → Thấp</option>
+                      </select>
+                    </div>
 
                     {/* View Mode */}
-                    <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
                       <button
                         onClick={() => setViewMode('grid')}
-                        className={`p-2 ${viewMode === 'grid' ? 'bg-primary-100 text-primary-600' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                        className={`p-2.5 rounded-lg transition-all duration-300 ${viewMode === 'grid' ? 'bg-white text-primary-600 shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
                       >
                         <FiGrid className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => setViewMode('list')}
-                        className={`p-2 border-l border-gray-300 ${viewMode === 'list' ? 'bg-primary-100 text-primary-600' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                        className={`p-2.5 rounded-lg transition-all duration-300 ${viewMode === 'list' ? 'bg-white text-primary-600 shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
                       >
                         <FiList className="w-5 h-5" />
                       </button>
@@ -338,21 +426,44 @@ const ProductListPage = () => {
                 </div>
               </div>
 
+              {/* Matching Shops Section */}
+              {searchQuery && matchingShops.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <span className="w-1 h-6 bg-primary-500 rounded-full"></span>
+                      Shop liên quan ({matchingShops.length})
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {shopsLoading ? (
+                      <div className="col-span-2 flex items-center justify-center py-8">
+                        <Loading size="sm" text="Đang tải shop..." />
+                      </div>
+                    ) : (
+                      matchingShops.map((shop) => (
+                        <ShopCard key={shop.id} shop={shop} />
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Products Grid */}
               {loading ? (
                 <div className="flex items-center justify-center py-20">
-                  <Loading size="lg" text="Đang tải sản phẩm..." />
+                  <div className="text-center">
+                    <Loading size="lg" text="Đang tải sản phẩm..." />
+                    <p className="mt-4 text-gray-500">Vui lòng chờ trong giây lát...</p>
+                  </div>
                 </div>
               ) : products.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-lg">
-                  <p className="text-gray-600 text-lg mb-2">Không tìm thấy sản phẩm</p>
-                  <p className="text-gray-500 text-sm mb-4">Thử điều chỉnh bộ lọc hoặc tìm kiếm khác</p>
-                  <Button onClick={handleClearFilters} variant="outline" className="mt-4">
-                    Xóa bộ lọc
-                  </Button>
-                </div>
+                <NoResultsFound 
+                  searchQuery={searchQuery}
+                  onClearFilters={handleClearFilters}
+                />
               ) : (
-                <div className={`grid ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'} gap-6`}>
+                <div className={`grid ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'} gap-6`}>
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}
@@ -366,12 +477,15 @@ const ProductListPage = () => {
 
               {/* Pagination */}
               {totalPages >= 1 && products.length > 0 && (
-                <div className="mt-8">
+                <div className="mt-10">
                   {/* Page Info */}
-                  <div className="text-center mb-4">
-                    <p className="text-sm text-gray-600">
-                      Trang <span className="font-semibold text-gray-900">{currentPage + 1}</span> / <span className="font-semibold text-gray-900">{totalPages}</span>
-                    </p>
+                  <div className="text-center mb-6">
+                    <span className="inline-flex items-center gap-2 bg-white px-6 py-3 rounded-full shadow-md border border-gray-100">
+                      <span className="text-gray-500">Trang</span>
+                      <span className="font-bold text-primary-600 text-lg">{currentPage + 1}</span>
+                      <span className="text-gray-500">/</span>
+                      <span className="font-bold text-gray-700 text-lg">{totalPages}</span>
+                    </span>
                   </div>
 
                   {/* Pagination Controls */}
@@ -381,9 +495,9 @@ const ProductListPage = () => {
                       onClick={() => setCurrentPage(0)}
                       disabled={currentPage === 0}
                       variant="outline"
-                      className="hidden sm:inline-flex"
+                      className="hidden sm:inline-flex px-4 py-2.5 rounded-xl font-medium"
                     >
-                      Đầu
+                      « Đầu
                     </Button>
 
                     {/* Previous Page Button */}
@@ -391,13 +505,14 @@ const ProductListPage = () => {
                       onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
                       disabled={currentPage === 0}
                       variant="outline"
+                      className="px-4 py-2.5 rounded-xl font-medium"
                     >
-                      <span className="hidden sm:inline">Trang trước</span>
+                      <span className="hidden sm:inline">← Trước</span>
                       <span className="sm:hidden">‹</span>
                     </Button>
 
                     {/* Page Numbers */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
                       {(() => {
                         const pages = [];
                         const maxVisiblePages = 7;
@@ -409,9 +524,9 @@ const ProductListPage = () => {
                               <button
                                 key={i}
                                 onClick={() => setCurrentPage(i)}
-                                className={`w-10 h-10 rounded-lg transition-all font-medium ${currentPage === i
-                                  ? 'bg-primary-600 text-white shadow-md scale-110'
-                                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-primary-300'
+                                className={`w-11 h-11 rounded-xl transition-all duration-300 font-semibold ${currentPage === i
+                                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg scale-110'
+                                  : 'bg-white text-gray-700 hover:bg-primary-50 hover:text-primary-600 border border-gray-200 hover:border-primary-300'
                                   }`}
                               >
                                 {i + 1}
@@ -424,9 +539,9 @@ const ProductListPage = () => {
                             <button
                               key={0}
                               onClick={() => setCurrentPage(0)}
-                              className={`w-10 h-10 rounded-lg transition-all font-medium ${currentPage === 0
-                                ? 'bg-primary-600 text-white shadow-md scale-110'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-primary-300'
+                              className={`w-11 h-11 rounded-xl transition-all duration-300 font-semibold ${currentPage === 0
+                                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg scale-110'
+                                : 'bg-white text-gray-700 hover:bg-primary-50 hover:text-primary-600 border border-gray-200 hover:border-primary-300'
                                 }`}
                             >
                               1
@@ -436,8 +551,8 @@ const ProductListPage = () => {
                           // Show ellipsis or page 2
                           if (currentPage > 3) {
                             pages.push(
-                              <span key="ellipsis-start" className="w-10 h-10 flex items-center justify-center text-gray-400">
-                                ...
+                              <span key="ellipsis-start" className="w-11 h-11 flex items-center justify-center text-gray-400 font-bold">
+                                •••
                               </span>
                             );
                           } else if (totalPages > 1) {
@@ -445,9 +560,9 @@ const ProductListPage = () => {
                               <button
                                 key={1}
                                 onClick={() => setCurrentPage(1)}
-                                className={`w-10 h-10 rounded-lg transition-all font-medium ${currentPage === 1
-                                  ? 'bg-primary-600 text-white shadow-md scale-110'
-                                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-primary-300'
+                                className={`w-11 h-11 rounded-xl transition-all duration-300 font-semibold ${currentPage === 1
+                                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg scale-110'
+                                  : 'bg-white text-gray-700 hover:bg-primary-50 hover:text-primary-600 border border-gray-200 hover:border-primary-300'
                                   }`}
                               >
                                 2
@@ -465,9 +580,9 @@ const ProductListPage = () => {
                                 <button
                                   key={i}
                                   onClick={() => setCurrentPage(i)}
-                                  className={`w-10 h-10 rounded-lg transition-all font-medium ${currentPage === i
-                                    ? 'bg-primary-600 text-white shadow-md scale-110'
-                                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-primary-300'
+                                  className={`w-11 h-11 rounded-xl transition-all duration-300 font-semibold ${currentPage === i
+                                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg scale-110'
+                                    : 'bg-white text-gray-700 hover:bg-primary-50 hover:text-primary-600 border border-gray-200 hover:border-primary-300'
                                     }`}
                                 >
                                   {i + 1}
@@ -479,8 +594,8 @@ const ProductListPage = () => {
                           // Show ellipsis or second to last page
                           if (currentPage < totalPages - 4) {
                             pages.push(
-                              <span key="ellipsis-end" className="w-10 h-10 flex items-center justify-center text-gray-400">
-                                ...
+                              <span key="ellipsis-end" className="w-11 h-11 flex items-center justify-center text-gray-400 font-bold">
+                                •••
                               </span>
                             );
                           } else if (totalPages > 2 && endPage < totalPages - 2) {
@@ -488,9 +603,9 @@ const ProductListPage = () => {
                               <button
                                 key={totalPages - 2}
                                 onClick={() => setCurrentPage(totalPages - 2)}
-                                className={`w-10 h-10 rounded-lg transition-all font-medium ${currentPage === totalPages - 2
-                                  ? 'bg-primary-600 text-white shadow-md scale-110'
-                                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-primary-300'
+                                className={`w-11 h-11 rounded-xl transition-all duration-300 font-semibold ${currentPage === totalPages - 2
+                                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg scale-110'
+                                  : 'bg-white text-gray-700 hover:bg-primary-50 hover:text-primary-600 border border-gray-200 hover:border-primary-300'
                                   }`}
                               >
                                 {totalPages - 1}
@@ -503,9 +618,9 @@ const ProductListPage = () => {
                             <button
                               key={totalPages - 1}
                               onClick={() => setCurrentPage(totalPages - 1)}
-                              className={`w-10 h-10 rounded-lg transition-all font-medium ${currentPage === totalPages - 1
-                                ? 'bg-primary-600 text-white shadow-md scale-110'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-primary-300'
+                              className={`w-11 h-11 rounded-xl transition-all duration-300 font-semibold ${currentPage === totalPages - 1
+                                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg scale-110'
+                                : 'bg-white text-gray-700 hover:bg-primary-50 hover:text-primary-600 border border-gray-200 hover:border-primary-300'
                                 }`}
                             >
                               {totalPages}
@@ -522,8 +637,9 @@ const ProductListPage = () => {
                       onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
                       disabled={currentPage === totalPages - 1}
                       variant="outline"
+                      className="px-4 py-2.5 rounded-xl font-medium"
                     >
-                      <span className="hidden sm:inline">Trang sau</span>
+                      <span className="hidden sm:inline">Sau →</span>
                       <span className="sm:hidden">›</span>
                     </Button>
 
@@ -532,9 +648,9 @@ const ProductListPage = () => {
                       onClick={() => setCurrentPage(totalPages - 1)}
                       disabled={currentPage === totalPages - 1}
                       variant="outline"
-                      className="hidden sm:inline-flex"
+                      className="hidden sm:inline-flex px-4 py-2.5 rounded-xl font-medium"
                     >
-                      Cuối
+                      Cuối »
                     </Button>
                   </div>
                 </div>

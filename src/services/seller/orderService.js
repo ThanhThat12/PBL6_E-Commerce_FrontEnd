@@ -370,3 +370,36 @@ export const cancelOrder = async (orderId) => {
     throw error;
   }
 };
+
+// Refund management APIs
+export const getRefundRequests = async () => {
+  try {
+    const response = await api.get('/refund/requests');
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error fetching refund requests:', error);
+    throw error;
+  }
+};
+
+export const reviewRefund = async (refundId, approve, rejectReason = '') => {
+  try {
+    const response = await api.post(`/refund/review/${refundId}`, null, {
+      params: { approve, rejectReason }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error reviewing refund:', error);
+    throw error;
+  }
+};
+
+export const confirmReceipt = async (refundId) => {
+  try {
+    const response = await api.post(`/refund/confirm-receipt/${refundId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error confirming receipt:', error);
+    throw error;
+  }
+};

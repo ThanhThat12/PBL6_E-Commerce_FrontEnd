@@ -30,8 +30,8 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
     const fetchVouchers = async () => {
       console.log('🎫 VoucherSelector - Checking params:', { shopId, cartItems, subtotal });
       
-      if (!shopId || !cartItems || cartItems.length === 0) {
-        console.log('⚠️ VoucherSelector - Missing params, skipping fetch');
+      if (!shopId || !cartItems || cartItems.length === 0 || loading) {
+        console.log('⚠️ VoucherSelector - Missing params or already loading, skipping fetch');
         return;
       }
       
@@ -72,7 +72,8 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
     };
 
     fetchVouchers();
-  }, [shopId, cartItems, subtotal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopId, cartItems?.length, subtotal]); // Only re-run when shopId, number of items, or subtotal changes
 
   // Kiểm tra voucher có hợp lệ không
   const validateVoucher = (voucher) => {

@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
-import { API_ENDPOINTS, STORAGE_KEYS } from '../../utils/constants';
+import { STORAGE_KEYS } from '../../utils/constants';
 import { getProductById } from '../../services/productService';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 import PaymentMethodSelector from '../../components/order/PaymentMethodSelector';
 import ShippingAddressForm from '../../components/order/ShippingAddressForm';
 import VoucherSelector from '../../components/order/VoucherSelector';
-import CartItemCard from '../../components/cart/CartItemCard';
+// CartItemCard removed - using inline display
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import { removeItem } from '../../utils/storage';
@@ -21,21 +21,25 @@ import useOrderNotification from '../../hooks/useOrderNotification';
  * Complete payment page with shipping address, payment method selection, and order summary
  */
 const PaymentPage = () => {
+  console.log('🔄 PaymentPage Render');
   const navigate = useNavigate();
-  const { cartItems, loading: cartLoading, fetchCart } = useCart();
+  const { cartItems: _cartItems, loading: cartLoading, fetchCart } = useCart(); // eslint-disable-line no-unused-vars
 
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [shippingAddress, setShippingAddress] = useState(null);
   const [orderNotes, setOrderNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(false);
   const [weightGrams] = useState(500);
   const [ghnServices, setGhnServices] = useState({}); // Available services by shop
   const [selectedServices, setSelectedServices] = useState({}); // Selected service for each shop
   const [shopShippingFees, setShopShippingFees] = useState({}); // Shipping fees by shop
-  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [_appliedVoucher, setAppliedVoucher] = useState(null); // eslint-disable-line no-unused-vars
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [detectedShopId, setDetectedShopId] = useState(null);
+  const [fetchedAddressId, setFetchedAddressId] = useState(null); // Track which addressId was used for fetching
+  const [walletBalance, setWalletBalance] = useState(0); // Wallet balance for SportyPay
 
   // Get shopId from checkoutItems (assuming all items are from the same shop)
   const shopId = useMemo(() => {
@@ -54,12 +58,6 @@ const PaymentPage = () => {
       firstItem?.sellerId ||
       null;
 
-    console.log('🏪 PaymentPage - shopId from checkoutItems:', {
-      firstItem,
-      shopId: id,
-      detectedShopId,
-      availableFields: Object.keys(firstItem || {})
-    });
     return id;
   }, [checkoutItems, detectedShopId]);
 
@@ -68,12 +66,11 @@ const PaymentPage = () => {
     try {
       const response = await getProductById(productId);
       const shopId = response?.data?.shopId || response?.shopId;
-      console.log('🏪 Fetched shopId from product API:', shopId);
       if (shopId) {
         setDetectedShopId(shopId);
       }
-    } catch (error) {
-      console.error('Error fetching shopId from product:', error);
+    } catch {
+      // Silently handle error
     }
   };
   // Removed stompClient state, handled by hook
@@ -101,9 +98,6 @@ const PaymentPage = () => {
     if (storedItems) {
       try {
         const items = JSON.parse(storedItems);
-        console.log('✅ Parsed checkout items:', items);
-        console.log('🔍 First item structure:', items[0]);
-        console.log('🔍 First item keys:', items[0] ? Object.keys(items[0]) : 'No items');
         setCheckoutItems(items);
 
         // If no shopId found in cart items, fetch from product API
@@ -113,17 +107,14 @@ const PaymentPage = () => {
           firstItem?.shop?.id;
 
         if (!hasShopId && firstItem?.productId) {
-          console.log('🔍 No shopId in cart item, fetching from product API...');
           fetchShopIdFromProduct(firstItem.productId);
         }
-      } catch (error) {
-        console.error('❌ Error parsing checkout items:', error);
+      } catch {
         toast.error('Lỗi tải thông tin đơn hàng');
         navigate('/cart');
       }
     } else {
       // If no selected items, redirect to cart
-      console.warn('No checkout items found in sessionStorage');
       toast.error('Vui lòng chọn sản phẩm để thanh toán');
       navigate('/cart');
     }
@@ -140,6 +131,41 @@ const PaymentPage = () => {
       });
     }
   }, [fetchCart]);
+
+  // Fetch wallet balance
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const response = await api.get('/wallet/balance');
+        console.log('💰 Full API response:', response);
+        console.log('💰 Response data:', response.data);
+        
+        if (response.data && response.data.data) {
+          // Structure: { status, data: { balance, userId, username } }
+          const balance = response.data.data.balance || 0;
+          console.log('💰 Extracted balance:', balance);
+          console.log('💰 Balance type:', typeof balance);
+          setWalletBalance(Number(balance));
+          console.log('💰 Wallet balance set to:', Number(balance));
+        } else if (response.data && typeof response.data.balance === 'number') {
+          // Alternative structure: { balance, userId, username }
+          const balance = response.data.balance || 0;
+          console.log('💰 Extracted balance (alt structure):', balance);
+          setWalletBalance(Number(balance));
+          console.log('💰 Wallet balance set to:', Number(balance));
+        } else {
+          console.warn('⚠️ Invalid response structure:', response.data);
+          setWalletBalance(0);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching wallet balance:', error);
+        // Don't show error toast, just log it
+        setWalletBalance(0);
+      }
+    };
+
+    fetchWalletBalance();
+  }, []);
 
   // Redirect if no checkout items
   useEffect(() => {
@@ -171,16 +197,22 @@ const PaymentPage = () => {
   }, [checkoutItems]);
 
   // Handle shipping address change
-  const handleAddressChange = (addressData) => {
+  const handleAddressChange = useCallback((addressData) => {
     setShippingAddress(addressData);
-  };
+  }, []); // No dependencies - just update state
 
   // Fetch GHN services when address changes
   useEffect(() => {
+    const addressId = shippingAddress?.addressId || shippingAddress?.id;
+    const hasRequiredData = shippingAddress && addressId && itemsByShop.length > 0;
+    
+    // Skip if already fetching or no required data
+    if (!hasRequiredData || loadingServices) return;
+    
     const loadServices = async () => {
-      const addressId = shippingAddress?.addressId || shippingAddress?.id;
       console.log('[GHN Services] shippingAddress:', shippingAddress);
       console.log('[GHN Services] extracted addressId:', addressId);
+      setLoadingServices(true);
       // GHN service fetch: run only when all required data present
       if (shippingAddress && addressId && itemsByShop.length > 0) {
         // Fetch GHN services for each shop
@@ -194,7 +226,6 @@ const PaymentPage = () => {
             };
             // silent request data for GHN
             const response = await api.post('/checkout/available-services', requestData);
-            console.log('[GHN] Raw response:', response.data);
 
             // handle GHN response - backend returns [{buyerAddress, totalWeight, services: [...], shopAddress}]
             let servicesArray = [];
@@ -213,8 +244,6 @@ const PaymentPage = () => {
               }
             }
 
-            console.log('[GHN] Extracted services array:', servicesArray);
-
             if (servicesArray.length > 0) {
               setGhnServices(prev => ({
                 ...prev,
@@ -223,18 +252,11 @@ const PaymentPage = () => {
               // Fetched GHN services
               if (!selectedServices[shop.shopId]) {
                 const firstService = servicesArray[0];
-                console.log('[GHN] Auto-selecting first service:', firstService);
                 // Auto-select first service
                 await handleServiceSelect(shop.shopId, firstService);
               }
             }
           } catch (error) {
-            console.error(`[GHN] ❌ Error fetching services for shop ${shop.shopId}:`, error);
-            if (error.response) {
-              console.error('[GHN] Error response:', error.response.data);
-            } else {
-              console.error('[GHN] Error message:', error.message);
-            }
             toast.error(`Không thể tải dịch vụ vận chuyển cho ${shop.shopName}`);
           }
         }
@@ -242,18 +264,16 @@ const PaymentPage = () => {
         // required conditions not met - nothing to fetch
       }
       // GHN service fetch finished
+      setLoadingServices(false);
     };
     loadServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shippingAddress, itemsByShop]);
+  }, [shippingAddress?.addressId, itemsByShop.length]); // Only re-run when addressId or number of shops changes
 
   // Handle service selection for a shop
   const handleServiceSelect = async (shopId, service) => {
-    console.log('[Service Select] shopId:', shopId, 'service:', service);
-
     // Validate service has required fields
     if (!service || !service.service_id || !service.service_type_id) {
-      console.error('[Service Select] Invalid service object:', service);
       toast.error('Dịch vụ vận chuyển không hợp lệ');
       return;
     }
@@ -306,24 +326,24 @@ const PaymentPage = () => {
   };
 
   // Handle voucher apply
-  const handleVoucherApply = (voucher) => {
+  const handleVoucherApply = useCallback((voucher) => {
     // Apply voucher without noisy logs
     setAppliedVoucher(voucher);
 
     if (voucher) {
       // Nếu là voucher miễn phí ship
       if (voucher.type === 'SHIPPING') {
-        setVoucherDiscount(Math.min(voucher.discount, shippingFee));
+        setVoucherDiscount(prev => Math.min(voucher.discount, shippingFee));
       } else {
         setVoucherDiscount(voucher.discount);
       }
     } else {
       setVoucherDiscount(0);
     }
-  };
+  }, [shippingFee]); // Depends on shippingFee for SHIPPING voucher calculation
 
   // Calculate totals - sử dụng useMemo để tự động tính lại khi checkoutItems thay đổi
-  const { subtotal, total, finalTotal } = useMemo(() => {
+  const { subtotal, total: _total, finalTotal } = useMemo(() => { // eslint-disable-line no-unused-vars
 
     if (!checkoutItems || checkoutItems.length === 0) {
       return { subtotal: 0, shipping: shippingFee, total: shippingFee, finalTotal: shippingFee - voucherDiscount };
@@ -349,7 +369,8 @@ const PaymentPage = () => {
   }, [checkoutItems, shippingFee, voucherDiscount]);
 
   // Prepare order items from selected checkout items
-  const prepareOrderItems = () => {
+  // eslint-disable-next-line no-unused-vars
+  const _prepareOrderItems = () => {
     if (!checkoutItems || checkoutItems.length === 0) return [];
 
     return checkoutItems.map(item => ({
@@ -367,7 +388,6 @@ const PaymentPage = () => {
         serviceTypeId: parseInt(serviceTypeId),
         cartItemIds: cartItemIds.map(id => parseInt(id))
       };
-      console.log('[Fee Calc] Payload:', payload);
       const response = await api.post('/checkout/calculate-fee', payload);
 
       // calculate fee response (store/handle errors as needed)
@@ -494,19 +514,11 @@ const PaymentPage = () => {
           ward: shippingAddress?.wardName || shippingAddress?.ward || ''
         };
 
-        // Log confirmData trước khi gửi lên backend
-        console.log('[ORDER PAYLOAD] confirmData:', confirmData);
-        // sending confirmData
-
         try {
           const response = await api.post('/checkout/confirm', confirmData);
 
-          // log response if needed
-
           if (response.data?.orderId) {
             const { orderId, totalAmount, status } = response.data;
-
-            // order created
 
             createdOrders.push({
               orderId,
@@ -516,12 +528,10 @@ const PaymentPage = () => {
               status
             });
           } else {
-            console.error(`❌ Failed to create order for ${shopName}:`, response);
             hasError = true;
             toast.error(`Lỗi đặt hàng cho ${shopName}: ${response?.message || 'Không xác định'}`);
           }
         } catch (error) {
-          console.error(`❌ Error creating order for ${shopName}:`, error);
           hasError = true;
 
           let errorMsg = error?.response?.data?.message || error?.message || 'Không xác định';
@@ -587,18 +597,14 @@ const PaymentPage = () => {
             window.location.href = momoResponse.data.payUrl;
             return;
           } else {
-            console.error('❌ No payUrl in MoMo response');
             toast.error('Không thể tạo link thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
             await refreshCartAndNavigate('/orders');
           }
-        } catch (momoError) {
-          console.error('❌ MoMo payment error:', momoError);
+        } catch {
           toast.error('Lỗi tạo thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
           await refreshCartAndNavigate('/orders');
         }
       } else if (paymentMethod === 'SPORTYPAY') {
-        console.log('💳 Processing SportyPay payment for multiple orders...');
-
         // Tính tổng tiền của tất cả đơn hàng
         const totalAmount = createdOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
@@ -608,8 +614,6 @@ const PaymentPage = () => {
             description: `Thanh toán ${createdOrders.length} đơn hàng qua SportyPay`
           });
 
-          console.log('💸 Wallet response:', walletResponse);
-
           if (walletResponse.status === 200) {
             toast.success('Thanh toán bằng ví SportyPay thành công!');
 
@@ -617,39 +621,33 @@ const PaymentPage = () => {
             for (const order of createdOrders) {
               try {
                 await api.post(`/orders/${order.orderId}/update-after-payment`, {});
-                console.log(`✅ Order ${order.orderId} updated after wallet payment`);
-              } catch (updateError) {
-                console.error(`⚠️ Error updating order ${order.orderId}:`, updateError);
+              } catch {
+                // Silent error for order update
               }
             }
+          }
 
-            console.log('✅ Cart will be cleared by backend for purchased items');
             await refreshCartAndNavigate('/orders');
           } else {
-            toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
-            await refreshCartAndNavigate('/orders');
+            toast.error('Không thể thanh toán đơn hàng. Vui lòng kiểm tra số dư ví.');
+            console.error('❌ All payments failed:', failedOrders);
           }
-        } catch (walletError) {
-          console.error('❌ SportyPay error:', walletError);
+        } catch {
           toast.error('Lỗi thanh toán bằng ví SportyPay');
           await refreshCartAndNavigate('/orders');
         }
       } else {
         // COD - Đơn hàng đã được tạo, chuyển đến trang đơn hàng
-        console.log('✅ COD orders created successfully');
-
         if (hasError) {
           toast.warning(`Đã tạo ${createdOrders.length}/${shopGroups.length} đơn hàng thành công. Một số đơn hàng không thể tạo.`);
         } else {
           toast.success(`Đặt hàng thành công ${createdOrders.length} đơn hàng!`);
         }
 
-        console.log('✅ Cart will be cleared by backend for purchased items (COD)');
         await refreshCartAndNavigate('/orders');
       }
 
-    } catch (error) {
-      console.error('❌ Error placing orders:', error);
+    } catch {
       toast.error('Lỗi đặt hàng. Vui lòng thử lại!');
       setIsProcessing(false);
     }
@@ -751,9 +749,10 @@ const PaymentPage = () => {
                                 <div className="col-span-12 md:col-span-6 flex gap-4">
                                   <div className="relative flex-shrink-0">
                                     <img
-                                      src={safeItem.productImage || '/placeholder.png'}
+                                      src={safeItem.mainImage || safeItem.productMainImage || safeItem.productImage || '/placeholder.png'}
                                       alt={safeItem.productName}
                                       className="w-20 h-20 object-cover rounded-lg border border-gray-200 shadow-sm"
+                                      onError={(e) => { e.target.src = '/placeholder.png'; }}
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -879,6 +878,7 @@ const PaymentPage = () => {
                 <PaymentMethodSelector
                   selectedMethod={paymentMethod}
                   onMethodChange={setPaymentMethod}
+                  walletBalance={walletBalance}
                 />
               </div>
 

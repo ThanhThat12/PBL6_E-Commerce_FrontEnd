@@ -40,11 +40,37 @@ const EditProductForm = ({ productId, onSuccess }) => {
   const [product, setProduct] = useState(null);
   const [productImages, setProductImages] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  
+  // Product attributes loaded from backend
+  const [productAttributes, setProductAttributes] = useState([]);
 
-  // Attribute mapping for primary attribute setting (memoized to prevent re-renders)
-  // Corrected to match database: 1=Size, 2=Color, 3=Material
-  const attributeMap = useMemo(() => ({ size: 1, color: 2, material: 3 }), []);
-  const reverseAttributeMap = useMemo(() => ({ 1: 'size', 2: 'color', 3: 'material' }), []);
+  // Build attribute mapping dynamically from loaded attributes
+  const attributeMap = useMemo(() => {
+    const map = {};
+    productAttributes.forEach(attr => {
+      map[attr.name.toLowerCase()] = attr.id;
+    });
+    return map;
+  }, [productAttributes]);
+
+  const reverseAttributeMap = useMemo(() => {
+    const map = {};
+    productAttributes.forEach(attr => {
+      map[attr.id] = attr.name.toLowerCase();
+    });
+    return map;
+  }, [productAttributes]);
+
+  // Get attribute name by ID or key
+  const getAttributeName = (attrKey) => {
+    // Try to find by ID first
+    const attrById = productAttributes.find(a => a.id === attrKey);
+    if (attrById) return attrById.name;
+    // Try to find by name key
+    const attrByName = productAttributes.find(a => a.name.toLowerCase() === attrKey);
+    if (attrByName) return attrByName.name;
+    return 'Thuộc tính';
+  };
 
   // Variant editing states
   const [classificationType1, setClassificationType1] = useState('color');
@@ -125,12 +151,17 @@ const EditProductForm = ({ productId, onSuccess }) => {
       const product = productData.data || productData;
       setProduct(product);
 
-      // Set form values
+      // Set form values including shipping dimensions
       form.setFieldsValue({
         name: product.name,
         description: product.description,
         basePrice: product.basePrice,
         categoryId: product.categoryId || (product.category && product.category.id),
+        // Shipping dimensions
+        weightGrams: product.weightGrams,
+        lengthCm: product.lengthCm,
+        widthCm: product.widthCm,
+        heightCm: product.heightCm,
       });
 
       // Parse existing variants and determine classifications
@@ -140,28 +171,19 @@ const EditProductForm = ({ productId, onSuccess }) => {
 
       // Try to load primary attribute to determine main classification
       try {
-        console.log('🔍 Loading primary attribute for product:', productId);
         const primaryAttributeResponse = await ImageUploadService.getPrimaryAttribute(productId);
-        console.log('🔍 Primary attribute response:', primaryAttributeResponse);
         
         const primaryAttribute = primaryAttributeResponse?.data;
         if (primaryAttribute?.id) {
           const primaryType = reverseAttributeMap[primaryAttribute.id];
-          console.log('🎯 Found primary attribute:', {
-            id: primaryAttribute.id,
-            name: primaryAttribute.name,
-            mappedType: primaryType
-          });
           
           if (primaryType) {
             setClassificationType1(primaryType);
-            console.log('✅ Set classification type 1 to:', primaryType);
           }
           
           // Store primary attribute info for later use
           setProductImages({ primaryAttribute });
         } else {
-          console.log('⚠️ No primary attribute found - using default classification');
           // Fallback: try to detect from existing variants
           if (product.variants && product.variants.length > 0) {
             const firstVariant = product.variants[0];
@@ -170,14 +192,12 @@ const EditProductForm = ({ productId, onSuccess }) => {
               const detectedType = reverseAttributeMap[firstAttribute.productAttributeId];
               if (detectedType) {
                 setClassificationType1(detectedType);
-                console.log('🔄 Detected classification from variants:', detectedType);
               }
             }
           }
           setProductImages(null);
         }
-      } catch (imgError) {
-        console.warn('Could not load primary attribute, using fallback logic:', imgError);
+      } catch {
         // Fallback: detect from variants if available
         try {
           if (product.variants && product.variants.length > 0) {
@@ -187,18 +207,16 @@ const EditProductForm = ({ productId, onSuccess }) => {
               const detectedType = reverseAttributeMap[firstAttribute.productAttributeId];
               if (detectedType) {
                 setClassificationType1(detectedType);
-                console.log('🔄 Fallback: Using first variant attribute type:', detectedType);
               }
             }
           }
-        } catch (fallbackError) {
-          console.warn('Fallback detection also failed:', fallbackError);
+        } catch {
+          // Silent fallback failure
         }
         setProductImages(null);
       }
       
-    } catch (error) {
-      console.error('Error loading product:', error);
+    } catch {
       message.error('Không thể tải thông tin sản phẩm');
     }
   }, [productId, form, reverseAttributeMap, parseExistingVariants]);
@@ -306,9 +324,26 @@ const EditProductForm = ({ productId, onSuccess }) => {
     setVariantTable(newVariantTable);
   };
 
+  // Fetch product attributes from backend
+  const fetchProductAttributes = async () => {
+    try {
+      const response = await api.get('/product-attributes');
+      const attrs = response.data || [];
+      setProductAttributes(attrs);
+    } catch {
+      // Use default attributes if API fails
+      setProductAttributes([
+        { id: 1, name: 'Size' },
+        { id: 2, name: 'Color' },
+        { id: 3, name: 'Material' }
+      ]);
+    }
+  };
+
   useEffect(() => {
     Promise.all([
       fetchCategories(),
+      fetchProductAttributes(),
       loadProduct()
     ]).finally(() => {
       setInitialLoading(false);
@@ -319,8 +354,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
     try {
       const response = await api.get('/categories');
       setCategories(response.data || []);
-    } catch (err) {
-      console.error('Error fetching categories:', err);
+    } catch {
       message.error('Không thể tải danh mục');
     }
   };
@@ -408,12 +442,17 @@ const EditProductForm = ({ productId, onSuccess }) => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // Prepare product update data
+      // Prepare product update data including shipping dimensions
       const updateData = {
         name: values.name.trim(),
         description: values.description?.trim() || '',
         categoryId: values.categoryId,
         basePrice: values.basePrice,
+        // Shipping dimensions
+        weightGrams: values.weightGrams || null,
+        lengthCm: values.lengthCm || null,
+        widthCm: values.widthCm || null,
+        heightCm: values.heightCm || null,
       };
 
       // If variants were edited, include them and set primary attribute
@@ -460,12 +499,9 @@ const EditProductForm = ({ productId, onSuccess }) => {
         updateData.variants = variants;
         updateData.primaryAttributeId = attributeMap[classificationType1]; // Set primary attribute
       }
-
-      console.log('📝 Updating product with data:', updateData);
       
       // Call update API with primary attribute support
-      const response = await updateProduct(productId, updateData);
-      console.log('✅ Product updated successfully:', response);
+      await updateProduct(productId, updateData);
       
       // Reload product data to get updated timestamps
       await loadProduct();
@@ -476,7 +512,6 @@ const EditProductForm = ({ productId, onSuccess }) => {
         onSuccess();
       }
     } catch (error) {
-      console.error('Error updating product:', error);
       message.error(error.message || 'Không thể cập nhật sản phẩm');
     } finally {
       setLoading(false);
@@ -553,6 +588,76 @@ const EditProductForm = ({ productId, onSuccess }) => {
                 <Input placeholder="299000" />
               </Form.Item>
             </Col>
+          </Row>
+        </Card>
+
+        {/* Thông tin vận chuyển (Khối lượng & Kích thước) */}
+        <Card title="Thông tin vận chuyển" className="mb-4">
+          <Row gutter={[16, 0]}>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Cân nặng (gram)"
+                name="weightGrams"
+                tooltip="Khối lượng sản phẩm tính bằng gram, dùng để tính phí vận chuyển"
+              >
+                <InputNumber
+                  placeholder="500"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={50000}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Chiều dài (cm)"
+                name="lengthCm"
+                tooltip="Chiều dài của kiện hàng tính bằng cm"
+              >
+                <InputNumber
+                  placeholder="30"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={200}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Chiều rộng (cm)"
+                name="widthCm"
+                tooltip="Chiều rộng của kiện hàng tính bằng cm"
+              >
+                <InputNumber
+                  placeholder="20"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={200}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Chiều cao (cm)"
+                name="heightCm"
+                tooltip="Chiều cao của kiện hàng tính bằng cm"
+              >
+                <InputNumber
+                  placeholder="10"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={200}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            💡 Thông tin vận chuyển giúp tính phí ship chính xác hơn. Nếu không nhập, hệ thống sẽ sử dụng giá trị mặc định.
+          </Text>
+        </Card>
+
+        <Card title="Thông tin sản phẩm" className="mb-4">
+          <Row gutter={[16, 0]}>
 
             {/* Product Metadata */}
             {product && (
@@ -626,9 +731,11 @@ const EditProductForm = ({ productId, onSuccess }) => {
                         style={{ width: 120, marginLeft: 8 }}
                         disabled={classification1Values.length > 0} // Disable if already has values
                       >
-                        <Option value="color">Màu sắc</Option>
-                        <Option value="size">Kích cỡ</Option>
-                        <Option value="material">Chất liệu</Option>
+                        {productAttributes.map(attr => (
+                          <Option key={attr.id} value={attr.name.toLowerCase()}>
+                            {attr.name}
+                          </Option>
+                        ))}
                       </Select>
                       <small className="ml-2 text-gray-500">(Sẽ được đặt làm thuộc tính chính)</small>
                     </div>
@@ -646,8 +753,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
                       ))}
 
                       <Input
-                        placeholder={`Thêm ${classificationType1 === 'color' ? 'màu sắc' :
-                          classificationType1 === 'size' ? 'kích cỡ' : 'chất liệu'}`}
+                        placeholder={`Thêm ${getAttributeName(classificationType1)}`}
                         style={{ width: 200, marginTop: 8 }}
                         onPressEnter={(e) => {
                           addClassification1Value(e.target.value);
@@ -682,9 +788,15 @@ const EditProductForm = ({ productId, onSuccess }) => {
                           onChange={setClassificationType2}
                           style={{ width: 120, marginLeft: 8 }}
                         >
-                          <Option value="color" disabled={classificationType1 === 'color'}>Màu sắc</Option>
-                          <Option value="size" disabled={classificationType1 === 'size'}>Kích cỡ</Option>
-                          <Option value="material" disabled={classificationType1 === 'material'}>Chất liệu</Option>
+                          {productAttributes.map(attr => (
+                            <Option 
+                              key={attr.id} 
+                              value={attr.name.toLowerCase()}
+                              disabled={classificationType1 === attr.name.toLowerCase()}
+                            >
+                              {attr.name}
+                            </Option>
+                          ))}
                         </Select>
                       </div>
 
@@ -701,8 +813,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
                         ))}
 
                         <Input
-                          placeholder={`Thêm ${classificationType2 === 'color' ? 'màu sắc' :
-                            classificationType2 === 'size' ? 'kích cỡ' : 'chất liệu'}`}
+                          placeholder={`Thêm ${getAttributeName(classificationType2)}`}
                           style={{ width: 200, marginTop: 8 }}
                           onPressEnter={(e) => {
                             addClassification2Value(e.target.value);
@@ -720,16 +831,14 @@ const EditProductForm = ({ productId, onSuccess }) => {
                 <Table
                   columns={[
                     {
-                      title: classificationType1 === 'color' ? 'Màu sắc' :
-                        classificationType1 === 'size' ? 'Kích cỡ' : 'Chất liệu',
+                      title: getAttributeName(classificationType1),
                       dataIndex: classificationType1,
                       key: classificationType1,
                       width: 120,
                       render: (text) => <Tag color="blue">{text}</Tag>
                     },
                     ...(enableClassification2 ? [{
-                      title: classificationType2 === 'color' ? 'Màu sắc' :
-                        classificationType2 === 'size' ? 'Kích cỡ' : 'Chất liệu',
+                      title: getAttributeName(classificationType2),
                       dataIndex: classificationType2,
                       key: classificationType2,
                       width: 120,
@@ -796,9 +905,9 @@ const EditProductForm = ({ productId, onSuccess }) => {
                 <div>
                   <Text>Sản phẩm hiện có <strong>{variantTable.length} phân loại</strong></Text>
                   <div className="mt-2">
-                    <Text>Thuộc tính chính: <Tag color="blue">{classificationType1 === 'color' ? 'Màu sắc' : classificationType1 === 'size' ? 'Kích cỡ' : 'Chất liệu'}</Tag></Text>
+                    <Text>Thuộc tính chính: <Tag color="blue">{getAttributeName(classificationType1)}</Tag></Text>
                     {enableClassification2 && (
-                      <Text className="ml-4">Thuộc tính phụ: <Tag color="green">{classificationType2 === 'color' ? 'Màu sắc' : classificationType2 === 'size' ? 'Kích cỡ' : 'Chất liệu'}</Tag></Text>
+                      <Text className="ml-4">Thuộc tính phụ: <Tag color="green">{getAttributeName(classificationType2)}</Tag></Text>
                     )}
                   </div>
                   <div className="mt-2 text-sm text-gray-500">

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { X, Package } from 'lucide-react';
 import './ProductDetailModal.css';
 
-const ProductDetailModal = ({ product, onClose, onUpdate }) => {
+const ProductDetailModal = ({ product, onClose, onUpdate: _onUpdate }) => {
   // Add ESC key listener
   useEffect(() => {
     const handleEscKey = (event) => {

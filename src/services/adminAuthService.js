@@ -32,7 +32,11 @@ export const loginAdmin = async (username, password) => {
         };
       }
       
-      // Save to localStorage
+      // Save to localStorage - use standard keys so api.js can access
+      localStorage.setItem('access_token', token);
+      localStorage.setItem('refresh_token', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      // Also save admin-specific keys for backwards compatibility
       localStorage.setItem('adminToken', token);
       localStorage.setItem('adminRefreshToken', refreshToken);
       localStorage.setItem('adminUser', JSON.stringify(user));
@@ -93,6 +97,11 @@ export const loginAdmin = async (username, password) => {
  * Logout admin
  */
 export const logoutAdmin = () => {
+  // Clear standard keys
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  // Clear admin-specific keys
   localStorage.removeItem('adminToken');
   localStorage.removeItem('adminRefreshToken');
   localStorage.removeItem('adminUser');

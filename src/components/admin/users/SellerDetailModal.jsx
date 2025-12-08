@@ -55,6 +55,7 @@ const SellerDetailModal = ({ seller, onClose, onUpdate }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing, onClose]);
 
   if (!seller) return null;
