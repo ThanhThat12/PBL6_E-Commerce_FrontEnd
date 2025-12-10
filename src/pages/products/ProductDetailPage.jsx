@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FiShoppingCart, FiMinus, FiPlus, FiChevronRight, FiStar, FiPackage, FiMapPin, FiMessageCircle } from 'react-icons/fi';
+import { FiShoppingCart, FiMinus, FiPlus, FiChevronRight, FiStar, FiPackage, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiEye, FiShare2, FiHeart, FiTruck, FiRotateCcw, FiAward, FiGrid, FiThumbsUp, FiThumbsDown, FiClock } from 'react-icons/fi';
 
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
@@ -31,6 +31,8 @@ const ProductDetailPage = () => {
   const [productImages, setProductImages] = useState(null);
   const [imageGallery, setImageGallery] = useState([]);
   const [adding, setAdding] = useState(false);
+  const [activeTab, setActiveTab] = useState('details'); // details, reviews, shipping
+  const [currentImagePage, setCurrentImagePage] = useState(0);
   const { user, isAuthenticated, hasRole } = useAuth();
 
   // Load product
@@ -265,6 +267,62 @@ const ProductDetailPage = () => {
   const isInStock = selectedVariant ? selectedVariant.stock > 0 : false;
   const maxQuantity = selectedVariant ? Math.min(selectedVariant.stock, 100) : 100;
 
+  // Helper functions
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN').format(price);
+  };
+
+  const getDiscountPercentage = () => {
+    if (!product.originalPrice || !displayPrice || displayPrice >= product.originalPrice) return 0;
+    return Math.round(((product.originalPrice - displayPrice) / product.originalPrice) * 100);
+  };
+
+  const renderStars = (rating, size = 'sm') => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    const sizeClass = size === 'md' ? 'w-5 h-5' : 'w-4 h-4';
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <FiStar key={i} className={`${sizeClass} text-yellow-400 fill-current`} />
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <div key={i} className="relative">
+            <FiStar className={`${sizeClass} text-gray-300`} />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <FiStar className={`${sizeClass} text-yellow-400 fill-current`} />
+            </div>
+          </div>
+        );
+      } else {
+        stars.push(
+          <FiStar key={i} className={`${sizeClass} text-gray-300`} />
+        );
+      }
+    }
+    return <div className="flex items-center gap-0.5">{stars}</div>;
+  };
+
+  // Shop info from product data
+  const shopInfo = {
+    id: product.shop?.id || product.shopId,
+    name: product.shop?.name || product.shopName || 'Shop',
+    logo: product.shop?.logoUrl || product.shopLogo || '',
+    rating: product.shop?.rating || product.shopRating || 0,
+    productCount: product.shop?.productCount || product.shopProductCount || 0,
+    location: product.shop?.location || product.shopLocation || '',
+    isVerified: product.shop?.isVerified ?? false,
+    isOnline: product.shop?.isOnline ?? false,
+  };
+
+  const discount = getDiscountPercentage();
+  const rating = product.averageRating || 0;
+  const soldCount = product.soldCount || 0;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
@@ -285,169 +343,157 @@ const ProductDetailPage = () => {
 
       {/* Product Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Images */}
-          <div>
+          <div className="space-y-4">
             {/* Main Image */}
-            <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-lg mb-4">
+            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative">
               <img
                 src={selectedImage || product.mainImage || '/placeholder-product.jpg'}
                 alt={product.name}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/placeholder-product.jpg';
+                }}
               />
+              
+              {discount > 0 && (
+                <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-lg font-bold">
+                  -{discount}%
+                </div>
+              )}
+              
+              <div className="absolute top-4 right-4 flex gap-2">
+                <button className="p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-all">
+                  <FiShare2 className="w-4 h-4 text-gray-600" />
+                </button>
+                <button className="p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-all">
+                  <FiHeart className="w-4 h-4 text-gray-600 hover:text-red-500" />
+                </button>
+              </div>
             </div>
-
-            {/* Thumbnail Images - Show variant-aware gallery */}
+            
+            {/* Thumbnail Images - Show variant-aware gallery with pagination */}
             {imageGallery && imageGallery.length > 1 && (
-              <div className="grid grid-cols-4 gap-4">
-                {imageGallery.map((imgUrl, index) => (
-                  <button
-                    key={`gallery-${index}-${imgUrl}`}
-                    onClick={() => setSelectedImage(imgUrl)}
-                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                      selectedImage === imgUrl
-                        ? 'border-primary-500 ring-2 ring-primary-200'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={`${product.name} - Ảnh ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/placeholder-product.jpg';
-                      }}
-                    />
-                  </button>
-                ))}
+              <div className="relative">
+                <div className="grid grid-cols-5 gap-2">
+                  {imageGallery.slice(currentImagePage * 5, (currentImagePage * 5) + 5).map((imgUrl, index) => (
+                    <button
+                      key={`gallery-${currentImagePage}-${index}-${imgUrl}`}
+                      onClick={() => setSelectedImage(imgUrl)}
+                      className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedImage === imgUrl
+                          ? 'border-primary-500 ring-2 ring-primary-500 ring-opacity-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`${product.name} ${currentImagePage * 5 + index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Pagination Controls */}
+                {imageGallery.length > 5 && (
+                  <div className="flex items-center justify-between mt-3">
+                    <button
+                      onClick={() => setCurrentImagePage(prev => Math.max(0, prev - 1))}
+                      disabled={currentImagePage === 0}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <FiChevronRight className="w-4 h-4 rotate-180" />
+                    </button>
+                    
+                    <span className="text-sm text-gray-600">
+                      {currentImagePage * 5 + 1} - {Math.min((currentImagePage + 1) * 5, imageGallery.length)} / {imageGallery.length}
+                    </span>
+                    
+                    <button
+                      onClick={() => setCurrentImagePage(prev => Math.min(Math.ceil(imageGallery.length / 5) - 1, prev + 1))}
+                      disabled={currentImagePage >= Math.ceil(imageGallery.length / 5) - 1}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <FiChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Product Info */}
-          <div>
-            {/* Shop Info Card */}
-            {(product.shop || product.shopName) && (
-              <Link 
-                to={`/shops/${product.shop?.id || product.shopId}`}
-                className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl border border-primary-200 flex items-center gap-4 hover:shadow-md transition-all group no-underline"
-              >
-                {/* Shop Logo */}
-                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0">
-                  <img
-                    src={product.shop?.logoUrl || product.shopLogo || '/default-shop.png'}
-                    alt={product.shop?.name || product.shopName}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/default-shop.png';
-                    }}
-                  />
+          <div className="space-y-6">
+            {/* Product Name and Rating */}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                {rating > 0 && (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500">★</span>
+                      <span className="font-medium text-gray-900">{rating.toFixed(1)}</span>
+                    </div>
+                    <span>•</span>
+                  </>
+                )}
+                {soldCount > 0 && (
+                  <>
+                    <span>Đã bán {soldCount.toLocaleString()}</span>
+                    <span>•</span>
+                  </>
+                )}
+                <div className="flex items-center gap-1 text-green-600">
+                  <FiEye className="w-3 h-3" />
+                  <span>Đang xem</span>
                 </div>
-                
-                {/* Shop Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">
-                    {product.shop?.name || product.shopName}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-600">
-                    {(product.shop?.rating || product.shopRating) && (
-                      <span className="flex items-center gap-1">
-                        <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
-                        {(product.shop?.rating || product.shopRating).toFixed(1)}
-                      </span>
-                    )}
-                    {(product.shop?.productCount || product.shopProductCount) && (
-                      <span className="flex items-center gap-1">
-                        <FiPackage className="w-4 h-4" />
-                        {product.shop?.productCount || product.shopProductCount} sản phẩm
-                      </span>
-                    )}
-                    {(product.shop?.location || product.shopLocation) && (
-                      <span className="flex items-center gap-1">
-                        <FiMapPin className="w-4 h-4" />
-                        {product.shop?.location || product.shopLocation}
-                      </span>
-                    )}
-                  </div>
-                </div>
+              </div>
+            </div>
 
-                {/* View Shop Button */}
-                <div className="flex-shrink-0">
-                  <span className="inline-flex items-center gap-1 px-4 py-2 bg-white text-primary-600 rounded-lg text-sm font-medium border border-primary-200 group-hover:bg-primary-600 group-hover:text-white transition-colors">
-                    <FiMessageCircle className="w-4 h-4" />
-                    Xem Shop
-                  </span>
-                </div>
-              </Link>
-            )}
-
-            {/* Category */}
-            {product.category && (
-              <p className="text-sm text-primary-600 font-semibold uppercase tracking-wide mb-2">
-                {product.category.name}
-              </p>
-            )}
-
-            {/* Product Name */}
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              {product.name}
-            </h1>
-
-            {/* Price */}
-            <div className="mb-6">
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-primary-600">
-                  {displayPrice.toLocaleString('vi-VN')}₫
+            {/* Price and Promotions */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-baseline gap-3 mb-2">
+                <span className="text-3xl font-bold text-primary-600">
+                  ₫{formatPrice(displayPrice)}
                 </span>
-                {product.basePrice && selectedVariant && selectedVariant.price !== product.basePrice && (
-                  <span className="text-xl text-gray-400 line-through">
-                    {product.basePrice.toLocaleString('vi-VN')}₫
+                {product.originalPrice && product.originalPrice > displayPrice && (
+                  <span className="text-lg text-gray-400 line-through">
+                    ₫{formatPrice(product.originalPrice)}
+                  </span>
+                )}
+                {discount > 0 && (
+                  <span className="bg-red-100 text-red-600 px-2 py-1 rounded-md text-sm font-bold">
+                    -{discount}% GIẢM
                   </span>
                 )}
               </div>
-            </div>
-
-            {/* Stock Status */}
-            <div className="mb-6">
-              {!product.isActive ? (
-                <p className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                  Sản phẩm không khả dụng
-                </p>
-              ) : (
-                <p className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  isInStock 
-                    ? selectedVariant && selectedVariant.stock < 10
-                      ? 'bg-orange-100 text-orange-800'
-                      : 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {isInStock 
-                    ? selectedVariant.stock < 10
-                      ? `Chỉ còn ${selectedVariant.stock} sản phẩm`
-                      : `Còn hàng (${selectedVariant.stock} sản phẩm)`
-                    : 'Hết hàng'
-                  }
-                </p>
-              )}
-            </div>
-
-            {/* Description */}
-            {product.description && (
-              <div className="mb-8 pb-8 border-b">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Mô tả sản phẩm
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {product.description}
-                </p>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <FiTruck className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600">Miễn phí vận chuyển</span>
+                </div>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <FiRotateCcw className="w-4 h-4 text-blue-500" />
+                  <span className="text-blue-600">Đổi trả 15 ngày</span>
+                </div>
               </div>
-            )}
+            </div>
 
             {/* Variant Selector */}
             {product.variants && product.variants.length > 0 && (
-              <div className="mb-8 pb-8 border-b">
+              <div className="pb-6 border-b">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Chọn phiên bản</h3>
                 <VariantSelector
                   variants={product.variants}
                   selectedVariant={selectedVariant}
@@ -456,106 +502,198 @@ const ProductDetailPage = () => {
               </div>
             )}
 
-            {/* Quantity Selector */}
-            <div className="mb-8">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                Số lượng
-              </h4>
+            {/* Quantity and Actions */}
+            <div className="space-y-4">
+              {/* Quantity Selector */}
               <div className="flex items-center gap-4">
-                <div className="flex items-center border-2 border-gray-300 rounded-lg">
+                <span className="text-gray-700 font-medium">Số lượng:</span>
+                <div className="flex items-center border border-gray-300 rounded-lg">
                   <button
                     onClick={() => handleQuantityChange(-1)}
                     disabled={quantity <= 1}
-                    className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-white transition-colors"
                   >
-                    <FiMinus className="w-5 h-5" />
+                    <FiMinus className="w-4 h-4" />
                   </button>
-                  <span className="px-6 py-3 font-semibold text-lg">
-                    {quantity}
-                  </span>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => {
+                      const newQty = parseInt(e.target.value) || 1;
+                      const maxStock = selectedVariant?.stock || 100;
+                      const maxAllowed = Math.min(maxStock, 100);
+                      setQuantity(Math.max(1, Math.min(newQty, maxAllowed)));
+                    }}
+                    className="w-16 text-center py-2 border-0 focus:ring-0"
+                    min="1"
+                    max={selectedVariant?.stock || 999}
+                  />
                   <button
                     onClick={() => handleQuantityChange(1)}
                     disabled={!selectedVariant || quantity >= maxQuantity}
-                    className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-white transition-colors"
                   >
-                    <FiPlus className="w-5 h-5" />
+                    <FiPlus className="w-4 h-4" />
                   </button>
                 </div>
-                {selectedVariant && selectedVariant.stock < 10 && (
-                  <p className="text-sm text-orange-600">
-                    Chỉ còn {selectedVariant.stock} sản phẩm
-                  </p>
+                
+                {selectedVariant && (
+                  <span className="text-sm text-gray-500">
+                    {selectedVariant.stock} sản phẩm có sẵn
+                  </span>
                 )}
               </div>
-            </div>
 
-            {/* Action Button */}
-            <div className="flex gap-4">
-              <Button
-                onClick={handleAddToCart}
-                disabled={!product.isActive || !isInStock || adding}
-                loading={adding}
-                variant="primary"
-                className="flex-1 py-4"
-              >
-                <FiShoppingCart className="w-5 h-5 mr-2" />
-                Thêm vào giỏ hàng
-              </Button>
-            </div>
-
-            {/* Product Details */}
-            {selectedVariant && (
-              <div className="mt-8 pt-8 border-t">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                  Thông tin chi tiết
-                </h4>
-                <dl className="space-y-3">
-                  <div className="flex justify-between py-2 border-b border-gray-100">
-                    <dt className="text-gray-600">SKU:</dt>
-                    <dd className="font-mono font-semibold text-gray-900">{selectedVariant.sku}</dd>
-                  </div>
-                  {product.category && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <dt className="text-gray-600">Danh mục:</dt>
-                      <dd className="font-semibold text-gray-900">{product.category.name}</dd>
-                    </div>
-                  )}
-                  {(product.shop?.name || product.shopName) && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <dt className="text-gray-600">Shop:</dt>
-                      <dd>
-                        <Link 
-                          to={`/shops/${product.shop?.id || product.shopId}`}
-                          className="font-semibold text-primary-600 hover:text-primary-700 no-underline"
-                        >
-                          {product.shop?.name || product.shopName}
-                        </Link>
-                      </dd>
-                    </div>
-                  )}
-                  {selectedVariant.variantValues && selectedVariant.variantValues.length > 0 && (
-                    selectedVariant.variantValues.map((vv, idx) => (
-                      <div key={idx} className="flex justify-between py-2 border-b border-gray-100">
-                        <dt className="text-gray-600">{vv.productAttribute?.name || 'Thuộc tính'}:</dt>
-                        <dd className="font-semibold text-gray-900">{vv.value}</dd>
-                      </div>
-                    ))
-                  )}
-                </dl>
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={adding || !selectedVariant || selectedVariant.stock === 0 || !product.isActive}
+                  variant="outline"
+                  className="flex-1 border-primary-500 text-primary-600 hover:bg-primary-50"
+                >
+                  <FiShoppingCart className="w-5 h-5 mr-2" />
+                  {adding ? 'Đang thêm...' : 'Thêm Vào Giỏ Hàng'}
+                </Button>
+                
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={adding || !selectedVariant || selectedVariant.stock === 0 || !product.isActive}
+                  variant="primary"
+                  className="flex-1"
+                >
+                  Mua Ngay
+                </Button>
               </div>
-            )}
+            </div>
+
+            {/* Trust Badges */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiShield className="w-4 h-4 text-green-500" />
+                <span>Đảm bảo chính hãng</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiTruck className="w-4 h-4 text-blue-500" />
+                <span>Giao hàng toàn quốc</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiRotateCcw className="w-4 h-4 text-purple-500" />
+                <span>Đổi trả dễ dàng</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiAward className="w-4 h-4 text-yellow-500" />
+                <span>Chất lượng đảm bảo</span>
+              </div>
+            </div>
+
           </div>
         </div>
+        </div>
+
+        {/* Shop Info Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            {/* Shop Info */}
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-primary-100 shadow-lg flex-shrink-0">
+                {shopInfo.logo ? (
+                  <img src={shopInfo.logo} alt={shopInfo.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-2xl">
+                      {shopInfo.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900">{shopInfo.name}</h2>
+                  {shopInfo.isVerified && (
+                    <div className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded-full">
+                      <FiShield className="w-3 h-3" />
+                      <span className="text-xs font-medium">Official</span>
+                    </div>
+                  )}
+                  {shopInfo.isOnline && (
+                    <div className="flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded-full">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      <span className="text-xs font-medium">Online</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  {shopInfo.rating > 0 && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span className="font-medium text-gray-900">{shopInfo.rating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-gray-300">|</span>
+                    </>
+                  )}
+                  {shopInfo.productCount > 0 && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <FiPackage className="w-4 h-4" />
+                        <span>{shopInfo.productCount} Sản phẩm</span>
+                      </div>
+                      <span className="text-gray-300">|</span>
+                    </>
+                  )}
+                  {shopInfo.location && (
+                    <div className="flex items-center gap-1">
+                      <FiMapPin className="w-4 h-4" />
+                      <span>{shopInfo.location}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Shop Actions */}
+            <div className="flex items-center gap-3">
+              <Button variant="outline" className="border-primary-500 text-primary-600 hover:bg-primary-50">
+                <FiMessageCircle className="w-4 h-4 mr-2" />
+                Chat Ngay
+              </Button>
+              {shopInfo.id && (
+                <Link to={`/shops/${shopInfo.id}`}>
+                  <Button variant="primary">
+                    <FiEye className="w-4 h-4 mr-2" />
+                    Xem Shop
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Product Description Section - Full Width */}
+        {product.description && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Mô tả sản phẩm</h2>
+            <div className="prose max-w-none">
+              <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {product.description}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      {/* Reviews Section - Using new ReviewSection component */}
-      <ReviewSection 
-        productId={id}
-        product={product}
-        isAuthenticated={isAuthenticated}
-        user={user}
-        hasRole={hasRole}
-        isProductOwner={isProductOwner}
-      />
+        
+        {/* Reviews Section - Using new ReviewSection component */}
+        <ReviewSection 
+          productId={id}
+          product={product}
+          isAuthenticated={isAuthenticated}
+          user={user}
+          hasRole={hasRole}
+          isProductOwner={isProductOwner}
+        />
       </main>
 
       {/* Footer */}
