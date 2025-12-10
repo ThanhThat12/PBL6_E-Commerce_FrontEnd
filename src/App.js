@@ -79,6 +79,7 @@ import SettingsPage from "./pages/admin/Settings/SettingsPage";
 import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
 import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
 import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
+import ChatPage from './pages/admin/Chat/ChatPage';
 
 function App() {
   return (
@@ -205,6 +206,7 @@ function App() {
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
             <Route path="/admin/seller-registrations" element={<ProtectedRouteAdmin><SellerRegistrationsPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/chat" element={<ProtectedRouteAdmin><ChatPage/></ProtectedRouteAdmin>} />            
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
 

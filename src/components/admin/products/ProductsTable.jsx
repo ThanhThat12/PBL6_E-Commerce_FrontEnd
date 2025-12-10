@@ -68,12 +68,17 @@ const ProductsTable = () => {
       console.log('📋 [ProductsTable] Fetching categories...');
       const response = await getAllCategories();
       
+      console.log('📋 [ProductsTable] Categories response:', response);
+      
       if (response.status === 200 && response.data) {
         setCategories(response.data);
-        console.log('✅ [ProductsTable] Categories loaded:', response.data.length);
+        console.log('✅ [ProductsTable] Categories loaded:', response.data.length, 'categories:', response.data);
+      } else {
+        console.warn('⚠️ [ProductsTable] Unexpected response structure:', response);
       }
     } catch (error) {
       console.error('❌ [ProductsTable] Error fetching categories:', error);
+      console.error('❌ [ProductsTable] Error details:', error.response?.data);
     }
   };
 
@@ -476,7 +481,7 @@ const ProductsTable = () => {
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Status</th>
-                <th>Sales</th>
+                <th>Sold</th>
                 <th>Rating</th>
                 <th>Actions</th>
               </tr>
