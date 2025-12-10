@@ -7,6 +7,132 @@ import Button from '../../components/common/Button';
 import reviewService from '../../services/reviewService';
 
 /**
+ * ReviewCard Component - Extracted outside to prevent re-creation on each render
+ */
+const ReviewCard = ({ review, replyState, handleToggleReply, handleReplyChange, submitReply, formatDate, renderStars, openImageModal }) => (
+  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+          {review.userAvatarUrl ? (
+            <img 
+              src={review.userAvatarUrl} 
+              alt={review.userFullName || review.userName}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <FiUser className="w-5 h-5 text-gray-500" />
+          )}
+        </div>
+        <div>
+          <p className="font-medium text-gray-900">
+            {review.userFullName || review.userName}
+          </p>
+          <p className="text-sm text-gray-500">
+            {formatDate(review.createdAt)}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        {renderStars(review.rating)}
+        {review.verifiedPurchase && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+            <FiCheck className="w-3 h-3" />
+            Đã mua hàng
+          </span>
+        )}
+      </div>
+    </div>
+
+    <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded">
+      <FiPackage className="w-4 h-4 text-gray-500" />
+      <span className="text-sm text-gray-700">
+        <span className="font-medium">{review.productName}</span>
+        {review.orderId && (
+          <span className="text-gray-500"> • Đơn hàng #{review.orderId}</span>
+        )}
+      </span>
+    </div>
+
+    <div className="mb-4">
+      <p className="text-gray-800 mb-3">{review.comment}</p>
+      
+      {review.images && review.images.length > 0 && (
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {review.images.map((image, index) => (
+            <img 
+              key={index}
+              src={image} 
+              alt={`Review ${index + 1}`}
+              className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => openImageModal(review.images, index)}
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+
+    {review.sellerResponse ? (
+      <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r">
+        <div className="flex items-center gap-2 mb-1">
+          <FiMessageCircle className="w-4 h-4 text-blue-600" />
+          <span className="text-sm font-medium text-blue-800">Phản hồi của bạn</span>
+          <span className="text-xs text-blue-600">
+            {formatDate(review.sellerResponseDate)}
+          </span>
+        </div>
+        <p className="text-blue-800 text-sm">{review.sellerResponse}</p>
+      </div>
+    ) : (
+      <div className="border-t pt-4">
+        {!replyState[review.id]?.open ? (
+          <Button
+            onClick={() => handleToggleReply(review.id, true)}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <FiMessageCircle className="w-4 h-4 mr-2" />
+            Phản hồi đánh giá
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            <textarea
+              value={replyState[review.id]?.text || ''}
+              onChange={(e) => handleReplyChange(review.id, e.target.value)}
+              className="w-full border border-gray-300 rounded-md p-3 text-sm"
+              rows={3}
+              placeholder="Viết phản hồi cho khách hàng..."
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={() => submitReply(review.id)}
+                disabled={replyState[review.id]?.loading}
+                size="sm"
+                className="flex-1"
+              >
+                {replyState[review.id]?.loading ? 'Đang gửi...' : 'Gửi phản hồi'}
+              </Button>
+              <Button
+                onClick={() => handleToggleReply(review.id, false)}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
+
+/**
  * ReviewsPage - Seller reviews management
  */
 const ReviewsPage = () => {
@@ -194,129 +320,6 @@ const ReviewsPage = () => {
     }
   };
 
-  const ReviewCard = ({ review }) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-            {review.userAvatarUrl ? (
-              <img 
-                src={review.userAvatarUrl} 
-                alt={review.userFullName || review.userName}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <FiUser className="w-5 h-5 text-gray-500" />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-gray-900">
-              {review.userFullName || review.userName}
-            </p>
-            <p className="text-sm text-gray-500">
-              {formatDate(review.createdAt)}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {renderStars(review.rating)}
-          {review.verifiedPurchase && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-              <FiCheck className="w-3 h-3" />
-              Đã mua hàng
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded">
-        <FiPackage className="w-4 h-4 text-gray-500" />
-        <span className="text-sm text-gray-700">
-          <span className="font-medium">{review.productName}</span>
-          {review.orderId && (
-            <span className="text-gray-500"> • Đơn hàng #{review.orderId}</span>
-          )}
-        </span>
-      </div>
-
-      <div className="mb-4">
-        <p className="text-gray-800 mb-3">{review.comment}</p>
-        
-        {review.images && review.images.length > 0 && (
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {review.images.map((image, index) => (
-              <img 
-                key={index}
-                src={image} 
-                alt={`Review ${index + 1}`}
-                className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => openImageModal(review.images, index)}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {review.sellerResponse ? (
-        <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r">
-          <div className="flex items-center gap-2 mb-1">
-            <FiMessageCircle className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-800">Phản hồi của bạn</span>
-            <span className="text-xs text-blue-600">
-              {formatDate(review.sellerResponseDate)}
-            </span>
-          </div>
-          <p className="text-blue-800 text-sm">{review.sellerResponse}</p>
-        </div>
-      ) : (
-        <div className="border-t pt-4">
-          {!replyState[review.id]?.open ? (
-            <Button
-              onClick={() => handleToggleReply(review.id, true)}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <FiMessageCircle className="w-4 h-4 mr-2" />
-              Phản hồi đánh giá
-            </Button>
-          ) : (
-            <div className="space-y-3">
-              <textarea
-                value={replyState[review.id]?.text || ''}
-                onChange={(e) => handleReplyChange(review.id, e.target.value)}
-                className="w-full border border-gray-300 rounded-md p-3 text-sm"
-                rows={3}
-                placeholder="Viết phản hồi cho khách hàng..."
-              />
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => submitReply(review.id)}
-                  disabled={replyState[review.id]?.loading}
-                  size="sm"
-                  className="flex-1"
-                >
-                  {replyState[review.id]?.loading ? 'Đang gửi...' : 'Gửi phản hồi'}
-                </Button>
-                <Button
-                  onClick={() => handleToggleReply(review.id, false)}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  Hủy
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -433,7 +436,17 @@ const ReviewsPage = () => {
       <div className="space-y-4">
         {filteredReviews.length > 0 ? (
           filteredReviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
+            <ReviewCard 
+              key={review.id} 
+              review={review}
+              replyState={replyState}
+              handleToggleReply={handleToggleReply}
+              handleReplyChange={handleReplyChange}
+              submitReply={submitReply}
+              formatDate={formatDate}
+              renderStars={renderStars}
+              openImageModal={openImageModal}
+            />
           ))
         ) : (
           <div className="text-center py-12 bg-white rounded-lg border">

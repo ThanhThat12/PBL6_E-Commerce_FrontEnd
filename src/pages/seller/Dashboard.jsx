@@ -54,11 +54,20 @@ const Dashboard = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-8 text-white shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Chào mừng trở lại! 👋</h1>
+            <p className="text-blue-100 text-lg">Quản lý cửa hàng của bạn hiệu quả hơn</p>
+          </div>
+          <div className="hidden md:block text-6xl">📊</div>
+        </div>
+      </div>
 
       {/* Stats Cards */}
-      <Row gutter={[16, 16]} className="mb-6">
+      <Row gutter={[20, 20]}>
         <Col xs={24} sm={12} lg={6}>
           <StatCard
             icon={<DollarOutlined />}
@@ -69,7 +78,7 @@ const Dashboard = () => {
             }).format(stats?.totalRevenue || 0)}
             trend="+12% từ tháng trước"
             trendType="up"
-            bgColor="bg-green-500"
+            bgColor="bg-gradient-to-br from-green-500 to-emerald-600"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -79,7 +88,7 @@ const Dashboard = () => {
             value={stats?.totalOrders || 0}
             trend="+8% từ tháng trước"
             trendType="up"
-            bgColor="bg-blue-500"
+            bgColor="bg-gradient-to-br from-blue-500 to-cyan-600"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -89,7 +98,7 @@ const Dashboard = () => {
             value={stats?.totalProducts || 0}
             trend="+3 sản phẩm mới"
             trendType="neutral"
-            bgColor="bg-purple-500"
+            bgColor="bg-gradient-to-br from-purple-500 to-pink-600"
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -99,13 +108,13 @@ const Dashboard = () => {
             value={stats?.totalCustomers || 0}
             trend="+5% từ tháng trước"
             trendType="up"
-            bgColor="bg-orange-500"
+            bgColor="bg-gradient-to-br from-orange-500 to-red-600"
           />
         </Col>
       </Row>
 
       {/* Revenue Chart */}
-      <Row gutter={[16, 16]} className="mb-6">
+      <Row gutter={[20, 20]}>
         <Col xs={24} lg={16}>
           <RevenueChart data={revenueData} title="Biểu đồ doanh thu tháng này" />
         </Col>

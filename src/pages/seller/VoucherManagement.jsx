@@ -197,15 +197,25 @@ const VoucherManagement = () => {
       )
     },
     {
-      title: 'Trạng Thái',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (isActive) => (
-        <Tag color={isActive ? 'green' : 'red'}>
-          {isActive ? 'Hoạt động' : 'Đã hủy'}
-        </Tag>
-      )
-    },
+  title: 'Trạng Thái',
+  dataIndex: 'status',
+  key: 'status',
+  render: (status) => {
+    if (!status) {
+      return <Tag color="default">Không xác định</Tag>;
+    }
+    switch (status) {
+      case 'ACTIVE':
+        return <Tag color="green">Đang diễn ra</Tag>;
+      case 'EXPIRED':
+        return <Tag color="red">Đã hết hạn</Tag>;
+      case 'UPCOMING':
+        return <Tag color="orange">Sắp diễn ra</Tag>;
+      default:
+        return <Tag color="default">{status}</Tag>;
+    }
+  }
+},
     {
       title: 'Thao Tác',
       key: 'actions',
@@ -235,22 +245,30 @@ const VoucherManagement = () => {
   ];
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản Lý Voucher</h1>
-          <p className="text-gray-600">Tạo và quản lý mã giảm giá cho shop</p>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+              <span>🎁</span>
+              Quản Lý Voucher
+            </h1>
+            <p className="text-purple-100">Tạo và quản lý mã giảm giá cho shop</p>
+          </div>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setShowCreateModal(true)}
+            size="large"
+            className="bg-white text-purple-600 hover:bg-purple-50 border-0 shadow-lg hover:shadow-xl transition-all"
+          >
+            Tạo Voucher
+          </Button>
         </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setShowCreateModal(true)}
-        >
-          Tạo Voucher
-        </Button>
       </div>
 
-      <Card>
+      <Card className="shadow-lg rounded-xl border-0">
         <Table
           columns={columns}
           dataSource={vouchers}
