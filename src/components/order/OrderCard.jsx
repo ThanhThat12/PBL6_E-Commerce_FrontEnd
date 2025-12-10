@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -119,9 +119,10 @@ const OrderCard = ({ order, onCancelSuccess }) => {
             {/* Product Image */}
             <div className="relative flex-shrink-0">
               <img 
-                src={firstProduct.productImage || '/placeholder.png'} 
+                src={firstProduct.mainImage || firstProduct.productMainImage || firstProduct.productImage || firstProduct.image || '/placeholder.png'} 
                 alt={firstProduct.productName}
                 className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                onError={(e) => { e.target.src = '/placeholder.png'; }}
               />
               {totalItems > 1 && (
                 <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md">

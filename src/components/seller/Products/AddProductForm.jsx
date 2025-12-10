@@ -16,16 +16,20 @@ import {
   Steps,
   Upload,
   Typography,
+  Spin,
+  Divider,
 } from 'antd';
-import { UploadOutlined, PlusOutlined, CheckOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { UploadOutlined, PlusOutlined, CheckOutlined, ArrowLeftOutlined, ShopOutlined, InboxOutlined } from '@ant-design/icons';
 import { createProduct } from '../../../services/seller/productService';
 import ImageUploadService from '../../../services/ImageUploadService';
 import api from '../../../services/api';
+import productAttributeService from '../../../services/productAttributeService';
 
 const { Option } = Select;
 const { TextArea } = Input;
 const { Step } = Steps;
 const { Title, Text } = Typography;
+const { Dragger } = Upload;
 
 /**
  * AddProductForm Component
@@ -37,19 +41,20 @@ const { Title, Text } = Typography;
 const AddProductForm = () => {
   const [form] = Form.useForm();
   const [categories, setCategories] = useState([]);
+  const [productAttributes, setProductAttributes] = useState([]);
+  const [attributesLoading, setAttributesLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [createdProduct, setCreatedProduct] = useState(null);
 
-  // Attribute mapping for primary attribute setting (corrected to match database)
-  const attributeMap = { size: 1, color: 2, material: 3 };
-
-  // States cho phân loại
-  const [classificationType1, setClassificationType1] = useState('color');
-  const [classificationType2, setClassificationType2] = useState('size');
+  // States cho phân loại - dynamic based on backend attributes
+  const [classificationType1, setClassificationType1] = useState(null);
+  const [classificationType2, setClassificationType2] = useState(null);
   const [enableClassification2, setEnableClassification2] = useState(false);
   const [classification1Values, setClassification1Values] = useState([]);
   const [classification2Values, setClassification2Values] = useState([]);
+  const [classification1Input, setClassification1Input] = useState('');
+  const [classification2Input, setClassification2Input] = useState('');
   const [variantTable, setVariantTable] = useState([]);
 
   // Images - now handled after product creation
@@ -59,16 +64,39 @@ const AddProductForm = () => {
 
   useEffect(() => {
     fetchCategories();
+    fetchProductAttributes();
   }, []);
 
   const fetchCategories = async () => {
     try {
       const response = await api.get('/categories');
       setCategories(response.data || []);
-    } catch (err) {
-      console.error('Error fetching categories:', err);
+    } catch (_err) {
       message.error('Không thể tải danh mục');
     }
+  };
+
+  const fetchProductAttributes = async () => {
+    setAttributesLoading(true);
+    try {
+      // Use centralized service for product attributes
+      const attrs = await productAttributeService.getAll();
+      const list = Array.isArray(attrs) ? attrs : (attrs?.data || []);
+      setProductAttributes(list);
+      // Do NOT set default classification types here.
+      // The user must explicitly choose the classification groups before creating variants.
+    } catch (_err) {
+      message.error('Không thể tải thuộc tính sản phẩm');
+    } finally {
+      setAttributesLoading(false);
+    }
+  };
+
+  // Get attribute name by ID
+  const getAttributeName = (attrId) => {
+    if (!attrId) return 'Chưa chọn';
+    const attr = productAttributes.find(a => a.id === attrId);
+    return attr?.name || 'Thuộc tính';
   };
 
   // Ref to store current variant table for merging without dependency loop
@@ -91,8 +119,8 @@ const AddProductForm = () => {
     // Helper to find existing data
     const findExisting = (v1, v2) => {
       return currentTable.find(item =>
-        item[classificationType1] === v1 &&
-        (!enableClassification2 || item[classificationType2] === v2)
+        item.classification1 === v1 &&
+        (!enableClassification2 || item.classification2 === v2)
       );
     };
 
@@ -105,8 +133,8 @@ const AddProductForm = () => {
 
           newVariantTable.push({
             key: index++,
-            [classificationType1]: value1,
-            [classificationType2]: value2,
+            classification1: value1,
+            classification2: value2,
             sku: sku,
             price: existing ? existing.price : 0,
             stock: existing ? existing.stock : 0
@@ -121,7 +149,7 @@ const AddProductForm = () => {
 
         newVariantTable.push({
           key: index++,
-          [classificationType1]: value1,
+          classification1: value1,
           sku: sku,
           price: existing ? existing.price : 0,
           stock: existing ? existing.stock : 0
@@ -147,15 +175,27 @@ const AddProductForm = () => {
 
   // Thêm/xóa giá trị phân loại
   const addClassification1Value = (value) => {
-    if (value && !classification1Values.includes(value)) {
-      setClassification1Values([...classification1Values, value]);
+    const v = (value || '').trim();
+    if (!classificationType1) {
+      message.warning('Vui lòng chọn nhóm phân loại chính trước');
+      return;
     }
+    if (v && !classification1Values.includes(v)) {
+      setClassification1Values([...classification1Values, v]);
+    }
+    setClassification1Input('');
   };
 
   const addClassification2Value = (value) => {
-    if (value && !classification2Values.includes(value)) {
-      setClassification2Values([...classification2Values, value]);
+    const v = (value || '').trim();
+    if (!classificationType2) {
+      message.warning('Vui lòng chọn nhóm phân loại 2 trước');
+      return;
     }
+    if (v && !classification2Values.includes(v)) {
+      setClassification2Values([...classification2Values, v]);
+    }
+    setClassification2Input('');
   };
 
   const removeClassification1Value = (value) => {
@@ -169,18 +209,16 @@ const AddProductForm = () => {
   // Columns cho bảng variants (Step 0 - Basic info only)
   const variantColumns = [
     {
-      title: classificationType1 === 'color' ? 'Màu sắc' :
-        classificationType1 === 'size' ? 'Kích cỡ' : 'Chất liệu',
-      dataIndex: classificationType1,
-      key: classificationType1,
+      title: getAttributeName(classificationType1),
+      dataIndex: 'classification1',
+      key: 'classification1',
       width: 120,
       render: (text) => <Tag color="blue">{text}</Tag>
     },
     ...(enableClassification2 ? [{
-      title: classificationType2 === 'color' ? 'Màu sắc' :
-        classificationType2 === 'size' ? 'Kích cỡ' : 'Chất liệu',
-      dataIndex: classificationType2,
-      key: classificationType2,
+      title: getAttributeName(classificationType2),
+      dataIndex: 'classification2',
+      key: 'classification2',
       width: 120,
       render: (text) => <Tag color="green">{text}</Tag>
     }] : []),
@@ -245,6 +283,14 @@ const AddProductForm = () => {
     setLoading(true);
 
     try {
+      // Ensure user selected classification groups
+      if (!classificationType1) {
+        throw new Error('Vui lòng chọn nhóm phân loại chính trước khi tạo sản phẩm');
+      }
+      // Classification type 2 is optional - only validate if enabled AND has values
+      if (enableClassification2 && classification2Values.length > 0 && !classificationType2) {
+        throw new Error('Vui lòng chọn nhóm phân loại 2 hoặc tắt tính năng phân loại 2');
+      }
       // Validation
       if (variantTable.length === 0) {
         throw new Error('Vui lòng thêm ít nhất 1 phân loại để tạo biến thể');
@@ -266,17 +312,17 @@ const AddProductForm = () => {
       const variants = variantTable.map(variant => {
         const variantValues = [];
 
-        if (variant[classificationType1]) {
+        if (variant.classification1) {
           variantValues.push({
-            productAttributeId: attributeMap[classificationType1],
-            value: variant[classificationType1]
+            productAttributeId: classificationType1,
+            value: variant.classification1
           });
         }
 
-        if (enableClassification2 && variant[classificationType2]) {
+        if (enableClassification2 && variant.classification2) {
           variantValues.push({
-            productAttributeId: attributeMap[classificationType2],
-            value: variant[classificationType2]
+            productAttributeId: classificationType2,
+            value: variant.classification2
           });
         }
 
@@ -288,39 +334,25 @@ const AddProductForm = () => {
         };
       });
 
-      // Create product with JSON (basic info + primary attribute)
+      // Create product with JSON (basic info + primary attribute + shipping dimensions)
       const productData = {
         name: values.name.trim(),
         description: values.description?.trim() || '',
         categoryId: values.categoryId,
         basePrice: values.basePrice,
-        primaryAttributeId: attributeMap[classificationType1], // Set primary attribute based on classification type 1
+        primaryAttributeId: classificationType1, // Set primary attribute based on classification type 1
+        // Shipping dimensions (optional)
+        weightGrams: values.weightGrams || null,
+        lengthCm: values.lengthCm || null,
+        widthCm: values.widthCm || null,
+        heightCm: values.heightCm || null,
         variants: variants
       };
 
-      console.log('📦 Creating product with data (includes primary attribute):', productData);
       const response = await createProduct(productData);
-      console.log('✅ Product created:', response);
       
-      // Debug response structure and timestamps
-      const productResult = response.data || response;
-      console.log('🔍 Created product details:', {
-        id: productResult.id,
-        name: productResult.name,
-        shopId: productResult.shopId,
-        productCondition: productResult.productCondition,
-        rating: productResult.rating,
-        reviewCount: productResult.reviewCount,
-        soldCount: productResult.soldCount,
-        createdAt: productResult.createdAt,
-        updatedAt: productResult.updatedAt,
-        timestamps: {
-          createdAt_formatted: productResult.createdAt ? new Date(productResult.createdAt).toLocaleString('vi-VN') : 'null',
-          updatedAt_formatted: productResult.updatedAt ? new Date(productResult.updatedAt).toLocaleString('vi-VN') : 'null'
-        }
-      });
-
       // Store created product
+      const productResult = response.data || response;
       setCreatedProduct(productResult);
       message.success(`Tạo sản phẩm thành công! (ID: ${productResult.id})`);
       
@@ -328,7 +360,6 @@ const AddProductForm = () => {
       nextStep();
 
     } catch (error) {
-      console.error('Create product error:', error);
       message.error(error.message || 'Có lỗi xảy ra khi tạo sản phẩm');
     } finally {
       setLoading(false);
@@ -349,58 +380,28 @@ const AddProductForm = () => {
       // Upload main image
       if (mainImageFile) {
         try {
-          // Debug token from all possible sources  
-          const correctToken = localStorage.getItem('access_token'); // Correct key!
-          const wrongToken1 = localStorage.getItem('accessToken');
-          const wrongToken2 = localStorage.getItem('token');
-          
-          console.log('🔑 Token debug (FIXED):', {
-            correct_access_token: !!correctToken,
-            wrong_accessToken: !!wrongToken1,
-            wrong_token: !!wrongToken2,
-            correctPreview: correctToken ? `${correctToken.substring(0, 20)}...` : 'none'
-          });
-          
-          console.log('📸 Uploading main image:', {
-            productId: createdProduct.id,
-            fileName: mainImageFile.name,
-            fileSize: mainImageFile.size,
-            fileType: mainImageFile.type,
-            endpoint: `http://localhost:8081/api/products/${createdProduct.id}/images/main`
-          });
-          
           await ImageUploadService.uploadProductMain(
             createdProduct.id, 
             mainImageFile,
-            (progress) => console.log(`Main image upload: ${progress}%`)
+            () => {} // Silent progress
           );
           uploadResults.main = true;
-          console.log('✅ Main image uploaded successfully');
-        } catch (error) {
-          console.error('❌ Main image upload failed:', error);
-          message.error(`Không thể tải ảnh đại diện: ${error.message || 'Lỗi server'}`);
+        } catch (_error) {
+          message.error('Không thể tải ảnh đại diện');
         }
       }
 
       // Upload gallery images
       if (galleryImageFiles.length > 0) {
         try {
-          console.log('🖼️ Uploading gallery images:', {
-            productId: createdProduct.id,
-            fileCount: galleryImageFiles.length,
-            totalSize: galleryImageFiles.reduce((sum, f) => sum + f.size, 0)
-          });
-          
           await ImageUploadService.uploadProductGallery(
             createdProduct.id, 
             galleryImageFiles,
-            (progress) => console.log(`Gallery upload: ${progress}%`)
+            () => {} // Silent progress
           );
           uploadResults.gallery = true;
-          console.log('✅ Gallery images uploaded successfully');
-        } catch (error) {
-          console.error('❌ Gallery images upload failed:', error);
-          message.error(`Không thể tải ảnh thư viện: ${error.message || 'Lỗi server'}`);
+        } catch (_error) {
+          message.error('Không thể tải ảnh thư viện');
         }
       }
 
@@ -411,24 +412,15 @@ const AddProductForm = () => {
         
         for (const [variantValue, file] of Object.entries(variantImages)) {
           try {
-            console.log(`🎨 Uploading variant image for "${variantValue}":`, {
-              productId: createdProduct.id,
-              fileName: file.name,
-              fileSize: file.size,
-              attributeValue: variantValue
-            });
-            
             await ImageUploadService.uploadVariantImage(
               createdProduct.id, 
               file, 
               variantValue, 
-              (progress) => console.log(`Uploading ${variantValue}: ${progress}%`)
+              () => {} // Silent progress
             );
             variantSuccessCount++;
-            console.log(`✅ Variant image "${variantValue}" uploaded successfully`);
-          } catch (error) {
-            console.error(`❌ Variant image "${variantValue}" upload failed:`, error);
-            message.error(`Không thể tải ảnh phân loại "${variantValue}": ${error.message || 'Lỗi server'}`);
+          } catch (_error) {
+            message.error(`Không thể tải ảnh phân loại "${variantValue}"`);
           }
         }
         
@@ -442,31 +434,20 @@ const AddProductForm = () => {
       const successCount = Object.values(uploadResults).filter(Boolean).length;
       const totalUploads = (mainImageFile ? 1 : 0) + (galleryImageFiles.length > 0 ? 1 : 0) + (Object.keys(variantImages).length > 0 ? 1 : 0);
 
-      console.log('📊 Upload results summary:', {
-        uploadResults,
-        successCount,
-        totalUploads,
-        mainImage: mainImageFile ? 'Selected' : 'None',
-        galleryCount: galleryImageFiles.length,
-        variantCount: Object.keys(variantImages).length
-      });
-
       if (successCount === totalUploads && totalUploads > 0) {
         message.success('🎉 Tải lên tất cả hình ảnh thành công!');
         nextStep(); // Go to final step
       } else if (successCount > 0) {
-        message.warning(`⚠️ Tải lên thành công ${successCount}/${totalUploads} loại hình ảnh. Một số ảnh gặp lỗi.`);
+        message.warning(`⚠️ Tải lên thành công ${successCount}/${totalUploads} loại hình ảnh.`);
         nextStep();
       } else if (totalUploads > 0) {
-        message.error('❌ Không thể tải lên hình ảnh nào. Vui lòng kiểm tra kết nối và thử lại.');
-        // Don't advance to next step on total failure
+        message.error('❌ Không thể tải lên hình ảnh nào. Vui lòng thử lại.');
       } else {
-        message.info('ℹ️ Không có hình ảnh nào được chọn. Bạn có thể thêm sau.');
+        message.info('ℹ️ Không có hình ảnh nào được chọn.');
         nextStep();
       }
 
-    } catch (error) {
-      console.error('Image upload error:', error);
+    } catch (_error) {
       message.error('Có lỗi xảy ra khi tải lên hình ảnh');
     } finally {
       setLoading(false);
@@ -487,201 +468,315 @@ const AddProductForm = () => {
   };
 
   // Step 0 component - Basic Info & Variants
-  const renderStep0 = () => (
-    <Form form={form} layout="vertical" onFinish={onFinishStep1}>
-      {/* Thông tin cơ bản */}
-      <Card title="Thông tin cơ bản sản phẩm" size="small" className="mb-4">
-        <Row gutter={[16, 0]}>
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Tên sản phẩm"
-              name="name"
-              rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
-            >
-              <Input placeholder="Ví dụ: Giày thể thao Nam" />
-            </Form.Item>
-          </Col>
+  const renderStep0 = () => {
+    if (attributesLoading) {
+      return (
+        <div className="text-center py-8">
+          <Spin size="large" />
+          <div className="mt-4 text-gray-500">Đang tải thuộc tính sản phẩm...</div>
+        </div>
+      );
+    }
 
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Danh mục"
-              name="categoryId"
-              rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
-            >
-              <Select placeholder="Chọn danh mục">
-                {categories.map(category => (
-                  <Option key={category.id} value={category.id}>
-                    {category.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
+    return (
+      <Form form={form} layout="vertical" onFinish={onFinishStep1}>
+        {/* Thông tin cơ bản */}
+        <Card title={<><ShopOutlined className="mr-2" />Thông tin cơ bản sản phẩm</>} size="small" className="mb-4">
+          <Row gutter={[16, 0]}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Tên sản phẩm"
+                name="name"
+                rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
+              >
+                <Input placeholder="Ví dụ: Giày thể thao Nam" size="large" />
+              </Form.Item>
+            </Col>
 
-          <Col span={24}>
-            <Form.Item label="Mô tả sản phẩm" name="description">
-              <TextArea rows={4} placeholder="Mô tả chi tiết về sản phẩm..." />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} md={8}>
-            <Form.Item
-              label="Giá cơ bản (VND)"
-              name="basePrice"
-              rules={[{ required: true, message: 'Vui lòng nhập giá cơ bản' }]}
-            >
-              <InputNumber
-                placeholder="299000"
-                style={{ width: '100%' }}
-                min={0}
-                formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/\$\s?|(,*)/g, '')}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Phân loại hàng hóa */}
-      <Card title="Phân loại hàng hóa" size="small" className="mb-4">
-        <Row gutter={16}>
-          <Col span={enableClassification2 ? 12 : 24}>
-            <div>
-              <div className="mb-2">
-                <span>Nhóm phân loại 1: </span>
-                <Select
-                  value={classificationType1}
-                  onChange={setClassificationType1}
-                  style={{ width: 120, marginLeft: 8 }}
-                >
-                  <Option value="color">Màu sắc</Option>
-                  <Option value="size">Kích cỡ</Option>
-                  <Option value="material">Chất liệu</Option>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Danh mục"
+                name="categoryId"
+                rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
+              >
+                <Select placeholder="Chọn danh mục" size="large">
+                  {categories.map(category => (
+                    <Option key={category.id} value={category.id}>
+                      {category.name}
+                    </Option>
+                  ))}
                 </Select>
-              </div>
+              </Form.Item>
+            </Col>
 
-              <div>
-                {classification1Values.map((value, index) => (
-                  <Tag
-                    key={index}
-                    closable
-                    onClose={() => removeClassification1Value(value)}
-                    className="mb-2"
-                  >
-                    {value}
-                  </Tag>
-                ))}
+            <Col span={24}>
+              <Form.Item label="Mô tả sản phẩm" name="description">
+                <TextArea rows={4} placeholder="Mô tả chi tiết về sản phẩm..." />
+              </Form.Item>
+            </Col>
 
-                <Input
-                  placeholder={`Thêm ${classificationType1 === 'color' ? 'màu sắc' :
-                    classificationType1 === 'size' ? 'kích cỡ' : 'chất liệu'}`}
-                  style={{ width: 200, marginTop: 8 }}
-                  onPressEnter={(e) => {
-                    addClassification1Value(e.target.value);
-                    e.target.value = '';
-                  }}
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Giá cơ bản (VND)"
+                name="basePrice"
+                rules={[{ required: true, message: 'Vui lòng nhập giá cơ bản' }]}
+              >
+                <InputNumber
+                  placeholder="299000"
+                  style={{ width: '100%' }}
+                  size="large"
+                  min={0}
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
                 />
-              </div>
-            </div>
-          </Col>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
 
-          <Col span={24} className="mb-3">
-            <Checkbox
-              checked={enableClassification2}
-              onChange={(e) => {
-                setEnableClassification2(e.target.checked);
-                if (!e.target.checked) {
-                  setClassification2Values([]);
-                }
-              }}
-            >
-              Thêm nhóm phân loại 2 (tùy chọn)
-            </Checkbox>
-          </Col>
+        {/* Thông tin vận chuyển */}
+        <Card title={<><InboxOutlined className="mr-2" />Thông tin vận chuyển</>} size="small" className="mb-4">
+          <Row gutter={16}>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Cân nặng (gram)"
+                name="weightGrams"
+                tooltip="Khối lượng sản phẩm tính bằng gram"
+              >
+                <InputNumber
+                  placeholder="500"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={50000}
+                  addonAfter="g"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Chiều dài (cm)"
+                name="lengthCm"
+                tooltip="Chiều dài của kiện hàng"
+              >
+                <InputNumber
+                  placeholder="30"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={200}
+                  addonAfter="cm"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Chiều rộng (cm)"
+                name="widthCm"
+                tooltip="Chiều rộng của kiện hàng"
+              >
+                <InputNumber
+                  placeholder="20"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={200}
+                  addonAfter="cm"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                label="Chiều cao (cm)"
+                name="heightCm"
+                tooltip="Chiều cao của kiện hàng"
+              >
+                <InputNumber
+                  placeholder="10"
+                  style={{ width: '100%' }}
+                  min={1}
+                  max={200}
+                  addonAfter="cm"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Text type="secondary" className="text-xs">
+            💡 Thông tin vận chuyển giúp tính phí ship chính xác hơn. Nếu không nhập, hệ thống sẽ sử dụng giá trị mặc định.
+          </Text>
+        </Card>
 
-          {enableClassification2 && (
-            <Col span={12}>
-              <div>
-                <div className="mb-2">
-                  <span>Nhóm phân loại 2: </span>
+        {/* Phân loại hàng hóa */}
+        <Card title="Phân loại hàng hóa" size="small" className="mb-4">
+          <Row gutter={16}>
+            <Col span={enableClassification2 ? 12 : 24}>
+              <div className="p-4 bg-blue-50 rounded-lg mb-4">
+                <div className="mb-3">
+                  <Text strong>Nhóm phân loại 1 (Chính): </Text>
                   <Select
-                    value={classificationType2}
-                    onChange={setClassificationType2}
-                    style={{ width: 120, marginLeft: 8 }}
+                    value={classificationType1}
+                    onChange={setClassificationType1}
+                    style={{ width: 150, marginLeft: 8 }}
+                    size="large"
                   >
-                    <Option value="color" disabled={classificationType1 === 'color'}>Màu sắc</Option>
-                    <Option value="size" disabled={classificationType1 === 'size'}>Kích cỡ</Option>
-                    <Option value="material" disabled={classificationType1 === 'material'}>Chất liệu</Option>
+                    {productAttributes.map(attr => (
+                      <Option 
+                        key={attr.id} 
+                        value={attr.id}
+                        disabled={attr.id === classificationType2}
+                      >
+                        {attr.name}
+                      </Option>
+                    ))}
                   </Select>
                 </div>
 
                 <div>
-                  {classification2Values.map((value, index) => (
+                  {classification1Values.map((value, index) => (
                     <Tag
                       key={index}
                       closable
-                      onClose={() => removeClassification2Value(value)}
-                      className="mb-2"
+                      onClose={() => removeClassification1Value(value)}
+                      className="mb-2 py-1 px-3"
+                      color="blue"
                     >
                       {value}
                     </Tag>
                   ))}
 
-                  <Input
-                    placeholder={`Thêm ${classificationType2 === 'color' ? 'màu sắc' :
-                      classificationType2 === 'size' ? 'kích cỡ' : 'chất liệu'}`}
-                    style={{ width: 200, marginTop: 8 }}
-                    onPressEnter={(e) => {
-                      addClassification2Value(e.target.value);
-                      e.target.value = '';
-                    }}
-                  />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <Input
+                        value={classification1Input}
+                        onChange={(e) => setClassification1Input(e.target.value)}
+                        placeholder={classificationType1 ? `Thêm ${getAttributeName(classificationType1)}` : 'Chọn nhóm phân loại trước'}
+                        style={{ width: 200 }}
+                        size="large"
+                        onPressEnter={() => addClassification1Value(classification1Input)}
+                        disabled={!classificationType1}
+                      />
+                      <Button
+                        size="large"
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => addClassification1Value(classification1Input)}
+                        disabled={!classificationType1 || !classification1Input.trim()}
+                      />
+                    </div>
                 </div>
               </div>
             </Col>
-          )}
-        </Row>
-      </Card>
 
-      {/* Bảng variants */}
-      {variantTable.length > 0 && (
-        <Card title="Thông tin bán hàng" size="small" className="mb-4">
-          <Table
-            columns={variantColumns}
-            dataSource={variantTable}
-            pagination={false}
-            size="small"
-            scroll={{ x: 600 }}
-            bordered
-          />
+            <Col span={24} className="mb-3">
+              <Checkbox
+                checked={enableClassification2}
+                onChange={(e) => {
+                  setEnableClassification2(e.target.checked);
+                  if (!e.target.checked) {
+                    setClassification2Values([]);
+                  }
+                }}
+              >
+                <Text strong>Thêm nhóm phân loại 2 (tùy chọn)</Text>
+              </Checkbox>
+            </Col>
+
+            {enableClassification2 && (
+              <Col span={12}>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="mb-3">
+                    <Text strong>Nhóm phân loại 2: </Text>
+                    <Select
+                      value={classificationType2}
+                      onChange={setClassificationType2}
+                      style={{ width: 150, marginLeft: 8 }}
+                      size="large"
+                    >
+                      {productAttributes.map(attr => (
+                        <Option 
+                          key={attr.id} 
+                          value={attr.id}
+                          disabled={attr.id === classificationType1}
+                        >
+                          {attr.name}
+                        </Option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div>
+                    {classification2Values.map((value, index) => (
+                      <Tag
+                        key={index}
+                        closable
+                        onClose={() => removeClassification2Value(value)}
+                        className="mb-2 py-1 px-3"
+                        color="green"
+                      >
+                        {value}
+                      </Tag>
+                    ))}
+
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <Input
+                        value={classification2Input}
+                        onChange={(e) => setClassification2Input(e.target.value)}
+                        placeholder={classificationType2 ? `Thêm ${getAttributeName(classificationType2)}` : 'Chọn nhóm phân loại 2 trước'}
+                        style={{ width: 200 }}
+                        size="large"
+                        onPressEnter={() => addClassification2Value(classification2Input)}
+                        disabled={!classificationType2}
+                      />
+                      <Button
+                        size="large"
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => addClassification2Value(classification2Input)}
+                        disabled={!classificationType2 || !classification2Input.trim()}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            )}
+          </Row>
         </Card>
-      )}
 
-      {/* Buttons */}
-      <div className="text-right">
-        <Space>
-          <Button onClick={resetForm}>
-            Đặt lại
-          </Button>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            Tiếp theo: Thêm hình ảnh
-          </Button>
-        </Space>
-      </div>
-    </Form>
-  );
+        {/* Bảng variants */}
+        {variantTable.length > 0 && (
+          <Card title="Thông tin bán hàng" size="small" className="mb-4">
+            <Table
+              columns={variantColumns}
+              dataSource={variantTable}
+              pagination={false}
+              size="middle"
+              scroll={{ x: 600 }}
+              bordered
+            />
+          </Card>
+        )}
+
+        {/* Buttons */}
+        <div className="text-right">
+          <Space size="middle">
+            <Button onClick={resetForm} size="large">
+              Đặt lại
+            </Button>
+            <Button type="primary" htmlType="submit" loading={loading} size="large">
+              Tiếp theo: Thêm hình ảnh
+            </Button>
+          </Space>
+        </div>
+      </Form>
+    );
+  };
 
   // Step 1 component - Image Upload
   const renderStep1 = () => (
     <div>
       <Card title="Tải lên hình ảnh sản phẩm" size="small" className="mb-4">
-        <Row gutter={16}>
+        <Row gutter={24}>
           {/* Main Image */}
           <Col xs={24} md={8}>
             <div className="mb-4">
-              <Text strong>Ảnh đại diện chính</Text>
-              <Upload
-                listType="picture-card"
+              <Text strong className="text-base mb-3 block">📷 Ảnh đại diện chính</Text>
+              <Dragger
                 maxCount={1}
                 beforeUpload={(file) => {
                   setMainImageFile(file);
@@ -694,21 +789,22 @@ const AddProductForm = () => {
                   status: 'done',
                   url: URL.createObjectURL(mainImageFile),
                 }] : []}
+                listType="picture"
+                accept="image/*"
               >
-                {mainImageFile ? null : (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Tải lên</div>
-                  </div>
-                )}
-              </Upload>
+                <p className="ant-upload-drag-icon">
+                  <InboxOutlined />
+                </p>
+                <p className="ant-upload-text">Click hoặc kéo thả ảnh vào đây</p>
+                <p className="ant-upload-hint">Ảnh chính hiển thị khi xem sản phẩm</p>
+              </Dragger>
             </div>
           </Col>
 
           {/* Gallery Images */}
           <Col xs={24} md={8}>
             <div className="mb-4">
-              <Text strong>Thư viện ảnh (tối đa 5)</Text>
+              <Text strong className="text-base mb-3 block">🖼️ Thư viện ảnh (tối đa 5)</Text>
               <Upload
                 listType="picture-card"
                 multiple
@@ -728,6 +824,7 @@ const AddProductForm = () => {
                   url: URL.createObjectURL(file),
                   originFileObj: file
                 }))}
+                accept="image/*"
               >
                 {galleryImageFiles.length >= 5 ? null : (
                   <div>
@@ -742,11 +839,18 @@ const AddProductForm = () => {
           {/* Variant Images */}
           <Col xs={24} md={8}>
             <div className="mb-4">
-              <Text strong>Ảnh cho từng phân loại {classificationType1 === 'color' ? 'màu sắc' : classificationType1 === 'size' ? 'kích cỡ' : 'chất liệu'}</Text>
-              {classification1Values.map((variantValue, index) => {
-                return (
-                  <div key={index} className="mb-2">
-                    <Text className="text-sm">{variantValue}:</Text>
+              <Text strong className="text-base mb-3 block">
+                🎨 Ảnh cho từng phân loại {getAttributeName(classificationType1)}
+              </Text>
+              
+              {classification1Values.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <Text type="secondary">Chưa có phân loại nào</Text>
+                </div>
+              ) : (
+                classification1Values.map((variantValue, index) => (
+                  <div key={index} className="mb-3 p-3 bg-gray-50 rounded-lg">
+                    <Text className="text-sm font-medium block mb-2">{variantValue}:</Text>
                     <Upload
                       listType="picture-card"
                       maxCount={1}
@@ -770,6 +874,7 @@ const AddProductForm = () => {
                         status: 'done',
                         url: URL.createObjectURL(variantImages[variantValue]),
                       }] : []}
+                      accept="image/*"
                     >
                       {variantImages[variantValue] ? null : (
                         <div>
@@ -779,24 +884,29 @@ const AddProductForm = () => {
                       )}
                     </Upload>
                   </div>
-                );
-              })}
+                ))
+              )}
             </div>
           </Col>
         </Row>
 
-        <div className="text-sm text-gray-500 mb-4">
-          <p>💡 <strong>Lưu ý:</strong> Hình ảnh sẽ được tải lên server sau khi bạn nhấn "Tải lên hình ảnh".</p>
+        <Divider />
+
+        <div className="p-4 bg-blue-50 rounded-lg mb-4">
+          <Text className="text-blue-800">
+            💡 <strong>Lưu ý:</strong> Hình ảnh sẽ được tải lên server sau khi bạn nhấn "Tải lên hình ảnh".
+            Bạn có thể bỏ qua bước này và thêm ảnh sau.
+          </Text>
         </div>
       </Card>
 
       {/* Buttons */}
       <div className="text-right">
-        <Space>
-          <Button onClick={prevStep} icon={<ArrowLeftOutlined />}>
+        <Space size="middle">
+          <Button onClick={prevStep} icon={<ArrowLeftOutlined />} size="large">
             Quay lại
           </Button>
-          <Button onClick={() => nextStep()}>
+          <Button onClick={() => nextStep()} size="large">
             Bỏ qua hình ảnh
           </Button>
           <Button 
@@ -804,52 +914,11 @@ const AddProductForm = () => {
             onClick={uploadImages} 
             loading={loading}
             icon={<UploadOutlined />}
+            size="large"
           >
             Tải lên hình ảnh
           </Button>
-          <Button 
-            onClick={async () => {
-              // Quick test endpoint
-              try {
-                const token = localStorage.getItem('access_token'); // Use correct storage key
-                const response = await fetch(`http://localhost:8081/api/products/${createdProduct?.id}`, {
-                  headers: { 'Authorization': token ? `Bearer ${token}` : '' }
-                });
-                const data = await response.json();
-                console.log('🧪 Test API response:', { status: response.status, data });
-                message.info(`API Test: ${response.status} - ${data?.message || 'OK'}`);
-              } catch (err) {
-                console.error('🧪 Test API failed:', err);
-                message.error('API connection failed');
-              }
-            }}
-          >
-            Test API
-          </Button>
-          <Button 
-            onClick={() => {
-              // Force set a test token for debugging
-              const testToken = prompt('Enter test token (optional):');
-              if (testToken) {
-                localStorage.setItem('access_token', testToken); // Use correct key
-                message.success('Test token set!');
-              } else {
-                // Show current token info
-                const currentToken = localStorage.getItem('access_token'); // Use correct key
-                message.info(currentToken ? `Token exists: ${currentToken.substring(0, 30)}...` : 'No token found - please login first');
-              }
-            }}
-          >
-            Debug Token
-          </Button>
         </Space>
-        
-        {/* Debug info */}
-        <div className="mt-4 text-xs text-gray-500">
-          <p>🔧 <strong>Debug:</strong> Product ID: {createdProduct?.id}</p>
-          <p>📸 Images: {mainImageFile ? '1 main' : '0 main'} + {galleryImageFiles.length} gallery + {Object.keys(variantImages).length} variant</p>
-          <p>🌐 Backend: http://localhost:8081/api/products/{createdProduct?.id}/images/*</p>
-        </div>
       </div>
     </div>
   );

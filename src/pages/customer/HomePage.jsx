@@ -24,8 +24,9 @@ const HomePage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // User context effect - kept for potential future use
   useEffect(() => {
-    console.log("UserContext ở HomePage:", user);
+    // User context available
   }, [user]);
 
   const handleScrollToTop = () => {

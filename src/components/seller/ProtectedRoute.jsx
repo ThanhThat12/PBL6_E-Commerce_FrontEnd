@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
  * @returns {React.ReactNode}
  */
 const ProtectedRoute = ({ children, requiredRole = 'SELLER' }) => {
-  const { user, loading, isAuthenticated, hasRole } = useAuth();
+  const { loading, isAuthenticated, hasRole } = useAuth();
   const location = useLocation();
 
   // Loading state

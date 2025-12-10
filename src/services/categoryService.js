@@ -58,6 +58,8 @@ export const getAllCategories = async () => {
   }
 };
 
-export default {
+const categoryService = {
   getAllCategories
 };
+
+export default categoryService;

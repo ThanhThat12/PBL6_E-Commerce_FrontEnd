@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useNotifications } from '../../hooks/useNotifications';
+import { useNotificationContext } from '../../context/NotificationContext';
 import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 /**
@@ -16,10 +16,12 @@ export default function NotificationsPage() {
     clearAll,
     deleteNotification,
     unreadCount 
-  } = useNotifications(user?.id);
+  } = useNotificationContext(); // Use shared WebSocket connection
 
   // Format time
   const formatTime = (timestamp) => {
+    if (!timestamp) return 'Vừa xong'; // Handle undefined/null timestamp
+    
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now - date;

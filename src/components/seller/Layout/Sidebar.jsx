@@ -8,7 +8,6 @@ import {
   BarChartOutlined,
   UserOutlined,
   GiftOutlined,
-  StarOutlined,
 } from '@ant-design/icons';
 import { Menu } from 'antd';
 

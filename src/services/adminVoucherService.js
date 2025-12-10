@@ -226,7 +226,7 @@ export const getVouchersByStatus = async (status, page = 0, size = 10) => {
   }
 };
 
-export default {
+const adminVoucherService = {
   getVoucherStats,
   getVouchers,
   getVoucherDetail,
@@ -235,3 +235,5 @@ export default {
   deleteVoucher,
   getVouchersByStatus,
 };
+
+export default adminVoucherService;

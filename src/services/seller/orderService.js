@@ -46,6 +46,8 @@ const orderService = {
           orderCode: order.id,
           createdAt: order.createdAt || order.created_at,
           method: order.paymentMethod || order.method || 'Unknown',
+          paymentMethod: order.paymentMethod || order.method || 'Unknown',
+          paymentStatus: order.paymentStatus || 'UNPAID',
           // keep backend status code so Select can use it (e.g., 'PENDING', 'COMPLETED')
           status: order.status,
           // friendly label if needed elsewhere
@@ -367,6 +369,39 @@ export const cancelOrder = async (orderId) => {
     return response.data;
   } catch (error) {
     console.error('Error cancelling order:', error);
+    throw error;
+  }
+};
+
+// Refund management APIs
+export const getRefundRequests = async () => {
+  try {
+    const response = await api.get('/refund/requests');
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error fetching refund requests:', error);
+    throw error;
+  }
+};
+
+export const reviewRefund = async (refundId, approve, rejectReason = '') => {
+  try {
+    const response = await api.post(`/refund/review/${refundId}`, null, {
+      params: { approve, rejectReason }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error reviewing refund:', error);
+    throw error;
+  }
+};
+
+export const confirmReceipt = async (refundId) => {
+  try {
+    const response = await api.post(`/refund/confirm-receipt/${refundId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error confirming receipt:', error);
     throw error;
   }
 };

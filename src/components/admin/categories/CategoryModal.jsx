@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Layers, FileText, Save, XCircle } from 'lucide-react';
+import { X, Layers, Save, XCircle } from 'lucide-react';
 import './CategoryModal.css';
 
 const CategoryModal = ({ category, onClose, onSave, loading = false }) => {

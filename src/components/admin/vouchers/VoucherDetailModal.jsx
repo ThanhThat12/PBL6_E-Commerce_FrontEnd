@@ -62,6 +62,7 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing, onClose]);
 
   const fetchVoucherDetail = async () => {

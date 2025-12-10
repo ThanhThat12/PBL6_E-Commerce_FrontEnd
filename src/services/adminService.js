@@ -595,7 +595,7 @@ export const deleteCategory = async (id) => {
 
 export { apiClient };
 
-export default {
+const adminService = {
   
   getCustomers,
   getCustomersPage,
@@ -628,6 +628,8 @@ export default {
   deleteCategory,
 
 };
+
+export default adminService;
 
 // ============ Admin Profile APIs ============
 

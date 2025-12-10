@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Package, TrendingUp, AlertTriangle, ShoppingCart, Plus, Upload, Eye, Trash2 } from 'lucide-react';
+import { Search, Package, TrendingUp, AlertTriangle, ShoppingCart, Upload, Eye, Trash2 } from 'lucide-react';
 import './ProductsTable.css';
 import ProductDetailModal from './ProductDetailModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -39,6 +39,7 @@ const ProductsTable = () => {
     fetchProducts(currentPage);
     fetchStats();
     fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, selectedCategory, selectedStatus]);
 
   // Debounce search term
@@ -59,6 +60,7 @@ const ProductsTable = () => {
       // When search is cleared, fetch products normally
       fetchProducts(currentPage);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm]);
 
   const fetchCategories = async () => {
@@ -190,8 +192,8 @@ const ProductsTable = () => {
     }
   ];
    
-  // Mock data cho products
-  const productsData = [
+  // Mock data cho products - kept for reference
+  /* const productsData = [
     { 
       id: 'PRD001', 
       name: 'iPhone 15 Pro Max', 
@@ -267,7 +269,7 @@ const ProductsTable = () => {
       image: null, // TODO: Load from API
       dateAdded: '2024-05-12'
     }
-  ];
+  ]; */
 
   const getStatusClass = (status) => {
     switch(status) {
@@ -277,7 +279,9 @@ const ProductsTable = () => {
     }
   };
 
-  const getCategoryClass = (category) => {
+  // getCategoryClass - kept for future use
+  // eslint-disable-next-line no-unused-vars
+  const _getCategoryClass = (category) => {
     switch(category) {
       case 'Electronics': return 'category-electronics';
       case 'Fashion': return 'category-fashion';

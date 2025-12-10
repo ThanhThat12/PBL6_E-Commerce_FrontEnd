@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus , Search, Users, UserCheck, Star, Package, TrendingUp, ShoppingBag, Receipt, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Users, UserCheck, ShoppingBag, Receipt } from 'lucide-react';
 import CustomerActions from './CustomerActions';
 import CustomerDetailModal from './CustomerDetailModal';
 import AddCustomerModal from './AddCustomerModal';
@@ -29,19 +29,21 @@ const CustomersTable = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
+  const [_totalElements, setTotalElements] = useState(0); // eslint-disable-line no-unused-vars
   const [pageSize] = useState(10);
 
   // Fetch customers and stats from API
   useEffect(() => {
     fetchCustomers();
     fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]); // Re-fetch when page changes
 
   // Re-fetch when status filter changes
   useEffect(() => {
     setCurrentPage(0); // Reset to first page when filter changes
     fetchCustomers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const fetchCustomers = async () => {
@@ -138,8 +140,8 @@ const CustomersTable = () => {
     }
   ];
   
-  // Mock data dựa theo ảnh - Thêm đầy đủ thông tin cho modal
-  const mockCustomersData = [
+  // Mock data dựa theo ảnh - Kept for reference
+  /* const mockCustomersData = [
     { 
       id: '#CUST001', 
       name: 'John Doe', 
@@ -237,9 +239,11 @@ const CustomersTable = () => {
       registerAt: '2024-06-22',
       lastOrderDate: '2024-09-05'
     },
-  ];
+  ]; */
 
-  const getStatusClass = (status) => {
+  // Status class helpers - kept for future use
+  // eslint-disable-next-line no-unused-vars
+  const _getStatusClass = (status) => {
     switch(status) {
       case 'Active': return 'status-active';
       case 'Inactive': return 'status-inactive';
@@ -247,7 +251,8 @@ const CustomersTable = () => {
     }
   };
 
-  const getStatusDot = (status) => {
+  // eslint-disable-next-line no-unused-vars
+  const _getStatusDot = (status) => {
     switch(status) {
       case 'Active': return '●';
       case 'Inactive': return '●';
@@ -356,7 +361,9 @@ const CustomersTable = () => {
     }
   };
 
-  const handleAddCustomer = () => {
+  // handleAddCustomer - used when Add Customer button is enabled
+  // eslint-disable-next-line no-unused-vars
+  const _handleAddCustomer = () => {
     setShowAddModal(true);
   };
 
