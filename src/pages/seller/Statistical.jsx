@@ -117,8 +117,17 @@ const Statistical = () => {
       setAnalyticsLoading(true);
       const res = await getShopAnalytics(year);
       const payload = res?.data || res || {};
-      const monthly = payload?.monthlyRevenue || payload?.data?.monthlyRevenue || payload;
-      const months = Array.isArray(monthly) ? monthly.slice() : [];
+      
+      // Extract monthlyRevenue safely
+      let monthly = payload?.monthlyRevenue || payload?.data?.monthlyRevenue || [];
+      
+      // Ensure it's an array before using slice
+      if (!Array.isArray(monthly)) {
+        console.warn('monthlyRevenue is not an array:', monthly);
+        monthly = [];
+      }
+      
+      const months = monthly.slice();
       months.sort((a, b) => (a.month || 0) - (b.month || 0));
       setMonthlyRevenue(months);
     } catch (error) {

@@ -39,6 +39,7 @@ const PaymentPage = () => {
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [detectedShopId, setDetectedShopId] = useState(null);
   const [fetchedAddressId, setFetchedAddressId] = useState(null); // Track which addressId was used for fetching
+  const [walletBalance, setWalletBalance] = useState(0); // Wallet balance for SportyPay
 
   // Get shopId from checkoutItems (assuming all items are from the same shop)
   const shopId = useMemo(() => {
@@ -130,6 +131,41 @@ const PaymentPage = () => {
       });
     }
   }, [fetchCart]);
+
+  // Fetch wallet balance
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const response = await api.get('/wallet/balance');
+        console.log('💰 Full API response:', response);
+        console.log('💰 Response data:', response.data);
+        
+        if (response.data && response.data.data) {
+          // Structure: { status, data: { balance, userId, username } }
+          const balance = response.data.data.balance || 0;
+          console.log('💰 Extracted balance:', balance);
+          console.log('💰 Balance type:', typeof balance);
+          setWalletBalance(Number(balance));
+          console.log('💰 Wallet balance set to:', Number(balance));
+        } else if (response.data && typeof response.data.balance === 'number') {
+          // Alternative structure: { balance, userId, username }
+          const balance = response.data.balance || 0;
+          console.log('💰 Extracted balance (alt structure):', balance);
+          setWalletBalance(Number(balance));
+          console.log('💰 Wallet balance set to:', Number(balance));
+        } else {
+          console.warn('⚠️ Invalid response structure:', response.data);
+          setWalletBalance(0);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching wallet balance:', error);
+        // Don't show error toast, just log it
+        setWalletBalance(0);
+      }
+    };
+
+    fetchWalletBalance();
+  }, []);
 
   // Redirect if no checkout items
   useEffect(() => {
@@ -592,8 +628,7 @@ const PaymentPage = () => {
 
             await refreshCartAndNavigate('/orders');
           } else {
-            toast.error(walletResponse.message || 'Thanh toán bằng ví thất bại!');
-            await refreshCartAndNavigate('/orders');
+            toast.error('Không thể thanh toán đơn hàng. Vui lòng kiểm tra số dư ví.');
           }
         } catch {
           toast.error('Lỗi thanh toán bằng ví SportyPay');
@@ -841,6 +876,7 @@ const PaymentPage = () => {
                 <PaymentMethodSelector
                   selectedMethod={paymentMethod}
                   onMethodChange={setPaymentMethod}
+                  walletBalance={walletBalance}
                 />
               </div>
 

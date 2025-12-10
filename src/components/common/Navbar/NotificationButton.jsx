@@ -7,12 +7,28 @@ import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid';
  * NotificationButton Component
  * Hiển thị icon thông báo với badge số lượng và dropdown danh sách thông báo
  */
-export default function NotificationButton({ notifications = [], onMarkAsRead, onClearAll }) {
+export default function NotificationButton({ notifications = [], onMarkAsRead, onClearAll, variant = 'customer' }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   
   const unreadCount = notifications.filter(n => !n.read).length;
   const hasUnread = unreadCount > 0;
+
+  // Style variants
+  const isAdmin = variant === 'admin';
+  const buttonClass = isAdmin 
+    ? 'p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors'
+    : 'flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary-600 transition-colors group';
+  
+  const iconClass = isAdmin
+    ? 'w-5 h-5'
+    : hasUnread 
+      ? 'w-6 h-6 text-yellow-300 group-hover:text-yellow-200 transition-colors animate-wiggle'
+      : 'w-6 h-6 text-white group-hover:text-primary-100 transition-colors';
+
+  const badgeClass = isAdmin
+    ? 'absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full shadow-md'
+    : 'absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full shadow-lg animate-pulse';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -33,6 +49,8 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
 
   // Format time ago
   const timeAgo = (timestamp) => {
+    if (!timestamp) return 'Vừa xong'; // Handle undefined/null timestamp
+    
     const now = Date.now();
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60000);
@@ -48,6 +66,8 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
   // Get icon for notification type
   const getNotificationIcon = (type) => {
     switch (type) {
+      case 'CHAT_MESSAGE':
+        return '💬';
       case 'ORDER_CONFIRMED':
         return '✅';
       case 'ORDER_SHIPPING':
@@ -61,58 +81,56 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
     }
   };
 
+  // Handle notification click
+  const handleNotificationClick = (notification) => {
+    // Mark as read
+    onMarkAsRead?.(notification.id);
+    
+    // Close dropdown
+    setIsOpen(false);
+    
+    // If chat message, open chat
+    if (notification.type === 'CHAT_MESSAGE') {
+      if (notification.conversationId) {
+        // Open specific conversation
+        window.dispatchEvent(new CustomEvent('openChat', {
+          detail: { conversationId: notification.conversationId }
+        }));
+      } else {
+        // Open chat window to show all conversations
+        window.dispatchEvent(new CustomEvent('openChat', {
+          detail: {}
+        }));
+      }
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Notification Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="
-          relative
-          flex
-          items-center
-          gap-2
-          px-3
-          py-2
-          rounded-lg
-          hover:bg-primary-600
-          transition-colors
-          group
-        "
+        className={buttonClass}
         aria-label="Thông báo"
       >
         {hasUnread ? (
-          <BellIconSolid className="w-6 h-6 text-yellow-300 group-hover:text-yellow-200 transition-colors animate-wiggle" />
+          <BellIconSolid className={iconClass} />
         ) : (
-          <BellIcon className="w-6 h-6 text-white group-hover:text-primary-100 transition-colors" />
+          <BellIcon className={iconClass} />
         )}
         
         {/* Badge */}
         {hasUnread && (
-          <span className="
-            absolute
-            -top-1
-            -right-1
-            min-w-[20px]
-            h-5
-            px-1.5
-            flex
-            items-center
-            justify-center
-            text-xs
-            font-bold
-            text-white
-            bg-red-500
-            rounded-full
-            shadow-lg
-            animate-pulse
-          ">
+          <span className={badgeClass}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
         
-        <span className="hidden lg:inline text-sm font-medium text-white group-hover:text-primary-100 transition-colors">
-          Thông báo
-        </span>
+        {!isAdmin && (
+          <span className="hidden lg:inline text-sm font-medium text-white group-hover:text-primary-100 transition-colors">
+            Thông báo
+          </span>
+        )}
       </button>
 
       {/* Dropdown */}
@@ -176,10 +194,7 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
                       cursor-pointer
                       ${!notification.read ? 'bg-blue-50' : ''}
                     `}
-                    onClick={() => {
-                      onMarkAsRead?.(notification.id);
-                      setIsOpen(false);
-                    }}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex gap-3">
                       {/* Icon */}
@@ -200,6 +215,11 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
                           >
                             Xem đơn hàng #{notification.orderId}
                           </Link>
+                        )}
+                        {notification.type === 'CHAT_MESSAGE' && (
+                          <p className="text-xs text-primary-600 mt-1">
+                            Nhấn để xem tin nhắn
+                          </p>
                         )}
                         <p className="text-xs text-gray-500 mt-1">
                           {timeAgo(notification.timestamp)}

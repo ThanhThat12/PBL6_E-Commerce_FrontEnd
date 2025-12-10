@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import { ArrowLeftIcon, ChatBubbleLeftRightIcon, StarIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { WriteReviewModal } from '../../components/review';
 import reviewService from '../../services/reviewService';
+import chatService from '../../services/chatService';
 
 /**
  * OrderDetailPage Component
@@ -162,12 +163,53 @@ const OrderDetailPage = () => {
     }
   };
 
-  const handleContactShop = () => {
-    if (currentOrder?.shop?.id) {
-      // Navigate to shop page or open chat
-      navigate(`/shops/${currentOrder.shop.id}`);
-    } else {
-      toast.info('Tính năng liên hệ shop đang được phát triển');
+  const handleContactShop = async () => {
+    try {
+      // Get all conversations to check if SHOP conversation exists
+      const conversations = await chatService.getMyConversations();
+      
+      // Find existing SHOP conversation with this shop
+      let conversation = conversations.find(
+        conv => conv.type === 'SHOP' && conv.shop?.id === currentOrder.shop?.id
+      );
+
+      // If no existing conversation, create new SHOP conversation
+      if (!conversation) {
+        conversation = await chatService.createConversation({
+          type: 'SHOP',
+          shopId: currentOrder.shop?.id
+        });
+        console.log('New SHOP conversation created:', conversation);
+      } else {
+        console.log('Opening existing SHOP conversation:', conversation);
+      }
+
+      // Dispatch custom event to open chat window
+      // Create order summary with URLs for both buyer and seller
+      const buyerUrl = `${window.location.origin}/orders/${currentOrder.id}`;
+      const sellerUrl = `${window.location.origin}/seller/orders/${currentOrder.id}`;
+      
+      const orderSummary = `Xin chao, toi muon hoi ve don hang #${currentOrder.id}
+
+Xem chi tiet don hang:
+- Khach hang: ${buyerUrl}
+- Nguoi ban: ${sellerUrl}`;
+
+      window.dispatchEvent(
+        new CustomEvent('openChat', {
+          detail: {
+            conversationId: conversation.id,
+            conversationType: 'SHOP',
+            shopId: currentOrder.shop?.id,
+            // Include order link to auto-send ONLY from order detail page
+            shouldAutoSend: true,
+            autoMessage: orderSummary
+          }
+        })
+      );
+    } catch (error) {
+      console.error('Error opening chat with shop:', error);
+      toast.error('Không thể mở chat với shop');
     }
   };
 

@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 /**
- * NotificationsPage - Trang xem tất cả thông báo
+ * Seller Notifications Page - Trang xem tất cả thông báo cho seller
  */
-export default function NotificationsPage() {
+export default function SellerNotificationsPage() {
   const { user } = useAuth();
   const { 
     notifications, 
@@ -16,17 +16,16 @@ export default function NotificationsPage() {
     clearAll,
     deleteNotification,
     unreadCount 
-  } = useNotificationContext(); // Use shared WebSocket connection
+  } = useNotificationContext();
 
   // Format time
   const formatTime = (timestamp) => {
-    if (!timestamp) return 'Vừa xong'; // Handle undefined/null timestamp
+    if (!timestamp) return 'Vừa xong';
     
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now - date;
     
-    // If less than 24 hours, show relative time
     if (diff < 86400000) {
       const minutes = Math.floor(diff / 60000);
       const hours = Math.floor(diff / 3600000);
@@ -36,7 +35,6 @@ export default function NotificationsPage() {
       return `${hours} giờ trước`;
     }
     
-    // Otherwise show date
     return date.toLocaleDateString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
@@ -49,9 +47,10 @@ export default function NotificationsPage() {
   // Get icon for notification type
   const getNotificationIcon = (type) => {
     const iconMap = {
-      ORDER_CONFIRMED: '✅',
-      ORDER_SHIPPING: '🚚',
+      NEW_ORDER: '🛒',
+      ORDER_PAID: '💰',
       ORDER_COMPLETED: '🎉',
+      RETURN_REQUESTED: '↩️',
       ORDER_CANCELLED: '❌',
       ORDER_STATUS_UPDATE: '📋',
     };
@@ -61,9 +60,10 @@ export default function NotificationsPage() {
   // Get badge color for notification type
   const getBadgeColor = (type) => {
     const colorMap = {
-      ORDER_CONFIRMED: 'bg-blue-100 text-blue-800',
-      ORDER_SHIPPING: 'bg-purple-100 text-purple-800',
+      NEW_ORDER: 'bg-green-100 text-green-800',
+      ORDER_PAID: 'bg-blue-100 text-blue-800',
       ORDER_COMPLETED: 'bg-green-100 text-green-800',
+      RETURN_REQUESTED: 'bg-yellow-100 text-yellow-800',
       ORDER_CANCELLED: 'bg-red-100 text-red-800',
       ORDER_STATUS_UPDATE: 'bg-gray-100 text-gray-800',
     };
@@ -72,9 +72,10 @@ export default function NotificationsPage() {
 
   const getBadgeText = (type) => {
     const textMap = {
-      ORDER_CONFIRMED: 'Đã xác nhận',
-      ORDER_SHIPPING: 'Đang giao',
+      NEW_ORDER: 'Đơn hàng mới',
+      ORDER_PAID: 'Đã thanh toán',
       ORDER_COMPLETED: 'Hoàn thành',
+      RETURN_REQUESTED: 'Yêu cầu trả hàng',
       ORDER_CANCELLED: 'Đã hủy',
       ORDER_STATUS_UPDATE: 'Cập nhật',
     };
@@ -106,7 +107,7 @@ export default function NotificationsPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <BellIcon className="w-8 h-8 text-primary-600" />
-                Thông báo
+                Thông báo của Shop
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Không có thông báo chưa đọc'}
@@ -141,7 +142,7 @@ export default function NotificationsPage() {
             <BellIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 text-lg">Không có thông báo nào</p>
             <p className="text-gray-400 text-sm mt-2">
-              Thông báo về đơn hàng của bạn sẽ xuất hiện ở đây
+              Thông báo về đơn hàng và hoạt động shop sẽ xuất hiện ở đây
             </p>
           </div>
         ) : (
@@ -192,7 +193,7 @@ export default function NotificationsPage() {
                     
                     {notification.orderId && (
                       <Link
-                        to={`/orders/${notification.orderId}`}
+                        to={`/seller/orders`}
                         className="inline-block mt-3 text-sm text-primary-600 hover:text-primary-700 hover:underline font-medium"
                       >
                         → Xem chi tiết đơn hàng #{notification.orderId}

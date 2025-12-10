@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotificationContext } from "../../context/NotificationContext";
 import { getCategories } from "../../services/homeService";
 import { 
   Bars3Icon,
@@ -46,8 +46,11 @@ export default function NavbarNew({ isHomePage = false }) {
     notifications, 
     markAsRead, 
     clearAll,
-    unreadCount: _unreadCount // eslint-disable-line no-unused-vars
-  } = useNotifications(user?.id); // Sử dụng NotificationContext
+    unreadCount,
+    chatUnreadCount
+  } = useNotificationContext(); // Sử dụng NotificationContext
+
+  console.log('Navbar - Notifications:', notifications.length, 'Total unread:', unreadCount, 'Chat unread:', chatUnreadCount);
 
   // Scroll effect
   useEffect(() => {

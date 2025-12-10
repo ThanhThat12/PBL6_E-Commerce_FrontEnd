@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import { Avatar, Dropdown, Badge } from 'antd';
 import { useAuth } from '../../../context/AuthContext';
+import NotificationDropdown from './NotificationDropdown';
 
 /**
  * Seller Header Component
@@ -89,10 +90,8 @@ const Header = () => {
 
       {/* Right side - notifications and user menu */}
       <div className="flex items-center gap-4">
-        {/* Notifications */}
-        <Badge count={0} showZero={false}>
-          <BellOutlined className="text-xl text-gray-600 cursor-pointer hover:text-blue-600" />
-        </Badge>
+        {/* Notifications Dropdown */}
+        <NotificationDropdown />
 
         {/* User menu */}
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>

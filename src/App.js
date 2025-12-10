@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ToastContainer } from 'react-toastify';
 import { Toaster } from 'react-hot-toast';
@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { OrderProvider } from './context/OrderContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ROUTES, GOOGLE_CLIENT_ID } from './utils/constants';
 
 // Pages
@@ -41,8 +42,26 @@ import RegistrationStatusPage from './pages/user/RegistrationStatusPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+// Chat Component
+import { ChatContainer } from './components/chat';
+
 // 🧑‍💼 Admin Pages
 import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
+
+// Chat Wrapper - Only show on authenticated pages
+const ConditionalChatContainer = () => {
+  const location = useLocation();
+  
+  // Hide chat on auth pages
+  const hideChat = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    '/forgot-password',
+    '/admin/login'
+  ].some(route => location.pathname.startsWith(route));
+  
+  return !hideChat ? <ChatContainer /> : null;
+};
 
 // 🏪 Seller Pages & Components
 import SellerProtectedRoute from './components/seller/ProtectedRoute';
@@ -66,9 +85,10 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <AuthProvider>
-          <CartProvider>
-            <OrderProvider>
-            <Routes>
+          <NotificationProvider>
+            <CartProvider>
+              <OrderProvider>
+              <Routes>
               {/* Public Routes */}
               <Route path={ROUTES.HOME} element={<Homepage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
@@ -229,6 +249,7 @@ function App() {
               <Route path="customers" element={<SellerPages.Customers />} />
               <Route path="vouchers" element={<SellerPages.VoucherManagement />} />
               <Route path="refunds" element={<SellerPages.Refunds />} />
+              <Route path="notifications" element={<SellerPages.Notifications />} />
             </Route>
             {/* ================================================= */}
 
@@ -278,8 +299,12 @@ function App() {
               draggable
               pauseOnHover
             />
-            </OrderProvider>
-          </CartProvider>
+            
+            {/* Chat Floating Window - Hidden on auth pages */}
+            <ConditionalChatContainer />
+              </OrderProvider>
+            </CartProvider>
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>

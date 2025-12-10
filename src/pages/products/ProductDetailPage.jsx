@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { FiShoppingCart, FiMinus, FiPlus, FiChevronRight, FiStar, FiPackage, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiEye, FiShare2, FiHeart, FiTruck, FiRotateCcw, FiAward, FiGrid, FiThumbsUp, FiThumbsDown, FiClock } from 'react-icons/fi';
@@ -13,6 +13,7 @@ import { getProductById, getProductImages } from '../../services/productService'
 import useCart from '../../hooks/useCart';
 import useAuth from '../../hooks/useAuth';
 import { getProductImage } from '../../utils/placeholderImage';
+import chatService from '../../services/chatService';
 
 /**
  * ProductDetailPage - Shopee Style
@@ -34,6 +35,104 @@ const ProductDetailPage = () => {
   const [activeTab, setActiveTab] = useState('details'); // details, reviews, shipping
   const [currentImagePage, setCurrentImagePage] = useState(0);
   const { user, isAuthenticated, hasRole } = useAuth();
+
+  // Check if current user is product owner - cached with useMemo
+  const isProductOwner = useMemo(() => {
+    // Early return if data not ready
+    if (!user || !product) return false;
+    
+    // Check SELLER role
+    if (!hasRole || !hasRole('SELLER')) return false;
+
+    // Get shop IDs
+    const userShopId = user.shopId || user.shop?.id;
+    const productShopId = product.shopId || product.shop?.id;
+    
+    // Both must exist to compare
+    if (!userShopId || !productShopId) return false;
+
+    // Compare shop IDs
+    return String(userShopId) === String(productShopId);
+  }, [user, product, hasRole]);
+
+  // Computed permission flags based on markdown spec
+  const canChat = useMemo(() => {
+    return !isProductOwner && isAuthenticated;
+  }, [isProductOwner, isAuthenticated]);
+
+  const canAddToCart = useMemo(() => {
+    if (isProductOwner) return false;
+    if (!product) return false;
+    if (!selectedVariant) return false;
+    return selectedVariant.stock > 0 && product.isActive;
+  }, [isProductOwner, product, selectedVariant]);
+
+  // Handle chat with shop
+  const handleChatWithShop = async (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
+    // Verify authentication
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để chat với shop');
+      navigate('/login');
+      return;
+    }
+
+    // Check ownership - only block if user is owner of THIS shop
+    if (isProductOwner) {
+      toast.error('Bạn không thể chat với shop của chính mình');
+      return;
+    }
+
+    const shopId = product.shop?.id || product.shopId;
+    
+    if (!shopId) {
+      toast.error('Không tìm thấy thông tin shop');
+      return;
+    }
+
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading('Đang mở chat với shop...');
+      
+      // Create or get conversation with shop
+      const apiResponse = await chatService.createConversation({
+        type: 'SHOP',
+        shopId: shopId,
+      });
+
+      toast.dismiss(loadingToast);
+
+      // apiResponse is ResponseDTO: { status, message, data: conversationObject }
+      const conversationData = apiResponse.data;
+      
+      if (conversationData && conversationData.id) {
+        console.log('[ProductDetailPage] ✅ Conversation created:', conversationData);
+        
+        // Dispatch event to open chat window
+        const event = new CustomEvent('openChat', { 
+          detail: { conversationId: conversationData.id } 
+        });
+        console.log('[ProductDetailPage] 📤 Dispatching openChat event');
+        window.dispatchEvent(event);
+        
+        toast.success('Chat đã mở!');
+      } else {
+        console.error('Invalid conversation response:', apiResponse);
+        toast.error('Không thể tạo cuộc trò chuyện');
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      // Check for specific backend error about self-chat
+      const errorMessage = error.response?.data?.message || '';
+      if (error.response?.status === 403 || errorMessage.includes('shop của chính mình') || errorMessage.includes('own shop')) {
+        toast.error('Bạn không thể chat với shop của chính mình');
+      } else {
+        toast.error(errorMessage || 'Không thể mở chat với shop');
+      }
+    }
+  };
 
   // Load product
   useEffect(() => {
@@ -165,6 +264,18 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = async () => {
+    // Frontend validation before API call
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
+      navigate('/login');
+      return;
+    }
+
+    if (isProductOwner) {
+      toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      return;
+    }
+
     if (!selectedVariant) {
       toast.error('Vui lòng chọn phiên bản sản phẩm');
       return;
@@ -182,16 +293,79 @@ const ProductDetailPage = () => {
 
     setAdding(true);
     try {
-      await addItemToCart(selectedVariant.id, quantity);
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+      const result = await addItemToCart(selectedVariant.id, quantity);
+      // Check if result indicates success
+      if (result && result.success === false) {
+        toast.error(result.error || 'Không thể thêm vào giỏ hàng');
+      } else {
+        toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+      }
     } catch (error) {
       console.error('Add to cart error:', error);
-      if (error.response?.status === 404) {
+      // Handle backend rejection (403 Forbidden = own product)
+      if (error.response?.status === 403) {
+        toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      } else if (error.response?.status === 404) {
         toast.error('Không tìm thấy sản phẩm');
       } else if (error.response?.status === 400) {
-        toast.error(error.response.data.message || 'Số lượng không hợp lệ');
+        toast.error(error.response.data?.message || 'Số lượng không hợp lệ');
       } else {
-        toast.error('Không thể thêm vào giỏ hàng');
+        toast.error(error.message || 'Không thể thêm vào giỏ hàng');
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    // Validation for authentication only
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để mua hàng');
+      navigate('/login');
+      return;
+    }
+
+    // Block own product purchase
+    if (isProductOwner) {
+      toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      return;
+    }
+
+    if (!selectedVariant) {
+      toast.error('Vui lòng chọn phiên bản sản phẩm');
+      return;
+    }
+
+    if (!product.isActive) {
+      toast.error('Sản phẩm hiện không khả dụng');
+      return;
+    }
+
+    if (selectedVariant.stock < quantity) {
+      toast.error('Số lượng vượt quá hàng có sẵn');
+      return;
+    }
+
+    // Add to cart first, then navigate to cart page for user to select and checkout
+    setAdding(true);
+    try {
+      const result = await addItemToCart(selectedVariant.id, quantity);
+      if (result && result.success === false) {
+        toast.error(result.error || 'Không thể thêm vào giỏ hàng');
+      } else {
+        // Navigate to cart page for user to select items and checkout
+        navigate('/cart');
+      }
+    } catch (error) {
+      console.error('Buy now error:', error);
+      if (error.response?.status === 403) {
+        toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      } else if (error.response?.status === 404) {
+        toast.error('Không tìm thấy sản phẩm');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response.data?.message || 'Số lượng không hợp lệ');
+      } else {
+        toast.error(error.message || 'Không thể mua ngay');
       }
     } finally {
       setAdding(false);
@@ -227,41 +401,6 @@ const ProductDetailPage = () => {
       </div>
     );
   }
-
-  const isProductOwner = () => {
-    if (!user || !product || !hasRole) return false;
-    // Must be seller role
-    if (!hasRole('SELLER')) return false;
-
-    const uid = user.id || user.userId || user._id || user.userId || user.uid;
-    const shop = product.shop || {};
-
-    // Collect many possible owner/shop fields used by different backends
-    const ownerIds = [
-      shop.ownerId,
-      shop.owner?.id,
-      shop.userId,
-      shop.user?.id,
-      shop.sellerId,
-      shop.seller?.id,
-      shop.id,
-      product.sellerId,
-      product.seller?.id,
-      product.shopId,
-    ].filter(Boolean);
-
-    // Also check if user has a shopId that matches
-    const userShopId = user.shopId || user.shop?.id || null;
-
-    const match = ownerIds.some(i => String(i) === String(uid)) || (userShopId && String(userShopId) === String(shop.id || product.shopId || product.shop?.id));
-
-    // Debug logging to help identify why seller cannot reply
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[isProductOwner] uid:', uid, 'userShopId:', userShopId, 'shop:', shop, 'ownerIds:', ownerIds, 'match:', match);
-    }
-
-    return !!match;
-  };
 
   const displayPrice = selectedVariant?.price || product.basePrice || 0;
   const isInStock = selectedVariant ? selectedVariant.stock > 0 : false;
@@ -548,21 +687,41 @@ const ProductDetailPage = () => {
               <div className="flex gap-3">
                 <Button
                   onClick={handleAddToCart}
-                  disabled={adding || !selectedVariant || selectedVariant.stock === 0 || !product.isActive}
+                  disabled={!canAddToCart || adding}
                   variant="outline"
-                  className="flex-1 border-primary-500 text-primary-600 hover:bg-primary-50"
+                  className={`flex-1 ${
+                    isProductOwner 
+                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                      : 'border-primary-500 text-primary-600 hover:bg-primary-50'
+                  }`}
+                  title={
+                    !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
+                    isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
+                    !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
+                    selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
+                    !product.isActive ? 'Sản phẩm không khả dụng' : ''
+                  }
                 >
                   <FiShoppingCart className="w-5 h-5 mr-2" />
-                  {adding ? 'Đang thêm...' : 'Thêm Vào Giỏ Hàng'}
+                  {isProductOwner ? 'Sản phẩm của bạn' : adding ? 'Đang thêm...' : 'Thêm Vào Giỏ Hàng'}
                 </Button>
                 
                 <Button
-                  onClick={handleAddToCart}
-                  disabled={adding || !selectedVariant || selectedVariant.stock === 0 || !product.isActive}
+                  onClick={handleBuyNow}
+                  disabled={!canAddToCart || adding}
                   variant="primary"
-                  className="flex-1"
+                  className={`flex-1 ${
+                    isProductOwner ? 'bg-gray-400 cursor-not-allowed' : ''
+                  }`}
+                  title={
+                    !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
+                    isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
+                    !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
+                    selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
+                    !product.isActive ? 'Sản phẩm không khả dụng' : ''
+                  }
                 >
-                  Mua Ngay
+                  {isProductOwner ? 'Không thể mua' : 'Mua Ngay'}
                 </Button>
               </div>
             </div>
@@ -656,10 +815,25 @@ const ProductDetailPage = () => {
 
             {/* Shop Actions */}
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="border-primary-500 text-primary-600 hover:bg-primary-50">
-                <FiMessageCircle className="w-4 h-4 mr-2" />
-                Chat Ngay
-              </Button>
+              {/* Conditional render: Hide Chat button completely for shop owner (per markdown spec) */}
+              {!isProductOwner && (
+                <Button 
+                  variant="outline" 
+                  className="border-primary-500 text-primary-600 hover:bg-primary-50"
+                  onClick={handleChatWithShop}
+                  disabled={!canChat}
+                  title={!isAuthenticated ? 'Vui lòng đăng nhập để chat' : 'Chat với shop'}
+                >
+                  <FiMessageCircle className="w-4 h-4 mr-2" />
+                  {!isAuthenticated ? 'Đăng nhập để chat' : 'Chat Ngay'}
+                </Button>
+              )}
+              {/* Optional: Show indicator for own product */}
+              {isProductOwner && (
+                <div className="text-sm text-gray-500 italic">
+                  Đây là sản phẩm của bạn
+                </div>
+              )}
               {shopInfo.id && (
                 <Link to={`/shops/${shopInfo.id}`}>
                   <Button variant="primary">
