@@ -625,12 +625,10 @@ const PaymentPage = () => {
                 // Silent error for order update
               }
             }
-          }
 
             await refreshCartAndNavigate('/orders');
           } else {
             toast.error('Không thể thanh toán đơn hàng. Vui lòng kiểm tra số dư ví.');
-            console.error('❌ All payments failed:', failedOrders);
           }
         } catch {
           toast.error('Lỗi thanh toán bằng ví SportyPay');

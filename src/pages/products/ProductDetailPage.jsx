@@ -13,6 +13,7 @@ import { getProductById, getProductImages } from '../../services/productService'
 import useCart from '../../hooks/useCart';
 import useAuth from '../../hooks/useAuth';
 import { getProductImage } from '../../utils/placeholderImage';
+import chatService from '../../services/chatService';
 
 /**
  * ProductDetailPage - Shopee Style
@@ -32,6 +33,63 @@ const ProductDetailPage = () => {
   const [imageGallery, setImageGallery] = useState([]);
   const [adding, setAdding] = useState(false);
   const { user, isAuthenticated, hasRole } = useAuth();
+
+  // Handle chat with shop
+  const handleChatWithShop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Chat button clicked!');
+    
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để chat với shop');
+      navigate('/login');
+      return;
+    }
+
+    const shopId = product.shop?.id || product.shopId;
+    console.log('Shop ID:', shopId);
+    
+    if (!shopId) {
+      toast.error('Không tìm thấy thông tin shop');
+      return;
+    }
+
+    try {
+      console.log('Creating conversation with shop:', shopId);
+      
+      // Create or get conversation with shop
+      const response = await chatService.createConversation({
+        type: 'SHOP',
+        shopId: shopId,
+      });
+
+      console.log('Conversation response:', response);
+
+      // API trả về object trực tiếp, không có response.data
+      const conversationData = response.data || response;
+      
+      if (conversationData && conversationData.id) {
+        toast.success('Đã mở chat với shop');
+        
+        console.log('Dispatching openChat event with conversationId:', conversationData.id);
+        
+        // Dispatch event to open chat window
+        const event = new CustomEvent('openChat', { 
+          detail: { conversationId: conversationData.id } 
+        });
+        window.dispatchEvent(event);
+        
+        console.log('Event dispatched successfully');
+      } else {
+        console.error('Invalid conversation response:', conversationData);
+        toast.error('Không nhận được thông tin conversation');
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      toast.error('Không thể mở chat với shop. Vui lòng thử lại.');
+    }
+  };
 
   // Load product
   useEffect(() => {
@@ -329,58 +387,78 @@ const ProductDetailPage = () => {
           <div>
             {/* Shop Info Card */}
             {(product.shop || product.shopName) && (
-              <Link 
-                to={`/shops/${product.shop?.id || product.shopId}`}
-                className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl border border-primary-200 flex items-center gap-4 hover:shadow-md transition-all group no-underline"
-              >
-                {/* Shop Logo */}
-                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0">
-                  <img
-                    src={product.shop?.logoUrl || product.shopLogo || '/default-shop.png'}
-                    alt={product.shop?.name || product.shopName}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/default-shop.png';
-                    }}
-                  />
-                </div>
-                
-                {/* Shop Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">
-                    {product.shop?.name || product.shopName}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-600">
-                    {(product.shop?.rating || product.shopRating) && (
-                      <span className="flex items-center gap-1">
-                        <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
-                        {(product.shop?.rating || product.shopRating).toFixed(1)}
-                      </span>
-                    )}
-                    {(product.shop?.productCount || product.shopProductCount) && (
-                      <span className="flex items-center gap-1">
-                        <FiPackage className="w-4 h-4" />
-                        {product.shop?.productCount || product.shopProductCount} sản phẩm
-                      </span>
-                    )}
-                    {(product.shop?.location || product.shopLocation) && (
-                      <span className="flex items-center gap-1">
-                        <FiMapPin className="w-4 h-4" />
-                        {product.shop?.location || product.shopLocation}
-                      </span>
-                    )}
+              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl border border-primary-200 hover:shadow-md transition-all">
+                <div className="flex items-center gap-4">
+                  {/* Shop Logo */}
+                  <Link 
+                    to={`/shops/${product.shop?.id || product.shopId}`}
+                    className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0 no-underline"
+                  >
+                    <img
+                      src={product.shop?.logoUrl || product.shopLogo || '/default-shop.png'}
+                      alt={product.shop?.name || product.shopName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/default-shop.png';
+                      }}
+                    />
+                  </Link>
+                  
+                  {/* Shop Info */}
+                  <div className="flex-1 min-w-0">
+                    <Link 
+                      to={`/shops/${product.shop?.id || product.shopId}`}
+                      className="no-underline"
+                    >
+                      <h3 className="font-bold text-gray-900 hover:text-primary-600 transition-colors truncate">
+                        {product.shop?.name || product.shopName}
+                      </h3>
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-600">
+                      {(product.shop?.rating || product.shopRating) && (
+                        <span className="flex items-center gap-1">
+                          <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
+                          {(product.shop?.rating || product.shopRating).toFixed(1)}
+                        </span>
+                      )}
+                      {(product.shop?.productCount || product.shopProductCount) && (
+                        <span className="flex items-center gap-1">
+                          <FiPackage className="w-4 h-4" />
+                          {product.shop?.productCount || product.shopProductCount} sản phẩm
+                        </span>
+                      )}
+                      {(product.shop?.location || product.shopLocation) && (
+                        <span className="flex items-center gap-1">
+                          <FiMapPin className="w-4 h-4" />
+                          {product.shop?.location || product.shopLocation}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex-shrink-0 flex flex-col gap-2">
+                    {/* Chat Button */}
+                    <button
+                      onClick={handleChatWithShop}
+                      className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                      <FiMessageCircle className="w-4 h-4" />
+                      Chat Ngay
+                    </button>
+                    
+                    {/* View Shop Link */}
+                    <Link 
+                      to={`/shops/${product.shop?.id || product.shopId}`}
+                      className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-white text-primary-600 rounded-lg text-sm font-medium border border-primary-200 hover:bg-primary-50 transition-colors no-underline"
+                    >
+                      <FiChevronRight className="w-4 h-4" />
+                      Xem Shop
+                    </Link>
                   </div>
                 </div>
-
-                {/* View Shop Button */}
-                <div className="flex-shrink-0">
-                  <span className="inline-flex items-center gap-1 px-4 py-2 bg-white text-primary-600 rounded-lg text-sm font-medium border border-primary-200 group-hover:bg-primary-600 group-hover:text-white transition-colors">
-                    <FiMessageCircle className="w-4 h-4" />
-                    Xem Shop
-                  </span>
-                </div>
-              </Link>
+              </div>
             )}
 
             {/* Category */}

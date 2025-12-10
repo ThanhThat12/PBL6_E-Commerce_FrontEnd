@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ToastContainer } from 'react-toastify';
 import { Toaster } from 'react-hot-toast';
@@ -42,8 +42,26 @@ import RegistrationStatusPage from './pages/user/RegistrationStatusPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+// Chat Component
+import { ChatContainer } from './components/chat';
+
 // 🧑‍💼 Admin Pages
 import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
+
+// Chat Wrapper - Only show on authenticated pages
+const ConditionalChatContainer = () => {
+  const location = useLocation();
+  
+  // Hide chat on auth pages
+  const hideChat = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    '/forgot-password',
+    '/admin/login'
+  ].some(route => location.pathname.startsWith(route));
+  
+  return !hideChat ? <ChatContainer /> : null;
+};
 
 // 🏪 Seller Pages & Components
 import SellerProtectedRoute from './components/seller/ProtectedRoute';
@@ -281,6 +299,9 @@ function App() {
               draggable
               pauseOnHover
             />
+            
+            {/* Chat Floating Window - Hidden on auth pages */}
+            <ConditionalChatContainer />
               </OrderProvider>
             </CartProvider>
           </NotificationProvider>

@@ -46,8 +46,11 @@ export default function NavbarNew({ isHomePage = false }) {
     notifications, 
     markAsRead, 
     clearAll,
-    unreadCount: _unreadCount // eslint-disable-line no-unused-vars
-  } = useNotifications(user?.id); // Sử dụng NotificationContext
+    unreadCount,
+    chatUnreadCount
+  } = useNotificationContext(); // Sử dụng NotificationContext
+
+  console.log('Navbar - Notifications:', notifications.length, 'Total unread:', unreadCount, 'Chat unread:', chatUnreadCount);
 
   // Scroll effect
   useEffect(() => {
