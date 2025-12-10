@@ -137,12 +137,20 @@
   margin-bottom: 24px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .search-container {
   position: relative;
   flex: 1;
   max-width: 400px;
+}
+
+.filter-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
 }
 
 .search-icon {

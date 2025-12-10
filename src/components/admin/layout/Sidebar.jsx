@@ -23,7 +23,8 @@ import {
   Grid3x3,
   Gift,
   CreditCard,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -110,6 +111,7 @@ const Sidebar = ({ onToggle }) => {
     { name: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
     { name: "Vouchers", icon: <CreditCard size={20} />, path: "/admin/vouchers" },
     { name: "My Profile", icon: <User size={20} />, path: "/admin/myprofile" },
+    { name: "Chat", icon: <MessageSquare size={20} />, path: "/admin/chat" },
     { name: "Setting", icon: <Settings size={20} />, path: "/admin/settings" },
   ];
 

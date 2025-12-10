@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X, Package, DollarSign, Clock, TrendingUp, ChevronLeft, ChevronRight, Filter, Eye, Printer, Trash2 } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
-import { getAdminOrders, getAdminOrderStats } from '../../../services/adminOrderService';
+import { getAdminOrders, getAdminOrderStats, getAdminOrdersByStatus } from '../../../services/adminOrderService';
 import './OrdersTable.css';
 
 const OrdersTable = () => {
@@ -28,7 +28,7 @@ const OrdersTable = () => {
   // Fetch orders from API
   useEffect(() => {
     fetchOrders();
-  }, [currentPage]);
+  }, [currentPage, statusFilter]);
 
   // Fetch stats on mount
   useEffect(() => {
@@ -53,8 +53,12 @@ const OrdersTable = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`📡 Fetching orders - page: ${currentPage}, size: 10`);
-      const response = await getAdminOrders(currentPage, 10);
+      console.log(`📡 Fetching orders - page: ${currentPage}, size: 10, status: ${statusFilter || 'ALL'}`);
+      
+      // Call different API based on filter
+      const response = statusFilter 
+        ? await getAdminOrdersByStatus(statusFilter, currentPage, 10)
+        : await getAdminOrders(currentPage, 10);
       
       console.log('📦 API Response:', response);
       
@@ -127,6 +131,12 @@ const OrdersTable = () => {
     if (newPage >= 0 && newPage < pagination.totalPages) {
       setCurrentPage(newPage);
     }
+  };
+
+  // Handle status filter change
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(0); // Reset to first page when filter changes
   };
 
   // Handle view details
@@ -227,12 +237,24 @@ const OrdersTable = () => {
           )}
         </div>
 
-      {/* Hiển thị lọc trạng thái đơn hàng */}
-      <div>
-        
+        {/* Status Filter Dropdown */}
+        <div className="filter-container">
+          <Filter size={18} />
+          
+          <select 
+            className="status-filter"
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+          >
+            <option value="">All Status</option>
+            <option value="PENDING">Pending</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="SHIPPING">Shipping</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
       </div>
-
-    </div>
 
 
       {/* Orders Table */}

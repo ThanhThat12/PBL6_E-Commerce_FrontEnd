@@ -76,8 +76,28 @@ export const getAdminOrderStats = async () => {
   }
 };
 
+/**
+ * Get orders filtered by status with pagination
+ * @param {string} status - Order status (PENDING, PROCESSING, SHIPPING, COMPLETED, CANCELLED)
+ * @param {number} page - Page number (0-indexed)
+ * @param {number} size - Page size (default 10)
+ * @returns {Promise} Response with page of filtered orders
+ */
+export const getAdminOrdersByStatus = async (status, page = 0, size = 10) => {
+  try {
+    const response = await apiClient.get(`/admin/orders/status/${status}`, {
+      params: { page, size }
+    });
+    return response;
+  } catch (error) {
+    console.error('Error fetching orders by status:', error);
+    throw error;
+  }
+};
+
 export default {
   getAdminOrders,
   getAdminOrderDetail,
-  getAdminOrderStats
+  getAdminOrderStats,
+  getAdminOrdersByStatus
 };
