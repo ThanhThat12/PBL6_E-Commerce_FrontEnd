@@ -355,24 +355,7 @@ const MyShop = () => {
         </Card>
       )}
 
-      {shopData?.status === 'ACTIVE' && (
-        <Card className="shadow-sm border-l-4 border-l-green-400 bg-green-50" bodyStyle={{ padding: 16 }}>
-          <div className="flex items-start gap-3">
-            <CheckCircleOutlined className="text-green-600 text-xl flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-green-800">Cửa hàng đã được xác thực ✓</h3>
-              <p className="text-sm text-green-700 mt-1">
-                Cửa hàng của bạn đang hoạt động bình thường và có thể bán hàng.
-              </p>
-              {shopData?.reviewedAt && (
-                <p className="text-xs text-green-600 mt-2">
-                  Phê duyệt lúc: {formatDate(shopData.reviewedAt)}
-                </p>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* No status alert for ACTIVE - shop is operating normally */}
 
       {/* Shop Header with Banner & Logo */}
       <div className="relative rounded-xl overflow-hidden shadow-lg">
@@ -498,6 +481,12 @@ const MyShop = () => {
                         <div>
                           <span className="text-gray-500">Điện thoại:</span>
                           <p className="font-semibold">{shopData.ownerPhone}</p>
+                        </div>
+                      )}
+                      {shopData?.idCardName && (
+                        <div>
+                          <span className="text-gray-500">Tên liên hệ (CMND/CCCD):</span>
+                          <p className="font-semibold">{shopData.idCardName}</p>
                         </div>
                       )}
                       {shopData?.ownerCreatedAt && (

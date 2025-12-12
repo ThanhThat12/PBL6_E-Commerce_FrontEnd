@@ -152,3 +152,46 @@ export const registerAsSeller = async (data) => {
     throw error;
   }
 };
+
+/**
+ * Get seller registration status
+ * @returns {Promise<object>} { shopId, shopName, status, rejectionReason, reviewedAt, ... }
+ */
+export const getRegistrationStatus = async () => {
+  try {
+    const response = await api.get('/seller/registration/status');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching registration status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cancel rejected shop application
+ * @returns {Promise<object>} Success message
+ */
+export const cancelRejectedApplication = async () => {
+  try {
+    const response = await api.delete('/seller/registration');
+    return response.data;
+  } catch (error) {
+    console.error('Error canceling application:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update rejected shop application with new information
+ * @param {object} registrationData - Updated registration data
+ * @returns {Promise<object>} Success response
+ */
+export const updateRejectedApplication = async (registrationData) => {
+  try {
+    const response = await api.put('/seller/registration', registrationData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating rejected application:', error);
+    throw error;
+  }
+};

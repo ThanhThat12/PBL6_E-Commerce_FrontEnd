@@ -48,6 +48,26 @@ import { ChatContainer } from './components/chat';
 // 🧑‍💼 Admin Pages
 import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 
+
+// 🏪 Seller Pages & Components
+import SellerProtectedRoute from './components/seller/ProtectedRoute';
+import { SellerLayout } from './components/seller/Layout';
+import * as SellerPages from './pages/seller';
+import ReviewsPage from './pages/seller/Review';
+import RejectionStatusPage from './pages/seller/RejectionStatusPage';
+import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
+import ProductsPage from "./pages/admin/Products/ProductsPage"; 
+import OrdersPage from "./pages/admin/Orders/OrdersPage";
+import CategoriesPage from "./pages/admin/Categories/CategoriesPage";
+import Customers from "./pages/admin/Users/Customers";
+import Sellers from "./pages/admin/Users/Sellers";
+import Admins from "./pages/admin/Users/Admins";
+import SettingsPage from "./pages/admin/Settings/SettingsPage";
+import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
+import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
+import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
+import SellerRegistrationGuard from './components/seller/SellerRegistrationGuard';
+
 // Chat Wrapper - Only show on authenticated pages
 const ConditionalChatContainer = () => {
   const location = useLocation();
@@ -63,22 +83,6 @@ const ConditionalChatContainer = () => {
   return !hideChat ? <ChatContainer /> : null;
 };
 
-// 🏪 Seller Pages & Components
-import SellerProtectedRoute from './components/seller/ProtectedRoute';
-import { SellerLayout } from './components/seller/Layout';
-import * as SellerPages from './pages/seller';
-import ReviewsPage from './pages/seller/Review';
-import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
-import ProductsPage from "./pages/admin/Products/ProductsPage"; 
-import OrdersPage from "./pages/admin/Orders/OrdersPage";
-import CategoriesPage from "./pages/admin/Categories/CategoriesPage";
-import Customers from "./pages/admin/Users/Customers";
-import Sellers from "./pages/admin/Users/Sellers";
-import Admins from "./pages/admin/Users/Admins";
-import SettingsPage from "./pages/admin/Settings/SettingsPage";
-import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
-import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
-import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
 function App() {
   return (
@@ -209,14 +213,18 @@ function App() {
             {/* ================================================= */}
 
                         {/* ================= SELLER REGISTRATION ROUTES ================= */}
+            {/* Entry point uses Guard - other pages handle their own routing */}
             <Route 
               path="/seller/register" 
               element={
                 <ProtectedRoute>
-                  <SellerRegistrationPage />
+                  <SellerRegistrationGuard>
+                    <SellerRegistrationPage />
+                  </SellerRegistrationGuard>
                 </ProtectedRoute>
               } 
             />
+            {/* Status pages don't use Guard to avoid redirect loops */}
             <Route 
               path="/seller/registration-status" 
               element={
@@ -225,9 +233,18 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/seller/rejected" 
+              element={
+                <ProtectedRoute>
+                  <RejectionStatusPage />
+                </ProtectedRoute>
+              } 
+            />
             {/* ============================================================= */}
 
             {/* ================= SELLER ROUTES ================= */}
+
             <Route 
               path="/seller" 
               element={
