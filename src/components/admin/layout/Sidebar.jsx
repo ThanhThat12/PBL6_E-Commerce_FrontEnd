@@ -18,7 +18,8 @@ import {
   CreditCard,
   X,
   MessageSquare,
-  Wallet
+  Wallet,
+  ClipboardCheck
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -97,10 +98,9 @@ const Sidebar = ({ onToggle }) => {
       dropdown: [
         { name: "Customers", icon: <User size={16} />, path: "/admin/users/customers" },
         { name: "Sellers", icon: <UserCheck size={16} />, path: "/admin/users/sellers" },
-        // { name: "Admins", icon: <Shield size={16} />, path: "/admin/users/admins" },
+    { name: "Duyệt Seller", icon: <ClipboardCheck size={20} />, path: "/admin/seller-registrations" },
       ],
     },
-    // { name: "Duyệt Seller", icon: <ClipboardCheck size={20} />, path: "/admin/seller-registrations" },
     { name: "Products", icon: <ShoppingBag size={20} />, path: "/admin/products" },
     { name: "Categories", icon: <LayoutGrid size={20} />, path: "/admin/categories" },
     { name: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
