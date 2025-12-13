@@ -100,7 +100,7 @@ const Sidebar = ({ onToggle }) => {
         // { name: "Admins", icon: <Shield size={16} />, path: "/admin/users/admins" },
       ],
     },
-    { name: "Duyệt Seller", icon: <ClipboardCheck size={20} />, path: "/admin/seller-registrations" },
+    // { name: "Duyệt Seller", icon: <ClipboardCheck size={20} />, path: "/admin/seller-registrations" },
     { name: "Products", icon: <ShoppingBag size={20} />, path: "/admin/products" },
     { name: "Categories", icon: <LayoutGrid size={20} />, path: "/admin/categories" },
     { name: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
