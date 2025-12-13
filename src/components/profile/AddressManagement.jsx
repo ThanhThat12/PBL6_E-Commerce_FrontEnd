@@ -1,47 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiMapPin, FiCheck } from 'react-icons/fi';
-import { getAddresses, createAddress, updateAddress, deleteAddress, setAsPrimary } from '../../services/userService';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
 import AddressFormModal from './AddressFormModal';
+import { useAddresses } from '../../hooks/useAddresses';
+
+// Constant to prevent recreation on every render
+const BUYER_EXCLUDE_TYPES = ['STORE'];
 
 /**
  * AddressManagement
  * Component quản lý địa chỉ người dùng
+ * Now using useAddresses hook for better state management
  */
 const AddressManagement = () => {
-  const [addresses, setAddresses] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
 
-  // Load addresses
+  // Use the useAddresses hook for state management
+  // excludeTypes is a stable reference now (constant)
+  const {
+    addresses,
+    loading,
+    fetchAddresses,
+    createAddress: createNewAddress,
+    updateAddress: updateExistingAddress,
+    deleteAddress: deleteExistingAddress,
+    setPrimaryAddress: setAsPrimary
+  } = useAddresses({ excludeTypes: BUYER_EXCLUDE_TYPES });
+
+  // Load addresses on mount
   useEffect(() => {
-    loadAddresses();
-  }, []);
-
-  const loadAddresses = async () => {
-    setLoading(true);
-    try {
-      console.log('Loading addresses...');
-      const response = await getAddresses();
-      console.log('loadAddresses response:', response);
-      // Backend returns ResponseDTO { status, message, data }
-      if (response.status === 200 && Array.isArray(response.data)) {
-        setAddresses(response.data);
-      } else {
-        console.warn('Unexpected response structure:', response);
-        setAddresses([]);
-      }
-    } catch (error) {
-      console.error('Failed to load addresses:', error);
-      toast.error('Không thể tải danh sách địa chỉ');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchAddresses();
+  }, [fetchAddresses]);
 
   const handleAddAddress = () => {
     setEditingAddress(null);
@@ -60,6 +51,7 @@ const AddressManagement = () => {
       wardId: address.wardCode, // wardCode -> wardId
       wardCode: address.wardCode, // Keep wardCode for reference
       streetAddress: address.fullAddress, // fullAddress -> streetAddress
+      typeAddress: address.typeAddress || 'HOME',
       isPrimary: address.primaryAddress, // primaryAddress -> isPrimary
       // Keep original names for display
       provinceName: address.provinceName,
@@ -73,87 +65,37 @@ const AddressManagement = () => {
 
   const handleSaveAddress = async (addressData) => {
     try {
-      let response;
       if (editingAddress) {
         // Update existing address
-        response = await updateAddress(editingAddress.id, addressData);
+        await updateExistingAddress(editingAddress.id, addressData);
       } else {
         // Create new address
-        response = await createAddress(addressData);
+        await createNewAddress(addressData);
       }
-
-      // Backend returns status 200 for update, 201 for create
-      if (response.status === 200 || response.status === 201) {
-        toast.success(editingAddress ? 'Cập nhật địa chỉ thành công' : 'Thêm địa chỉ thành công');
-        setModalOpen(false);
-        loadAddresses();
-      }
+      // Success toast is handled by the hook
+      setModalOpen(false);
     } catch (error) {
-      console.error('Failed to save address:', error);
-      toast.error(error.response?.data?.message || 'Lưu địa chỉ thất bại');
+      // Error toast is handled by the hook
       throw error;
     }
   };
 
   const handleDeleteAddress = async (addressId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
-      return;
-    }
-
-    setActionLoading(addressId);
     try {
-      const response = await deleteAddress(addressId);
-      // Luôn reload danh sách sau khi xóa
-      await loadAddresses();
-      if (response && response.status === 200) {
-        toast.success('Xóa địa chỉ thành công');
-      } else {
-        toast.error((response && response.message) || 'Xóa địa chỉ thất bại');
-      }
+      // Confirmation and error handling are done in the hook
+      await deleteExistingAddress(addressId);
     } catch (error) {
-      console.error('Failed to delete address:', error);
-      await loadAddresses();
-      if (error && error.response && error.response.status === 404) {
-        toast.error('Địa chỉ không tồn tại hoặc đã bị xóa. Danh sách đã được cập nhật.');
-      } else {
-        toast.error('Xóa địa chỉ thất bại');
-      }
-    } finally {
-      setActionLoading(null);
+      // Error already handled by hook
     }
   };
 
   const handleSetPrimary = async (addressId) => {
-    setActionLoading(addressId);
     try {
-      const response = await setAsPrimary(addressId);
-      // Fix: check response.status (API returns status 200)
-      if (response.status === 200) {
-        toast.success('Đặt làm địa chỉ mặc định thành công');
-        // Reload addresses, then move primary to top and auto-select
-        await loadAddresses();
-        // Find new primary address
-        const updated = await getAddresses();
-        if (updated.status === 200 && Array.isArray(updated.data)) {
-          const primary = updated.data.find(a => a.primaryAddress);
-          if (primary) {
-            // Move primary to top
-            setAddresses(prev => {
-              const others = updated.data.filter(a => a.id !== primary.id);
-              return [primary, ...others];
-            });
-            // Auto-select (open modal for edit)
-            handleEditAddress(primary);
-          }
-        }
-      } else {
-        toast.error('Đặt địa chỉ mặc định thất bại');
-      }
+      await setAsPrimary(addressId);
+      // Success toast and state update handled by the hook
+      // Addresses are automatically sorted (primary first) by the hook
     } catch (error) {
-      console.error('Failed to set primary address:', error);
-      toast.error('Đặt địa chỉ mặc định thất bại');
-    } finally {
-      setActionLoading(null);
+      // Error already handled by hook
     }
   };
 
@@ -198,7 +140,7 @@ const AddressManagement = () => {
             <div
               key={address.id}
               className={`border-2 rounded-lg p-5 transition-all ${
-                address.isPrimary
+                address.primaryAddress
                   ? 'border-primary-500 bg-primary-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
@@ -206,10 +148,15 @@ const AddressManagement = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   {/* Label and Phone */}
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <h3 className="font-semibold text-gray-900">{address.contactName || address.label}</h3>
                     <span className="text-gray-600">|</span>
                     <span className="text-gray-600">{address.contactPhone}</span>
+                    {address.typeAddress && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded uppercase tracking-wide">
+                        {address.typeAddress}
+                      </span>
+                    )}
                     {address.primaryAddress && (
                       <span className="px-2 py-1 bg-primary-500 text-white text-xs rounded">
                         Mặc định
@@ -232,7 +179,7 @@ const AddressManagement = () => {
                     <button
                       onClick={() => handleEditAddress(address)}
                       className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
-                      disabled={actionLoading === address.id}
+                      disabled={loading}
                     >
                       <FiEdit2 className="w-4 h-4" />
                       Chỉnh sửa
@@ -243,7 +190,7 @@ const AddressManagement = () => {
                         <button
                           onClick={() => handleDeleteAddress(address.id)}
                           className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1"
-                          disabled={actionLoading === address.id}
+                          disabled={loading}
                         >
                           <FiTrash2 className="w-4 h-4" />
                           Xóa
@@ -252,7 +199,7 @@ const AddressManagement = () => {
                         <button
                           onClick={() => handleSetPrimary(address.id)}
                           className="text-gray-600 hover:text-gray-700 text-sm font-medium flex items-center gap-1"
-                          disabled={actionLoading === address.id}
+                          disabled={loading}
                         >
                           <FiCheck className="w-4 h-4" />
                           Đặt làm mặc định
@@ -260,7 +207,7 @@ const AddressManagement = () => {
                       </>
                     )}
 
-                    {actionLoading === address.id && (
+                    {loading && (
                       <Loading size="sm" />
                     )}
                   </div>

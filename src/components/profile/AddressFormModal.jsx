@@ -18,6 +18,7 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
     districtId: null,
     wardId: null,
     streetAddress: '',
+    typeAddress: 'HOME',
     isPrimary: false
   });
 

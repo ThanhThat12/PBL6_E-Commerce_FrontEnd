@@ -23,35 +23,59 @@ export const loginUser = async (loginData) => {
 
 /**
  * Get user's saved addresses
+ * UPDATED: API path changed from me/addresses to addresses per spec 006-profile
+ * UPDATED: Added excludeTypes and types query params for filtering (e.g., exclude STORE for buyer view)
+ * @param {Object} options - Optional filtering options
+ * @param {Array<string>} options.excludeTypes - Array of type names to exclude (e.g., ['STORE'])
+ * @param {Array<string>} options.types - Array of type names to include (e.g., ['HOME', 'SHIPPING'])
  */
-export const getAddresses = async () => {
-  const responseDTO = await api.get('me/addresses');
+export const getAddresses = async (options = {}) => {
+  const params = {};
+  if (options.excludeTypes && options.excludeTypes.length > 0) {
+    params.excludeTypes = options.excludeTypes;
+  }
+  if (options.types && options.types.length > 0) {
+    params.types = options.types;
+  }
+  const responseDTO = await api.get('addresses', { params });
   // Interceptor returns response.data which is ResponseDTO { status, message, data }
   return responseDTO;
 };
 
 /**
+ * Get single address by ID
+ * NEW: Added per spec 006-profile
+ */
+export const getAddress = async (addressId) => {
+  const responseDTO = await api.get(`addresses/${addressId}`);
+  return responseDTO;
+};
+
+/**
  * Create new address
+ * UPDATED: API path changed from me/addresses to addresses per spec 006-profile
  */
 export const createAddress = async (addressData) => {
-  const responseDTO = await api.post('me/addresses', addressData);
+  const responseDTO = await api.post('addresses', addressData);
   // Interceptor returns response.data which is ResponseDTO { status, message, data }
   return responseDTO;
 };
 
 /**
  * Update address
+ * UPDATED: API path changed from me/addresses to addresses per spec 006-profile
  */
 export const updateAddress = async (addressId, addressData) => {
-  const responseDTO = await api.put(`me/addresses/${addressId}`, addressData);
+  const responseDTO = await api.put(`addresses/${addressId}`, addressData);
   return responseDTO;
 };
 
 /**
  * Delete address
+ * UPDATED: API path changed from me/addresses to addresses per spec 006-profile
  */
 export const deleteAddress = async (addressId) => {
-  const response = await api.delete(`me/addresses/${addressId}`);
+  const response = await api.delete(`addresses/${addressId}`);
   // Đảm bảo luôn trả về object có status và message
   if (response && response.data) {
     return response.data;
@@ -63,10 +87,20 @@ export const deleteAddress = async (addressId) => {
 
 /**
  * Set address as primary
+ * UPDATED: API path changed from me/addresses/{id}/primary to addresses/{id}/set-primary per spec 006-profile
  */
 export const setAsPrimary = async (addressId) => {
-  const response = await api.post(`me/addresses/${addressId}/primary`);
+  const response = await api.put(`addresses/${addressId}/set-primary`);
   return response.data;
+};
+
+/**
+ * Get auto-fill contact info (contactName, contactPhone from user profile)
+ * NEW: Added per spec 006-profile
+ */
+export const getAutoFillContactInfo = async () => {
+  const responseDTO = await api.get('addresses/auto-fill');
+  return responseDTO;
 };
 
 /**
@@ -102,31 +136,39 @@ export const updateAvatar = async (avatarUrl) => {
 };
 
 /**
- * GHN Master Data APIs
- * Get list of provinces from GHN
+ * GHN Location APIs
+ * UPDATED: Use backend /api/locations/* proxy endpoints with caching (24h TTL)
  * Note: api interceptor already returns response.data, so we get data directly
  */
 export const getProvinces = async () => {
-  const data = await api.get('ghn/master/provinces');
-  return Array.isArray(data) ? data : [];
+  const data = await api.get('locations/provinces');
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
 };
 
 /**
  * Get list of districts for a province from GHN
+ * UPDATED: Use backend /api/locations/districts/{provinceId} proxy endpoint
  * @param {number} provinceId - Province ID from GHN
  */
 export const getDistricts = async (provinceId) => {
-  const data = await api.get(`ghn/master/districts?province_id=${provinceId}`);
-  return Array.isArray(data) ? data : [];
+  const data = await api.get(`locations/districts/${provinceId}`);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
 };
 
 /**
  * Get list of wards for a district from GHN
+ * UPDATED: Use backend /api/locations/wards/{districtId} proxy endpoint
  * @param {number} districtId - District ID from GHN
  */
 export const getWards = async (districtId) => {
-  const data = await api.get(`ghn/master/wards?district_id=${districtId}`);
-  return Array.isArray(data) ? data : [];
+  const data = await api.get(`locations/wards/${districtId}`);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
 };
 
 /**
@@ -143,16 +185,20 @@ const userService = {
   getCurrentUser,
   registerUser,
   loginUser,
+  // Address APIs (updated paths per spec 006-profile)
   getAddresses,
+  getAddress,
   createAddress,
   updateAddress,
   deleteAddress,
   setAsPrimary,
+  getAutoFillContactInfo,
+  // Profile APIs
   getProfile,
   updateProfile,
   changePassword,
   updateAvatar,
-  // GHN APIs
+  // GHN Location APIs (backend proxy)
   getProvinces,
   getDistricts,
   getWards,
