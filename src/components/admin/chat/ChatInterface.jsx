@@ -220,40 +220,40 @@ const ChatInterface = () => {
   );
 
   return (
-    <div className="chat-interface">
+    <div className="admin-chat-interface">
       {/* Left Sidebar - Chat List */}
-      <div className="chat-sidebar">
-        <div className="sidebar-header">
+      <div className="admin-chat-sidebar">
+        <div className="admin-chat-sidebar-header">
           <h2>Chats</h2>
         </div>
 
-        <div className="search-box">
+        <div className="admin-chat-search-box">
           <input
             type="text"
-            className="search-input"
+            className="admin-chat-search-input"
             placeholder="Search here..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="chat-list">
+        <div className="admin-chat-list">
           {filteredUsers.map((user) => (
             <div
               key={user.id}
-              className={`chat-item ${selectedUser?.id === user.id ? 'active' : ''}`}
+              className={`admin-chat-item ${selectedUser?.id === user.id ? 'active' : ''}`}
               onClick={() => handleSelectUser(user)}
             >
-              <div className="chat-avatar-container">
-                <img src={user.avatar} alt={user.name} className="chat-avatar" />
-                {user.isOnline && <span className="online-status"></span>}
+              <div className="admin-chat-avatar-container">
+                <img src={user.avatar} alt={user.name} className="admin-chat-avatar" />
+                {user.isOnline && <span className="admin-chat-online-status"></span>}
               </div>
-              <div className="chat-info">
-                <div className="chat-header">
-                  <h4 className="chat-name">{user.name}</h4>
-                  <span className="chat-time">{user.time}</span>
+              <div className="admin-chat-info">
+                <div className="admin-chat-header">
+                  <h4 className="admin-chat-name">{user.name}</h4>
+                  <span className="admin-chat-time">{user.time}</span>
                 </div>
-                <p className={`chat-preview ${user.unread ? 'unread' : ''}`}>
+                <p className={`admin-chat-preview ${user.unread ? 'unread' : ''}`}>
                   {user.lastMessage}
                 </p>
               </div>
@@ -263,39 +263,39 @@ const ChatInterface = () => {
       </div>
 
       {/* Right Side - Chat Window */}
-      <div className="chat-window">
+      <div className="admin-chat-window">
         {selectedUser ? (
           <>
             {/* Header */}
-            <div className="chat-window-header">
-              <div className="header-user-info">
-                <img src={selectedUser.avatar} alt={selectedUser.name} className="header-avatar" />
-                <div className="header-details">
+            <div className="admin-chat-window-header">
+              <div className="admin-chat-header-user-info">
+                <img src={selectedUser.avatar} alt={selectedUser.name} className="admin-chat-header-avatar" />
+                <div className="admin-chat-header-details">
                   <h3>{selectedUser.name}</h3>
-                  <span className="header-status">
+                  <span className="admin-chat-header-status">
                     {selectedUser.isOnline ? 'Online' : 'Offline'}
                   </span>
                 </div>
               </div>
-              <div className="header-actions">
-                <button className="action-btn">
+              <div className="admin-chat-header-actions">
+                <button className="admin-chat-action-btn">
                   <SearchIcon size={20} />
                 </button>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="messages-container">
+            <div className="admin-chat-messages-container">
               {messages.map((message) => (
-                <div key={message.id} className={`message ${message.sender === 'other' ? 'received' : 'sent'}`}>
+                <div key={message.id} className={`admin-chat-message ${message.sender === 'other' ? 'received' : 'sent'}`}>
                   {message.sender === 'other' && (
-                    <img src={selectedUser.avatar} alt="" className="message-avatar" />
+                    <img src={selectedUser.avatar} alt="" className="admin-chat-message-avatar" />
                   )}
                   <div>
-                    <div className="message-bubble">
+                    <div className="admin-chat-message-bubble">
                       {message.text}
                     </div>
-                    <div className="message-timestamp">{message.time}</div>
+                    <div className="admin-chat-message-timestamp">{message.time}</div>
                   </div>
                 </div>
               ))}
@@ -303,11 +303,11 @@ const ChatInterface = () => {
             </div>
 
             {/* Input */}
-            <form className="message-input-area" onSubmit={handleSendMessage}>
-              <div className="input-wrapper">
+            <form className="admin-chat-message-input-area" onSubmit={handleSendMessage}>
+              <div className="admin-chat-input-wrapper">
                 <input
                   type="text"
-                  className="message-input"
+                  className="admin-chat-message-input"
                   placeholder="Write your message here..."
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
@@ -315,7 +315,7 @@ const ChatInterface = () => {
               </div>
               <button
                 type="submit"
-                className="send-btn"
+                className="admin-chat-send-btn"
                 disabled={inputText.trim() === ''}
               >
                 <Send size={18} />
@@ -323,7 +323,7 @@ const ChatInterface = () => {
             </form>
           </>
         ) : (
-          <div className="empty-state">
+          <div className="admin-chat-empty-state">
             <MessageSquare size={64} color="#65676b" />
             <h3>Select a chat</h3>
             <p>Choose a conversation from the list to start messaging</p>

@@ -219,13 +219,13 @@ const OrdersTable = () => {
       {/* Filters and Search */}
       <div className="orders-controls">
         <div className="search-container">
-          <Search className="search-icon" size={20} />
+          <Search className="admin-order-search-icon" size={20} />
           <input
             type="text"
             placeholder="Search orders..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            className="admin-order-search-input"
           />
           {searchTerm && (
             <button 
@@ -238,11 +238,9 @@ const OrdersTable = () => {
         </div>
 
         {/* Status Filter Dropdown */}
-        <div className="filter-container">
-          <Filter size={18} />
-          
+        <div className="order-filter-container"> 
           <select 
-            className="status-filter"
+            className="order-status-filter"
             value={statusFilter}
             onChange={handleStatusFilterChange}
           >

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../../components/admin/layout/Layout";
 import DashboardHeader from "../../../components/admin/dashboard/DashboardHeader";
 import StatsCards from "../../../components/admin/dashboard/StatsCards";
@@ -7,10 +7,147 @@ import CategoryChart from "../../../components/admin/dashboard/CategoryChart";
 import TopProductsTable from "../../../components/admin/dashboard/TopProductsTable";
 import RecentOrdersTable from "../../../components/admin/dashboard/RecentOrdersTable";
 import ActivityFeed from "../../../components/admin/dashboard/ActivityFeed";
+import adminDashboardService from "../../../services/adminDashboardService";
 import "./Dashboard.css";
 
 const DashboardPage = () => {
   const [timeRange, setTimeRange] = useState("thisWeek");
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    stats: null,
+    categories: [],
+    topProducts: [],
+    recentOrders: [],
+    revenueChart: []
+  });
+
+  // Fetch dashboard data from API
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [stats, categories, topProducts, recentOrders, revenueChart] = await Promise.all([
+          adminDashboardService.getDashboardStats(),
+          adminDashboardService.getSalesByCategory(),
+          adminDashboardService.getTopSellingProducts(10),
+          adminDashboardService.getRecentOrders(10),
+          adminDashboardService.getRevenueChart(12)
+        ]);
+
+        setDashboardData({
+          stats,
+          categories,
+          topProducts,
+          recentOrders,
+          revenueChart
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Format stats data for StatsCards component
+  const formatStatsData = () => {
+    if (!dashboardData.stats) return [];
+
+    return [
+      {
+        value: `${dashboardData.stats.totalRevenue?.toLocaleString('vi-VN')}đ`,
+        label: "Tổng Doanh Thu",
+        change: `${dashboardData.stats.revenueGrowth > 0 ? '+' : ''}${dashboardData.stats.revenueGrowth}%`,
+        color: "#3B82F6",
+        icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      },
+      {
+        value: dashboardData.stats.totalOrders?.toString() || "0",
+        label: "Tổng Đơn Hàng",
+        change: `${dashboardData.stats.ordersGrowth > 0 ? '+' : ''}${dashboardData.stats.ordersGrowth}%`,
+        color: "#10B981",
+        icon: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+      },
+      {
+        value: dashboardData.stats.activeCustomers?.toString() || "0",
+        label: "Khách Hàng Hoạt Động",
+        change: `${dashboardData.stats.customersGrowth > 0 ? '+' : ''}${dashboardData.stats.customersGrowth}%`,
+        color: "#F59E0B",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+      },
+      {
+        value: `${dashboardData.stats.conversionRate}%`,
+        label: "Tỷ Lệ Chuyển Đổi",
+        change: `${dashboardData.stats.conversionGrowth > 0 ? '+' : ''}${dashboardData.stats.conversionGrowth}%`,
+        color: "#EF4444",
+        icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+      }
+    ];
+  };
+
+  // Format category data for CategoryChart component
+  const formatCategoryData = () => {
+    return dashboardData.categories.map(cat => ({
+      name: cat.categoryName,
+      value: Math.round(cat.totalSales / 1000), // Convert to K
+      orderCount: cat.orderCount
+    }));
+  };
+
+  // Format top products data for TopProductsTable component
+  const formatTopProducts = () => {
+    return dashboardData.topProducts.map(product => ({
+      name: product.productName,
+      sku: `PRD${product.productId}`,
+      category: product.categoryName,
+      sales: product.quantitySold,
+      revenue: product.totalRevenue?.toLocaleString('vi-VN'),
+      status: product.status,
+      image: product.mainImage
+    }));
+  };
+
+  // Format recent orders data for RecentOrdersTable component
+  const formatRecentOrders = () => {
+    return dashboardData.recentOrders.map(order => ({
+      id: order.id,
+      customer: {
+        name: order.customerName,
+        email: order.customerEmail,
+        avatar: null
+      },
+      date: new Date(order.orderDate).toLocaleDateString('vi-VN'),
+      amount: order.totalAmount?.toLocaleString('vi-VN'),
+      status: translateStatus(order.status)
+    }));
+  };
+
+  // Translate order status to Vietnamese
+  const translateStatus = (status) => {
+    const statusMap = {
+      'PENDING': 'Chờ xử lý',
+      'PROCESSING': 'Đang xử lý',
+      'SHIPPING': 'Đang giao',
+      'COMPLETED': 'Hoàn thành',
+      'CANCELLED': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+  };
+
+  // Format sales data for SalesChart - using revenue chart data from API
+  const formatSalesData = () => {
+    if (!dashboardData.revenueChart || dashboardData.revenueChart.length === 0) {
+      return [];
+    }
+    
+    return dashboardData.revenueChart.map(item => ({
+      label: item.period,
+      revenue: item.revenue,
+      orderCount: item.orderCount
+    }));
+  };
 
   const statsData = [
     {
@@ -54,105 +191,42 @@ const DashboardPage = () => {
     { month: "Aug", sales: 465 }
   ];
 
-  const categoryData = [
-    { name: "Electronics", value: 145 },
-    { name: "Fashion", value: 98 },
-    { name: "Home & Garden", value: 67 },
-    { name: "Sports", value: 45 }
-  ];
-
-  const topProducts = [
-    {
-      name: "iPhone 15 Pro Max",
-      sku: "IP15PM001",
-      category: "Electronics",
-      sales: 2847,
-      revenue: "2,847,000",
-      status: "Active",
-      image: null // TODO: Load from API
-    },
-    {
-      name: "MacBook Pro M3",
-      sku: "MBP24001", 
-      category: "Electronics",
-      sales: 1596,
-      revenue: "3,592,800",
-      status: "Active",
-      image: null // TODO: Load from API
-    },
-    {
-      name: "AirPods Pro Gen 2",
-      sku: "APP2024",
-      category: "Electronics", 
-      sales: 3456,
-      revenue: "863,400",
-      status: "Active",
-      image: null // TODO: Load from API
-    }
-  ];
-
-  const recentOrders = [
-    {
-      id: "ORD2024001",
-      customer: {
-        name: "Alexander Chen",
-        email: "alexander.chen@email.com",
-        avatar: null // TODO: Load from API
-      },
-      date: "2024-10-13",
-      amount: "2,459.99",
-      status: "Completed"
-    },
-    {
-      id: "ORD2024002", 
-      customer: {
-        name: "Sarah Johnson",
-        email: "sarah.johnson@email.com",
-        avatar: null // TODO: Load from API
-      },
-      date: "2024-10-13",
-      amount: "1,299.00",
-      status: "Processing"
-    },
-    {
-      id: "ORD2024003",
-      customer: {
-        name: "Michael Rodriguez", 
-        email: "michael.r@email.com",
-        avatar: null // TODO: Load from API
-      },
-      date: "2024-10-12",
-      amount: "3,847.50",
-      status: "Shipped"
-    }
-  ];
-
   const activities = [
     {
-      text: "New high-value order received from Alexander Chen",
-      time: "2 minutes ago",
+      text: "Đơn hàng mới từ khách hàng",
+      time: "2 phút trước",
       type: "order"
     },
     {
-      text: "iPhone 15 Pro Max inventory restocked",
-      time: "15 minutes ago", 
+      text: "Sản phẩm được cập nhật kho",
+      time: "15 phút trước", 
       type: "product"
     },
     {
-      text: "Premium customer Sarah Johnson registered",
-      time: "45 minutes ago",
+      text: "Khách hàng mới đăng ký",
+      time: "45 phút trước",
       type: "user"
     },
     {
-      text: "Payment of $3,847.50 processed successfully",
-      time: "1 hour ago",
+      text: "Thanh toán được xử lý thành công",
+      time: "1 giờ trước",
       type: "payment"
     }
   ];
-
+  
   const handleExport = () => {
     console.log('Exporting dashboard data...');
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="dashboard-main" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <div>Đang tải dữ liệu...</div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -165,22 +239,22 @@ const DashboardPage = () => {
         />
 
         {/* Key Performance Metrics */}
-        <StatsCards stats={statsData} />
+        <StatsCards stats={formatStatsData()} />
 
         {/* Analytics Charts Section */}
         <div className="charts-container">
-          <SalesChart data={salesData} />
-          <CategoryChart data={categoryData} />
+          <SalesChart data={formatSalesData()} />
+          <CategoryChart data={formatCategoryData()} />
         </div>
 
         {/* Top Selling Products - Full Width Row */}
         <div className="table-section">
-          <TopProductsTable products={topProducts} />
+          <TopProductsTable products={formatTopProducts()} />
         </div>
 
         {/* Recent Orders - Full Width Row */}
         <div className="table-section">
-          <RecentOrdersTable orders={recentOrders} />
+          <RecentOrdersTable orders={formatRecentOrders()} />
         </div>
 
         {/* Real-time Activity Stream */}

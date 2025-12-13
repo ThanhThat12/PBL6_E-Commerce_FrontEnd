@@ -426,8 +426,8 @@ const ProductsTable = () => {
         
       {/* Filters Section */}
       <div className="filters-wrapper">
-        <div className="filter-card">
-          <label className="filter-label">Categories</label>
+        {/* <div className="filter-card"> */}
+          {/* <label className="filter-label">Categories</label> */}
           <select 
             className="filter-select"
             value={selectedCategory}
@@ -440,10 +440,10 @@ const ProductsTable = () => {
               </option>
             ))}
           </select>
-        </div>
+        {/* </div> */}
 
-        <div className="filter-card">
-          <label className="filter-label">Status</label>
+        {/* <div className="filter-card">
+          <label className="filter-label">Status</label> */}
           <select 
             className="filter-select"
             value={selectedStatus}
@@ -455,7 +455,7 @@ const ProductsTable = () => {
               </option>
             ))}
           </select>
-        </div>
+        {/* </div> */}
       </div>
 
       {/* Table */}

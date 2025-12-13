@@ -133,11 +133,10 @@
 /* Controls */
 .orders-controls {
   display: flex;
-  gap: 16px;
+  gap: 0px;
   margin-bottom: 24px;
   align-items: center;
   flex-wrap: wrap;
-  justify-content: space-between;
 }
 
 .search-container {
@@ -153,23 +152,24 @@
   color: #6b7280;
 }
 
-.search-icon {
+.admin-order-search-icon {
   position: absolute;
-  left: 12px;
+  left: 320px;
   top: 50%;
   transform: translateY(-50%);
   color: #6b7280;
   pointer-events: none;
 }
 
-.search-input {
-  width: 100%;
-  padding: 12px 16px 12px 44px;
+.admin-order-search-input {
+  width: 90%;
+  padding: 12px 44px 12px 16px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 20px;
   font-size: 14px;
   background: white;
   transition: all 0.2s ease;
+  height: 20%;
 }
 
 .search-input:focus {
@@ -180,7 +180,7 @@
 
 .clear-search {
   position: absolute;
-  right: 12px;
+  right: 44px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -197,26 +197,28 @@
   color: #374151;
 }
 
-.filter-container,
+.order-filter-container,
 .items-per-page {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.status-filter,
+.order-status-filter,
 .items-per-page select {
+  width: 500%;
   padding: 10px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 25px;
   font-size: 14px;
   background: white;
   color: #374151;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-left: 0px;
 }
 
-.status-filter:focus,
+.order-status-filter:focus,
 .items-per-page select:focus {
   outline: none;
   border-color: #3b82f6;

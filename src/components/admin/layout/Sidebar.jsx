@@ -24,7 +24,8 @@ import {
   Gift,
   CreditCard,
   X,
-  MessageSquare
+  MessageSquare,
+  Wallet
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -103,15 +104,16 @@ const Sidebar = ({ onToggle }) => {
       dropdown: [
         { name: "Customers", icon: <User size={16} />, path: "/admin/users/customers" },
         { name: "Sellers", icon: <UserCheck size={16} />, path: "/admin/users/sellers" },
-        { name: "Admins", icon: <Shield size={16} />, path: "/admin/users/admins" },
+        // { name: "Admins", icon: <Shield size={16} />, path: "/admin/users/admins" },
       ],
     },
     { name: "Products", icon: <ShoppingBag size={20} />, path: "/admin/products" },
     { name: "Categories", icon: <LayoutGrid size={20} />, path: "/admin/categories" },
     { name: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
     { name: "Vouchers", icon: <CreditCard size={20} />, path: "/admin/vouchers" },
-    { name: "My Profile", icon: <User size={20} />, path: "/admin/myprofile" },
+    { name: "Wallet", icon: <Wallet size={20} />, path: "/admin/wallet" },
     { name: "Chat", icon: <MessageSquare size={20} />, path: "/admin/chat" },
+    { name: "My Profile", icon: <User size={20} />, path: "/admin/myprofile" },
     { name: "Setting", icon: <Settings size={20} />, path: "/admin/settings" },
   ];
 
