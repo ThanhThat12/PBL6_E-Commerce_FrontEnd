@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiChevronDown, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiX, FiLoader } from 'react-icons/fi';
 
 /**
  * ProductFilter Component
@@ -7,12 +7,16 @@ import { FiChevronDown, FiX } from 'react-icons/fi';
  * 
  * @param {Array} categories - Available categories
  * @param {Object} filters - Current filter state {categoryId, priceMin, priceMax, minRating}
+ * @param {Object} facets - Faceted filter counts from API
+ * @param {boolean} facetsLoading - Whether facets are loading
  * @param {Function} onFilterChange - Filter change handler
  * @param {Function} onClearFilters - Clear all filters
  */
 const ProductFilter = ({ 
   categories = [], 
   filters = {}, 
+  facets = null,
+  facetsLoading = false,
   onFilterChange,
   onClearFilters 
 }) => {
@@ -20,7 +24,13 @@ const ProductFilter = ({
   const [priceOpen, setPriceOpen] = useState(true);
   const [ratingOpen, setRatingOpen] = useState(true);
 
-  const priceRanges = [
+  // Use facets if available, otherwise use static data
+  const priceRanges = facets?.priceRanges?.length > 0 ? facets.priceRanges.map(p => ({
+    label: p.label,
+    min: p.minPrice,
+    max: p.maxPrice || Infinity,
+    count: p.productCount
+  })) : [
     { label: 'Dưới 100.000₫', min: 0, max: 100000 },
     { label: '100.000₫ - 500.000₫', min: 100000, max: 500000 },
     { label: '500.000₫ - 1.000.000₫', min: 500000, max: 1000000 },
@@ -28,11 +38,22 @@ const ProductFilter = ({
     { label: 'Trên 5.000.000₫', min: 5000000, max: Infinity }
   ];
 
-  const ratingOptions = [
+  const ratingOptions = facets?.ratings?.length > 0 ? facets.ratings.map(r => ({
+    label: r.label,
+    value: r.minRating,
+    count: r.productCount
+  })) : [
     { label: '5 sao', value: 5 },
     { label: '4 sao trở lên', value: 4 },
     { label: '3 sao trở lên', value: 3 },
   ];
+
+  // Get category counts from facets
+  const getCategoryCount = (categoryId) => {
+    if (!facets?.categories) return null;
+    const cat = facets.categories.find(c => c.id === categoryId);
+    return cat?.productCount;
+  };
 
   const handleCategoryChange = (categoryId) => {
     const newFilters = { ...filters };
@@ -71,20 +92,34 @@ const ProductFilter = ({
   };
 
   const hasActiveFilters = 
-    filters.categoryId !== null && filters.categoryId !== undefined ||
+    (filters.categoryId !== null && filters.categoryId !== undefined) ||
     filters.priceMin !== undefined ||
     filters.priceMax !== undefined ||
     filters.minRating !== undefined;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-900">Bộ lọc</h3>
+        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <span className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+            {facetsLoading ? (
+              <FiLoader className="w-4 h-4 text-primary-600 animate-spin" />
+            ) : (
+              <FiChevronDown className="w-4 h-4 text-primary-600" />
+            )}
+          </span>
+          Bộ lọc
+          {facets?.totalCount > 0 && (
+            <span className="text-xs font-normal text-gray-500">
+              ({facets.totalCount} sản phẩm)
+            </span>
+          )}
+        </h3>
         {hasActiveFilters && (
           <button
             onClick={onClearFilters}
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+            className="text-sm text-red-500 hover:text-red-600 font-medium flex items-center gap-1"
           >
             <FiX className="w-4 h-4" />
             Xóa tất cả
@@ -110,6 +145,7 @@ const ProductFilter = ({
           <div className="space-y-2">
             {categories.map((category) => {
               const isChecked = filters.categoryId === category.id;
+              const count = getCategoryCount(category.id);
               return (
                 <label
                   key={category.id}
@@ -122,9 +158,14 @@ const ProductFilter = ({
                     onChange={() => handleCategoryChange(category.id)}
                     className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                   />
-                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900">
+                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 flex-1">
                     {category.name}
                   </span>
+                  {count !== null && count !== undefined && (
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {count}
+                    </span>
+                  )}
                 </label>
               );
             })}
@@ -165,9 +206,14 @@ const ProductFilter = ({
                     onChange={() => handlePriceRangeChange(range)}
                     className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                   />
-                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900">
+                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 flex-1">
                     {range.label}
                   </span>
+                  {range.count !== null && range.count !== undefined && (
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {range.count}
+                    </span>
+                  )}
                 </label>
               );
             })}
@@ -206,10 +252,15 @@ const ProductFilter = ({
                     onChange={() => handleRatingChange(option.value)}
                     className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                   />
-                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 flex items-center gap-1">
+                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 flex items-center gap-1 flex-1">
                     {option.label}
                     <span className="text-yellow-500">★</span>
                   </span>
+                  {option.count !== null && option.count !== undefined && (
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {option.count}
+                    </span>
+                  )}
                 </label>
               );
             })}

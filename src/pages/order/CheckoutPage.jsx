@@ -134,9 +134,10 @@ const CheckoutPage = () => {
         receiverName: shippingAddress.toName,
         receiverPhone: shippingAddress.toPhone,
         receiverAddress: shippingAddress.toAddress,
-        province: shippingAddress.province,
-        district: shippingAddress.district,
-        ward: shippingAddress.ward,
+        // Use ID fields instead of text
+        provinceId: shippingAddress.provinceId,
+        districtId: shippingAddress.districtId,
+        wardCode: shippingAddress.wardCode,
         toDistrictId: shippingAddress.toDistrictId,
         toWardCode: shippingAddress.toWardCode,
         weightGrams: weightGrams,
@@ -233,9 +234,10 @@ const CheckoutPage = () => {
                         <div className="flex gap-4">
                           {/* Product Image */}
                           <img 
-                            src={item.productImage || '/placeholder.png'} 
+                            src={item.mainImage || item.productMainImage || item.productImage || '/placeholder.png'} 
                             alt={item.productName}
                             className="w-20 h-20 object-cover rounded border border-gray-200"
+                            onError={(e) => { e.target.src = '/placeholder.png'; }}
                           />
                           
                           {/* Product Info */}

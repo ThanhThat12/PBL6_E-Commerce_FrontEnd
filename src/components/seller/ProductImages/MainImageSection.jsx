@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Button, Image, Modal, Progress } from 'antd';
+import { Button, Image, Modal, Progress } from 'antd';
 import { UploadOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import PropTypes from 'prop-types';
 

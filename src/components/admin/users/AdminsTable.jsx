@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Search, Filter, Users, Shield, Clock, UserCheck, Settings, Crown, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserPlus, Search, Users, Shield, Clock, UserCheck, Settings, Crown, Edit2, Trash2 } from 'lucide-react';
 import AddAdminModal from './AddAdminModal';
 import AdminEditModal from './AdminEditModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import Toast from '../common/Toast';
-import { getAdminsPage, getAdminDetail, getAdminStats, deleteUser } from '../../../services/adminService';
+import { getAdminsPage, getAdminStats, deleteUser } from '../../../services/adminService';
 import './AdminsTable.css';
 
 const AdminsTable = () => {
@@ -25,13 +25,14 @@ const AdminsTable = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
+  const [_totalElements, setTotalElements] = useState(0); // eslint-disable-line no-unused-vars
   const [pageSize] = useState(10);
 
   // Fetch admins data from API
   useEffect(() => {
     fetchAdmins();
     fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]); // Re-fetch when page changes
 
   const fetchStats = async () => {
@@ -107,8 +108,9 @@ const AdminsTable = () => {
     return roleMap[apiRole] || apiRole;
   };
 
-  // Get permissions based on role
-  const getRolePermissions = (role) => {
+  // Get permissions based on role - kept for future use
+  // eslint-disable-next-line no-unused-vars
+  const _getRolePermissions = (role) => {
     const permissionsMap = {
       'ADMIN': ['User Management', 'Content Management', 'Reports'],
       'SUPER_ADMIN': ['All Access'],
@@ -140,7 +142,9 @@ const AdminsTable = () => {
     }
   ];
 
-  const getRoleClass = (role) => {
+  // Role/status helpers - kept for future use
+  // eslint-disable-next-line no-unused-vars
+  const _getRoleClass = (role) => {
     switch(role) {
       case 'Super Admin': return 'role-super-admin';
       case 'Admin': return 'role-admin';
@@ -158,7 +162,8 @@ const AdminsTable = () => {
     }
   };
 
-  const getRoleIcon = (role) => {
+  // eslint-disable-next-line no-unused-vars
+  const _getRoleIcon = (role) => {
     switch(role) {
       case 'Super Admin': return <Crown size={16} />;
       case 'Admin': return <Shield size={16} />;
@@ -168,7 +173,8 @@ const AdminsTable = () => {
     }
   };
 
-  const formatLastLogin = (datetime) => {
+  // eslint-disable-next-line no-unused-vars
+  const _formatLastLogin = (datetime) => {
     if (!datetime) return 'N/A';
     const date = new Date(datetime);
     return date.toLocaleDateString('en-US', { 
@@ -190,7 +196,8 @@ const AdminsTable = () => {
     });
   };
 
-  const handleViewDetails = (admin) => {
+  // eslint-disable-next-line no-unused-vars
+  const _handleViewDetails = (admin) => {
     console.log('View details:', admin);
     alert(`Viewing details for ${admin.name}`);
   };

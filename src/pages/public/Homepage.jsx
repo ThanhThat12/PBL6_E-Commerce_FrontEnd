@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../hooks/useAuth";
 import usePendingOrderCleanup from "../../hooks/usePendingOrderCleanup";
 import Navbar from "../../components/common/Navbar";
 import HeroSection from "../../components/feature/home/HeroSection";
@@ -10,7 +9,8 @@ import BrandShowcase from "../../components/feature/home/BrandShowcase";
 import ServiceFeatures from "../../components/feature/tab/ServiceFeatures";
 import ButtonUp from "../../components/ui/buttonUp/ButtonUp";
 import Footer from "../../components/layout/footer/Footer";
-import { getCategories, getFeaturedProducts, getBestSellingProducts, getNewArrivals } from "../../services/homeService";
+import { getCategories, getFeaturedProducts, getBestSellingProducts } from "../../services/homeService";
+// Note: useAuth and getNewArrivals available but not currently used
 
 /**
  * HomePage - Trang chủ sàn thương mại đồ thể thao  
@@ -49,16 +49,11 @@ const HomePage = () => {
           getBestSellingProducts(8), // Flash deals = best sellers
         ]);
 
-        console.log('📦 Homepage Data Loaded:');
-        console.log('Categories:', categoriesData);
-        console.log('Featured Products:', featuredData);
-        console.log('Flash Deals:', flashDealsData);
-
         setCategories(categoriesData);
         setFeaturedProducts(featuredData);
         setFlashDeals(flashDealsData);
-      } catch (error) {
-        console.error('Error fetching homepage data:', error);
+      } catch {
+        // Silent error
       } finally {
         setLoading(false);
       }

@@ -170,7 +170,7 @@ export default function RefundApprovalList() {
                   {refund.orderItem && (
                     <div className="flex gap-3 p-3 bg-gray-50 rounded-lg">
                       <img 
-                        src={refund.orderItem.productImage || '/placeholder.png'}
+                        src={refund.orderItem.mainImage || refund.orderItem.productImage || '/placeholder.png'}
                         alt={refund.orderItem.productName}
                         className="w-16 h-16 object-cover rounded border border-gray-200"
                       />
@@ -252,11 +252,11 @@ export default function RefundApprovalList() {
               </div>
             )}
             
-            {/* Action for APPROVED_WAITING_RETURN status */}
-            {refund.status === 'APPROVED_WAITING_RETURN' && (
+            {/* Action for APPROVED status */}
+            {refund.status === 'APPROVED' && (
               <div className="px-6 py-4 bg-blue-50 border-t border-blue-200 flex gap-3 justify-between items-center">
                 <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Chờ khách trả hàng về</span>
+                  <span className="font-semibold">✅ Đã chấp nhận - Chờ khách trả hàng về</span>
                 </p>
                 <button
                   onClick={() => handleConfirmReceipt(refund.id)}
@@ -266,7 +266,7 @@ export default function RefundApprovalList() {
                   {actionLoading === refund.id && (
                     <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   )}
-                  Xác nhận đã nhận hàng
+                  ✓ Đã nhận hàng
                 </button>
               </div>
             )}

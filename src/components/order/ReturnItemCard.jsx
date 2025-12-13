@@ -30,33 +30,29 @@ const ReturnItemCard = ({ refund, onUpdate }) => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      REQUESTED: {
+        label: 'Chờ duyệt',
+        className: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      },
       PENDING: {
         label: 'Chờ duyệt',
         className: 'bg-yellow-100 text-yellow-800 border-yellow-300'
       },
-      APPROVED_WAITING_RETURN: {
-        label: 'Chờ trả hàng',
+      APPROVED: {
+        label: 'Đã duyệt - Chờ trả hàng',
         className: 'bg-blue-100 text-blue-800 border-blue-300'
       },
-      RETURNING: {
-        label: 'Đang trả hàng',
-        className: 'bg-purple-100 text-purple-800 border-purple-300'
-      },
-      APPROVED_REFUNDING: {
-        label: 'Đang hoàn tiền',
-        className: 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      },
       COMPLETED: {
-        label: 'Đã hoàn tiền',
+        label: '✓ Đã hoàn tiền',
         className: 'bg-green-100 text-green-800 border-green-300'
       },
       REJECTED: {
-        label: 'Từ chối',
+        label: '✗ Từ chối',
         className: 'bg-red-100 text-red-800 border-red-300'
       }
     };
 
-    const config = statusConfig[status] || statusConfig.PENDING;
+    const config = statusConfig[status] || statusConfig.REQUESTED;
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${config.className}`}>
         {config.label}
@@ -92,7 +88,7 @@ const ReturnItemCard = ({ refund, onUpdate }) => {
           {orderItem.productName && (
             <div className="flex gap-4 mb-4">
               <img
-                src={orderItem.productImage || '/placeholder.png'}
+                src={orderItem.mainImage || orderItem.productImage || '/placeholder.png'}
                 alt={orderItem.productName}
                 className="w-24 h-24 object-cover rounded-lg"
                 onError={(e) => {
@@ -160,13 +156,18 @@ const ReturnItemCard = ({ refund, onUpdate }) => {
             </div>
             
             <div className="flex gap-2">
-              {refund.status === 'APPROVED_WAITING_RETURN' && (
+              {refund.status === 'APPROVED' && (
                 <button
                   onClick={() => setShowInstruction(true)}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 >
                   Hướng dẫn trả hàng
                 </button>
+              )}
+              {refund.status === 'COMPLETED' && (
+                <div className="px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg border border-green-200">
+                  ✓ Đã hoàn tiền vào ví
+                </div>
               )}
               <button
                 onClick={() => navigate(`/orders/${refund.orderId}`)}

@@ -6,7 +6,6 @@ import { FiTrash2, FiMinus, FiPlus, FiAlertCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useCart from '../../hooks/useCart';
 import useCartStore from '../../store/cartStore';
-import { getProductImage } from '../../utils/placeholderImage';
 
 /**
  * CartItemCard
@@ -113,15 +112,13 @@ const CartItemCard = ({ item }) => {
         className="w-24 h-24 flex-shrink-0 rounded-md overflow-hidden bg-neutral-100 hover:opacity-80 transition-opacity"
       >
         <img
-          src={getProductImage({
-            mainImage: item.productMainImage || item.mainImage,
-            image: item.productImage || item.image
-          })}
+          src={item.mainImage || item.productMainImage || item.productImage || item.image || '/placeholder.png'}
           alt={item.productName}
           className="w-full h-full object-cover"
           loading="lazy"
           onError={(e) => {
             e.target.onerror = null;
+            e.target.src = '/placeholder.png';
           }}
         />
       </Link>

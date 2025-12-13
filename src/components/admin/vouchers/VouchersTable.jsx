@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Ticket, CheckCircle, Calendar, TrendingUp, Tags } from 'lucide-react';
-import { getVouchers, getVoucherStats, deleteVoucher, getVouchersByStatus } from '../../../services/adminVoucherService';
+import { getVouchers, getVoucherStats, deleteVoucher } from '../../../services/adminVoucherService';
 import VoucherActions from './VoucherActions';
 import VoucherDetailModal from './VoucherDetailModal';
 import AddVoucherModal from './AddVoucherModal';
-import VoucherFilters from './VoucherFilters';
+// VoucherFilters removed - currently not used
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import Toast from '../common/Toast';
 import './VouchersTable.css';
 
 const VouchersTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  // const [statusFilter, setStatusFilter] = useState('All'); // TODO: Implement status filter
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -34,8 +34,8 @@ const VouchersTable = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize] = useState(10);
 
-  // Mock data for development
-  const mockVouchers = [
+  // Mock data for development - kept for reference
+  /* const mockVouchers = [
     {
       id: 1,
       code: 'SUMMER2024',
@@ -88,12 +88,13 @@ const VouchersTable = () => {
       endDate: '2024-12-31',
       description: 'Welcome bonus'
     },
-  ];
+  ]; */
 
   // Fetch vouchers from API
   useEffect(() => {
     fetchVouchersData();
     fetchStatsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]); // Re-fetch when page changes
 
   const fetchVouchersData = async () => {
@@ -215,7 +216,9 @@ const VouchersTable = () => {
     setShowDetailModal(true);
   };
 
-  const handleUpdateVoucher = async (updatedData) => {
+  // handleUpdateVoucher is handled internally by VoucherDetailModal
+  // eslint-disable-next-line no-unused-vars
+  const _handleUpdateVoucher = async (updatedData) => {
     try {
       console.log('🔄 [VouchersTable] Voucher updated, refreshing data...');
       
@@ -293,9 +296,10 @@ const VouchersTable = () => {
     return voucher.code.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Handle status filter change
-  const handleStatusChange = (e) => {
-    setStatusFilter(e.target.value);
+  // Handle status filter change - TODO: implement status filter
+  // eslint-disable-next-line no-unused-vars
+  const _handleStatusChange = (e) => {
+    // setStatusFilter(e.target.value);
   };
 
   // Get status badge class

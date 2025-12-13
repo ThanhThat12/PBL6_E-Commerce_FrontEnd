@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { useOrder } from '../../context/OrderContext';
@@ -29,11 +29,7 @@ const ItemReturnPage = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
 
   useEffect(() => {
-    console.log('===[ItemReturnPage] Full location.state:', location.state);
-    console.log('===[ItemReturnPage] Extracted values:', { orderItemId, productName, variantName, price, maxQuantity });
-    
     if (!orderItemId || orderItemId === 'undefined' || isNaN(orderItemId)) {
-      console.error('===[ItemReturnPage] Invalid orderItemId, redirecting to /orders');
       toast.error('Thông tin sản phẩm không hợp lệ. Vui lòng thử lại.');
       navigate('/orders');
     }
@@ -98,6 +94,7 @@ const ItemReturnPage = () => {
         imageUrls: [] // Will be populated after image upload
       };
 
+      console.log('📦 Sending return request:', requestData);
       await api.post('/orders/items/return', requestData);
       
       toast.success('Yêu cầu trả hàng đã được gửi thành công!');
@@ -108,7 +105,9 @@ const ItemReturnPage = () => {
       navigate('/orders?tab=RETURN');
     } catch (error) {
       console.error('Error submitting return request:', error);
-      toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu trả hàng');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Không thể gửi yêu cầu trả hàng');
     } finally {
       setLoading(false);
     }

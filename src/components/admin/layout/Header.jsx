@@ -1,12 +1,20 @@
 // 📁 src/components/admin/layout/Header.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Search, Settings, LogOut, User } from "lucide-react";
+import { Bell, Search, LogOut, User } from "lucide-react";
+import { useNotificationContext } from "../../../context/NotificationContext";
+import NotificationButton from "../../common/Navbar/NotificationButton";
 
 const Header = () => {
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+
+  const { 
+    notifications, 
+    markAsRead, 
+    clearAll 
+  } = useNotificationContext();
 
   const handleLogout = () => {
     // Clear admin authentication
@@ -56,15 +64,15 @@ const Header = () => {
           <Search size={20} />
         </button>
 
-        {/* Notification Bell */}
-        <button className="p-2 text-gray-600 hover:text-gray-800">
-          <Bell size={20} />
-        </button>
-
-        {/* Settings */}
-        {/* <button className="p-2 text-gray-600 hover:text-gray-800">
-          <Settings size={20} />
-        </button> */}
+        {/* Notification Bell with Badge */}
+        <div className="relative">
+          <NotificationButton 
+            notifications={notifications}
+            onMarkAsRead={markAsRead}
+            onClearAll={clearAll}
+            variant="admin"
+          />
+        </div>
 
         {/* Profile */}
         <div className="relative">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ToastContainer } from 'react-toastify';
 import { Toaster } from 'react-hot-toast';
@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { OrderProvider } from './context/OrderContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ROUTES, GOOGLE_CLIENT_ID } from './utils/constants';
 
 // Pages
@@ -22,6 +23,9 @@ import PaymentResultPage from './pages/order/PaymentResultPage';
 import ProductListPage from './pages/products/ProductListPage';
 import ProductDetailPage from './pages/products/ProductDetailPage';
 
+// Shop Pages
+import ShopDetailPage from './pages/shops/ShopDetailPage';
+
 // Cart Page
 import CartPage from './pages/cart/CartPage';
 
@@ -33,10 +37,32 @@ import ItemReturnPage from './pages/order/ItemReturnPage';
 import ProfilePage from './pages/user/ProfilePage';
 import AddressManagementPage from './pages/user/AddressManagementPage';
 import ChangePasswordPage from './pages/user/ChangePasswordPage';
+import SellerRegistrationPage from './pages/user/SellerRegistrationPage';
+import RegistrationStatusPage from './pages/user/RegistrationStatusPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 
+// Chat Component
+import { ChatContainer } from './components/chat';
+
+// 🧑‍💼 Admin Pages
+import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
+
+// Chat Wrapper - Only show on authenticated pages
+const ConditionalChatContainer = () => {
+  const location = useLocation();
+  
+  // Hide chat on auth pages
+  const hideChat = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    '/forgot-password',
+    '/admin/login'
+  ].some(route => location.pathname.startsWith(route));
+  
+  return !hideChat ? <ChatContainer /> : null;
+};
 
 // 🏪 Seller Pages & Components
 import SellerProtectedRoute from './components/seller/ProtectedRoute';
@@ -58,15 +84,17 @@ import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
 import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
 import ChatPage from './pages/admin/Chat/ChatPage';
 import WalletPage from './pages/admin/Wallet/WalletPage';
+import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
 function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <AuthProvider>
-          <CartProvider>
-            <OrderProvider>
-            <Routes>
+          <NotificationProvider>
+            <CartProvider>
+              <OrderProvider>
+              <Routes>
               {/* Public Routes */}
               <Route path={ROUTES.HOME} element={<Homepage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
@@ -76,6 +104,9 @@ function App() {
               {/* Product Routes (Public) */}
               <Route path="/products" element={<ProductListPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
+              
+              {/* Shop Routes (Public) */}
+              <Route path="/shops/:shopId" element={<ShopDetailPage />} />
               
               
               {/* Protected Routes */}
@@ -178,11 +209,31 @@ function App() {
             <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><Customers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><Sellers /></ProtectedRouteAdmin>} />
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
+            <Route path="/admin/seller-registrations" element={<ProtectedRouteAdmin><SellerRegistrationsPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
             <Route path="/admin/chat" element={<ProtectedRouteAdmin><ChatPage/></ProtectedRouteAdmin>} />            
             <Route path="/admin/wallet" element={<ProtectedRouteAdmin><WalletPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
+
+                        {/* ================= SELLER REGISTRATION ROUTES ================= */}
+            <Route 
+              path="/seller/register" 
+              element={
+                <ProtectedRoute>
+                  <SellerRegistrationPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/registration-status" 
+              element={
+                <ProtectedRoute>
+                  <RegistrationStatusPage />
+                </ProtectedRoute>
+              } 
+            />
+            {/* ============================================================= */}
 
             {/* ================= SELLER ROUTES ================= */}
             <Route 
@@ -206,6 +257,7 @@ function App() {
               <Route path="customers" element={<SellerPages.Customers />} />
               <Route path="vouchers" element={<SellerPages.VoucherManagement />} />
               <Route path="refunds" element={<SellerPages.Refunds />} />
+              <Route path="notifications" element={<SellerPages.Notifications />} />
             </Route>
             {/* ================================================= */}
 
@@ -255,8 +307,12 @@ function App() {
               draggable
               pauseOnHover
             />
-            </OrderProvider>
-          </CartProvider>
+            
+            {/* Chat Floating Window - Hidden on auth pages */}
+            <ConditionalChatContainer />
+              </OrderProvider>
+            </CartProvider>
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>

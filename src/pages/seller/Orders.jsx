@@ -7,11 +7,13 @@ import {
   confirmOrder,
   shipOrder,
   cancelOrder,
+  getRefundRequests,
+  reviewRefund,
+  confirmReceipt,
   ORDER_STATUS, 
   STATUS_LABELS 
 } from '../../services/seller/orderService';
 
-const { confirm } = Modal;
 const { RangePicker } = DatePicker;
 
 /**
@@ -19,6 +21,7 @@ const { RangePicker } = DatePicker;
  * Display and manage all orders
  */
 const Orders = () => {
+  const [allOrders, setAllOrders] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -27,6 +30,7 @@ const Orders = () => {
   const [activeTab, setActiveTab] = useState('ALL');
   const [searchText, setSearchText] = useState('');
   const [dateRange, setDateRange] = useState(null);
+  const [refundRequests, setRefundRequests] = useState([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -35,8 +39,18 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
+    fetchRefunds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current, pagination.pageSize, activeTab]);
+  }, [pagination.current, pagination.pageSize]);
+
+  const fetchRefunds = async () => {
+    try {
+      const refunds = await getRefundRequests();
+      setRefundRequests(refunds);
+    } catch (error) {
+      console.error('Error fetching refund requests:', error);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -44,11 +58,11 @@ const Orders = () => {
       const params = {
         page: pagination.current - 1,
         size: pagination.pageSize,
-        status: activeTab !== 'ALL' ? activeTab : undefined,
+        // Không filter status ở đây, luôn lấy tất cả
       };
-
       const response = await getOrders(params);
-      
+      console.log('📦 Orders data:', response.content?.[0]); // Debug first order
+      setAllOrders(response.content || []);
       setOrders(response.content || []);
       setPagination({
         ...pagination,
@@ -62,6 +76,26 @@ const Orders = () => {
     }
   };
 
+  useEffect(() => {
+    // Mỗi lần đổi tab, filter lại từ allOrders
+    let filtered = allOrders;
+    if (activeTab === 'TO_SHIP') {
+      filtered = filtered.filter(o =>
+        o.status === ORDER_STATUS.PENDING || o.status === ORDER_STATUS.PROCESSING
+      );
+    } else if (activeTab !== 'ALL') {
+      filtered = filtered.filter(o => o.status === activeTab);
+    }
+    // Filter by search text
+    if (searchText) {
+      filtered = filtered.filter(o =>
+        o.orderCode?.toLowerCase().includes(searchText.toLowerCase()) ||
+        o.customerName?.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+    setOrders(filtered);
+  }, [activeTab, allOrders, searchText]);
+
   const handleConfirmOrder = async (orderId) => {
     try {
       await confirmOrder(orderId);
@@ -71,6 +105,69 @@ const Orders = () => {
       console.error('Error confirming order:', error);
       message.error('Không thể xác nhận đơn hàng');
     }
+  };
+
+  const handleApproveRefund = async (refundId) => {
+    try {
+      await reviewRefund(refundId, true);
+      message.success('Đã chấp nhận yêu cầu trả hàng - Chờ khách gửi hàng về');
+      fetchRefunds();
+      fetchOrders();
+    } catch (error) {
+      console.error('Error approving refund:', error);
+      message.error('Không thể chấp nhận yêu cầu');
+    }
+  };
+
+  const handleRejectRefund = (refundId) => {
+    Modal.confirm({
+      title: 'Từ chối yêu cầu trả hàng',
+      content: (
+        <div>
+          <p className="mb-2">Vui lòng nhập lý do từ chối:</p>
+          <Input.TextArea 
+            id="rejectReason"
+            rows={3} 
+            placeholder="Lý do từ chối..."
+          />
+        </div>
+      ),
+      okText: 'Từ chối',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        const reason = document.getElementById('rejectReason')?.value || 'Không đạt yêu cầu';
+        try {
+          await reviewRefund(refundId, false, reason);
+          message.success('Đã từ chối yêu cầu trả hàng');
+          fetchRefunds();
+          fetchOrders();
+        } catch (error) {
+          console.error('Error rejecting refund:', error);
+          message.error('Không thể từ chối yêu cầu');
+        }
+      }
+    });
+  };
+
+  const handleConfirmReceipt = (refundId) => {
+    Modal.confirm({
+      title: 'Xác nhận đã nhận hàng trả về',
+      content: 'Xác nhận hàng đã nhận và kiểm tra OK? Hệ thống sẽ tự động hoàn tiền cho khách.',
+      okText: 'Đã nhận hàng',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await confirmReceipt(refundId);
+          message.success('Đã xác nhận nhận hàng - Hoàn tiền thành công');
+          fetchRefunds();
+          fetchOrders();
+        } catch (error) {
+          console.error('Error confirming receipt:', error);
+          message.error('Không thể xác nhận nhận hàng');
+        }
+      }
+    });
   };
 
   const handleShipOrder = async (orderId) => {
@@ -84,24 +181,19 @@ const Orders = () => {
     }
   };
 
-  const handleCancelOrder = (orderId) => {
-    confirm({
-      title: 'Xác nhận hủy đơn hàng',
-      content: 'Bạn có chắc chắn muốn hủy đơn hàng này?',
-      okText: 'Hủy đơn',
-      okType: 'danger',
-      cancelText: 'Quay lại',
-      onOk: async () => {
-        try {
-          await cancelOrder(orderId);
-          message.success('Đã hủy đơn hàng');
-          fetchOrders();
-        } catch (error) {
-          console.error('Error cancelling order:', error);
-          message.error('Không thể hủy đơn hàng');
-        }
-      },
-    });
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+      return;
+    }
+    
+    try {
+      await cancelOrder(orderId);
+      message.success('Đã hủy đơn hàng');
+      fetchOrders();
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      message.error(error.response?.data?.message || 'Không thể hủy đơn hàng');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -144,13 +236,39 @@ const Orders = () => {
       );
     }
 
-    // Đang xử lý: Đã đóng gói/Giao cho ship (không cho hủy)
+    // Đang xử lý: Giao cho ship hoặc Hủy đơn
     if (status === ORDER_STATUS.PROCESSING) {
       return (
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Button
+            type="primary"
+            size="small"
+            icon={<SendOutlined />}
+            onClick={() => handleShipOrder(id)}
+            block
+          >
+            Giao hàng
+          </Button>
+          <Button
+            danger
+            size="small"
+            icon={<CloseOutlined />}
+            onClick={() => handleCancelOrder(id)}
+            block
+          >
+            Hủy đơn
+          </Button>
+        </Space>
+      );
+    }
+
+    // Đang giao: Không có action
+    if (status === ORDER_STATUS.SHIPPING) {
+      return (
         <Button
-          type="primary"
+          type="default"
           size="small"
-          icon={<SendOutlined />}
+          disabled
           onClick={() => handleShipOrder(id)}
           block
         >
@@ -208,28 +326,7 @@ const Orders = () => {
             <Avatar src={record.customerAvatar} size="small" className="mr-2" />
             <span className="text-xs text-gray-500">Mã đơn: #{record.orderCode}</span>
           </div>
-          {items && items.length > 0 ? (
-            <div className="space-y-2">
-              {items.slice(0, 2).map((item, index) => (
-                <div key={index} className="flex items-center">
-                  <img 
-                    src={item.productImage || 'https://via.placeholder.com/50'} 
-                    alt={item.productName}
-                    className="w-12 h-12 object-cover rounded mr-3"
-                  />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{item.productName}</div>
-                    <div className="text-xs text-gray-500">x{item.quantity}</div>
-                  </div>
-                </div>
-              ))}
-              {items.length > 2 && (
-                <div className="text-xs text-blue-500">+{items.length - 2} sản phẩm khác</div>
-              )}
-            </div>
-          ) : (
-            <span className="text-gray-400">Không có sản phẩm</span>
-          )}
+          
         </div>
       ),
     },
@@ -247,7 +344,9 @@ const Orders = () => {
             }).format(amount)}
           </div>
           <div className="text-xs text-gray-500">
-            {record.paymentMethod === 'COD' ? 'Thanh toán COD' : 'Đã thanh toán'}
+            {record.paymentStatus === 'PAID' 
+              ? (record.paymentMethod === 'COD' ? 'COD - Đã thanh toán' : 'Đã thanh toán')
+              : (record.paymentMethod === 'COD' ? 'COD - Chưa thanh toán' : 'Chưa thanh toán')}
           </div>
         </div>
       ),
@@ -315,10 +414,16 @@ const Orders = () => {
     },
   ];
 
+  // eslint-disable-next-line no-unused-vars
   const getOrderCount = (status) => {
-    if (!orders) return 0;
-    if (status === 'ALL') return orders.length;
-    return orders.filter(o => o.status === status).length;
+    if (!allOrders) return 0;
+    if (status === 'ALL') return allOrders.length;
+    if (status === 'TO_SHIP') {
+      return allOrders.filter(o =>
+        o.status === ORDER_STATUS.PENDING || o.status === ORDER_STATUS.PROCESSING
+      ).length;
+    }
+    return allOrders.filter(o => o.status === status).length;
   };
 
   const getToShipCount = () => {
@@ -332,50 +437,43 @@ const Orders = () => {
   };
 
   const tabItems = [
-    { key: 'ALL', label: 'Tất cả' },
-    { 
-      key: 'PENDING', 
-      label: (
-        <Badge count={getPendingCount()} offset={[10, 0]}>
-          Chờ xác nhận
-        </Badge>
-      )
-    },
-    { 
-      key: 'TO_SHIP', 
-      label: (
-        <Badge count={getToShipCount()} offset={[10, 0]}>
-          Chờ giao hàng
-        </Badge>
-      )
-    },
-    { key: 'SHIPPING', label: 'Đang giao' },
-    { key: 'COMPLETED', label: 'Hoàn thành' },
-    { key: 'CANCELLED', label: 'Đã hủy' },
+    { key: 'ALL', label: (
+      <span className="tab-label">
+        Tất cả
+        <Badge count={getOrderCount('ALL')} offset={[6, 0]} />
+      </span>
+    ) },
+    { key: 'PENDING', label: (
+      <span className="tab-label">
+        Chờ xác nhận
+        <Badge count={getOrderCount(ORDER_STATUS.PENDING)} offset={[6, 0]} />
+      </span>
+    ) },
+    { key: 'TO_SHIP', label: (
+      <span className="tab-label">
+        Chờ giao hàng
+        <Badge count={getOrderCount('TO_SHIP')} offset={[6, 0]} />
+      </span>
+    ) },
+    { key: 'SHIPPING', label: (
+      <span className="tab-label">
+        Đang giao
+        <Badge count={getOrderCount(ORDER_STATUS.SHIPPING)} offset={[6, 0]} />
+      </span>
+    ) },
+    { key: 'COMPLETED', label: (
+      <span className="tab-label">
+        Hoàn thành
+        <Badge count={getOrderCount(ORDER_STATUS.COMPLETED)} offset={[6, 0]} />
+      </span>
+    ) },
+    { key: 'CANCELLED', label: (
+      <span className="tab-label">
+        Đã hủy
+        <Badge count={getOrderCount(ORDER_STATUS.CANCELLED)} offset={[6, 0]} />
+      </span>
+    ) },
   ];
-
-  const filterOrders = () => {
-    let filtered = orders;
-
-    // Filter by main tab
-    if (activeTab === 'TO_SHIP') {
-      filtered = filtered.filter(o => 
-        o.status === ORDER_STATUS.PENDING || o.status === ORDER_STATUS.PROCESSING
-      );
-    } else if (activeTab !== 'ALL') {
-      filtered = filtered.filter(o => o.status === activeTab);
-    }
-
-    // Filter by search text
-    if (searchText) {
-      filtered = filtered.filter(o => 
-        o.orderCode?.toLowerCase().includes(searchText.toLowerCase()) ||
-        o.customerName?.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
-    return filtered;
-  };
 
   return (
     <div className="p-6">
@@ -428,11 +526,11 @@ const Orders = () => {
       {/* Orders Table */}
       <Card>
         <div className="mb-4">
-          <span className="text-lg font-semibold">{filterOrders().length} Đơn hàng</span>
+          <span className="text-lg font-semibold">{orders.length} Đơn hàng</span>
         </div>
         <Table
           columns={columns}
-          dataSource={filterOrders()}
+          dataSource={orders}
           rowKey="id"
           loading={loading}
           pagination={{
@@ -481,19 +579,73 @@ const Orders = () => {
             <div>
               <h3 className="font-semibold mb-2">Sản phẩm</h3>
               <ul>
-                {selectedOrder.items?.map(item => (
-                  <li key={item.id} className="mb-2">
-                    <div className="flex items-center">
-                      {item.productImage && (
-                        <img src={item.productImage} alt={item.productName} className="w-12 h-12 object-cover mr-3" />
-                      )}
-                      <div>
-                        <div className="font-medium">{item.productName}</div>
-                        <div className="text-sm text-gray-500">{item.variantName} × {item.quantity} — {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal)}</div>
+                {selectedOrder.items?.map(item => {
+                  // Find refund request for this item
+                  const itemRefund = refundRequests.find(r => 
+                    r.refundItems?.some(ri => ri.orderItemId === item.id)
+                  );
+                  
+                  return (
+                    <li key={item.id} className="mb-3 p-3 border rounded">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center flex-1">
+                          {item.productImage && (
+                            <img src={item.productImage} alt={item.productName} className="w-12 h-12 object-cover mr-3" />
+                          )}
+                          <div>
+                            <div className="font-medium">{item.productName}</div>
+                            <div className="text-sm text-gray-500">
+                              {item.variantName} × {item.quantity} — {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal)}
+                            </div>
+                          </div>
+                        </div>
+                        {itemRefund && (
+                          <div className="ml-3">
+                            {itemRefund.status === 'REQUESTED' && (
+                              <Space direction="vertical" size="small">
+                                <Tag color="orange">Yêu cầu trả hàng</Tag>
+                                <Space size="small">
+                                  <Button 
+                                    type="primary" 
+                                    size="small"
+                                    onClick={() => handleApproveRefund(itemRefund.id)}
+                                  >
+                                    Chấp nhận
+                                  </Button>
+                                  <Button 
+                                    danger 
+                                    size="small"
+                                    onClick={() => handleRejectRefund(itemRefund.id)}
+                                  >
+                                    Từ chối
+                                  </Button>
+                                </Space>
+                              </Space>
+                            )}
+                            {itemRefund.status === 'APPROVED' && (
+                              <Space direction="vertical" size="small">
+                                <Tag color="blue">Chờ khách gửi hàng</Tag>
+                                <Button 
+                                  type="primary" 
+                                  size="small"
+                                  onClick={() => handleConfirmReceipt(itemRefund.id)}
+                                >
+                                  Đã nhận hàng
+                                </Button>
+                              </Space>
+                            )}
+                            {itemRefund.status === 'COMPLETED' && (
+                              <Tag color="green">Đã hoàn tiền</Tag>
+                            )}
+                            {itemRefund.status === 'REJECTED' && (
+                              <Tag color="red">Đã từ chối</Tag>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>

@@ -215,7 +215,7 @@ const DashboardPage = () => {
   ];
   
   const handleExport = () => {
-    console.log('Exporting dashboard data...');
+    // Export functionality placeholder
   };
 
   if (loading) {

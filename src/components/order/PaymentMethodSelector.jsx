@@ -7,8 +7,16 @@ import { FaMoneyBillWave, FaCreditCard, FaWallet } from 'react-icons/fa';
  */
 const PaymentMethodSelector = ({ 
   selectedMethod = 'COD', 
-  onMethodChange = () => {} 
+  onMethodChange = () => {},
+  walletBalance = 0 
 }) => {
+  // Format currency to VND
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  };
   const paymentMethods = [
     {
       id: 'COD',
@@ -40,7 +48,8 @@ const PaymentMethodSelector = ({
       description: 'Thanh toán trực tiếp bằng ví SportyPay trên hệ thống',
       icon: FaWallet,
       color: 'bg-orange-50 border-orange-200',
-      activeColor: 'bg-orange-100 border-orange-500'
+      activeColor: 'bg-orange-100 border-orange-500',
+      showBalance: true
     },
   ];
 
@@ -66,11 +75,18 @@ const PaymentMethodSelector = ({
             />
             
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-1">
-                <Icon className={`text-lg ${isSelected ? 'text-blue-600' : 'text-gray-600'}`} />
-                <span className="font-semibold text-gray-900">
-                  {method.name}
-                </span>
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <div className="flex items-center gap-3">
+                  <Icon className={`text-lg ${isSelected ? 'text-blue-600' : 'text-gray-600'}`} />
+                  <span className="font-semibold text-gray-900">
+                    {method.name}
+                  </span>
+                </div>
+                {method.showBalance && (
+                  <span className="text-sm font-semibold text-orange-600">
+                    Số dư: {formatCurrency(walletBalance)}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-600 ml-8">
                 {method.description}
