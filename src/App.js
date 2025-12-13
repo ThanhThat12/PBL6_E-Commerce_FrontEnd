@@ -42,6 +42,7 @@ import RegistrationStatusPage from './pages/user/RegistrationStatusPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+
 // Chat Component
 import { ChatContainer } from './components/chat';
 
@@ -68,6 +69,9 @@ import SellerProtectedRoute from './components/seller/ProtectedRoute';
 import { SellerLayout } from './components/seller/Layout';
 import * as SellerPages from './pages/seller';
 import ReviewsPage from './pages/seller/Review';
+
+// 🧑‍💼 Admin Pages
+import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
 import OrdersPage from "./pages/admin/Orders/OrdersPage";
@@ -78,6 +82,8 @@ import Admins from "./pages/admin/Users/Admins";
 import SettingsPage from "./pages/admin/Settings/SettingsPage";
 import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
 import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
+import ChatPage from './pages/admin/Chat/ChatPage';
+import WalletPage from './pages/admin/Wallet/WalletPage';
 import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
 function App() {
@@ -205,6 +211,8 @@ function App() {
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
             <Route path="/admin/seller-registrations" element={<ProtectedRouteAdmin><SellerRegistrationsPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/chat" element={<ProtectedRouteAdmin><ChatPage/></ProtectedRouteAdmin>} />            
+            <Route path="/admin/wallet" element={<ProtectedRouteAdmin><WalletPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
 
