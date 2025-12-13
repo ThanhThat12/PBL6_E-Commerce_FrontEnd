@@ -46,8 +46,6 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 // Chat Component
 import { ChatContainer } from './components/chat';
 
-// 🧑‍💼 Admin Pages
-import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 
 // Chat Wrapper - Only show on authenticated pages
 const ConditionalChatContainer = () => {

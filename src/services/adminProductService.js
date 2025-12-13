@@ -182,5 +182,3 @@ export default {
   searchProducts,
   getProductDetail
 };
-
-export default adminProductService;
