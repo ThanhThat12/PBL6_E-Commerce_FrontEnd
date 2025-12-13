@@ -118,6 +118,16 @@ export const getShopAnalytics = async (year) => {
  * @param {object} params - optional params { limit }
  * @returns {Promise<Array>} list of buyers
  */
+export const getTopBuyers = async (params = {}) => {
+  try {
+    const response = await api.get('/seller/top-buyers', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching top buyers:', error);
+    throw error;
+  }
+};
+
 /**
  * Get completed orders monthly statistics
  * @returns {Promise<Array>} Array of { year, month, orderCount }
@@ -156,21 +166,6 @@ export const getTopSellingProducts = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching top selling products:', error);
-    throw error;
-  }
-};
-
-/**
- * Get top buyers/customers
- * @param {Object} params - Query parameters (limit, etc.)
- * @returns {Promise<Array>} Array of top buyers
- */
-export const getTopBuyers = async (params = {}) => {
-  try {
-    const response = await api.get('/seller/analytics/customers/top', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching top buyers:', error);
     throw error;
   }
 };
