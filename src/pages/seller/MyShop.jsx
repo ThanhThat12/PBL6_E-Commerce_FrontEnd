@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select } from 'antd';
+import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select, Tabs } from 'antd';
 import { 
   UploadOutlined, CameraOutlined, CheckCircleOutlined, ClockCircleOutlined, 
   CloseCircleOutlined, ShopOutlined, UserOutlined,
   EnvironmentOutlined, PhoneOutlined, MailOutlined, StarOutlined,
-  EditOutlined, ApiOutlined, KeyOutlined
+  EditOutlined, ApiOutlined, KeyOutlined, HomeOutlined
 } from '@ant-design/icons';
 import { getShopDetail, updateShopProfile } from '../../services/seller/shopService';
 import { useAddressMaster } from '../../hooks/useAddressMaster';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import StoreAddressManagement from '../../components/profile/StoreAddressManagement';
+import SellerProfileInfo from '../../components/seller/SellerProfileInfo';
+
+const { TabPane } = Tabs;
 
 // Default images from environment
 const DEFAULT_LOGO = process.env.REACT_APP_DEFAULT_LOGO || 'https://res.cloudinary.com/dejjhkhl1/image/upload/v1764911991/xwz5cpybxo1g1_sppbqi.png';
@@ -398,7 +402,17 @@ const MyShop = () => {
       </div>
 
       {/* Shop Info */}
-      <Row gutter={[24, 24]}>
+      <Tabs defaultActiveKey="info" className="custom-tabs">
+        <TabPane 
+          tab={
+            <span>
+              <ShopOutlined />
+              Thông Tin Cửa Hàng
+            </span>
+          } 
+          key="info"
+        >
+          <Row gutter={[24, 24]}>
                 {/* Left Column - Shop Info Display */}
                 <Col xs={24} lg={8}>
                   {/* Quick Stats */}
@@ -761,6 +775,34 @@ const MyShop = () => {
                   </Card>
                 </Col>
               </Row>
+        </TabPane>
+
+        {/* Store Address Tab */}
+        <TabPane 
+          tab={
+            <span>
+              <HomeOutlined />
+              Địa Chỉ Cửa Hàng
+            </span>
+          } 
+          key="address"
+        >
+          <StoreAddressManagement />
+        </TabPane>
+
+        {/* Personal Info Tab */}
+        <TabPane 
+          tab={
+            <span>
+              <UserOutlined />
+              Thông Tin Cá Nhân
+            </span>
+          } 
+          key="personal"
+        >
+          <SellerProfileInfo />
+        </TabPane>
+      </Tabs>
     </div>
   );
 };

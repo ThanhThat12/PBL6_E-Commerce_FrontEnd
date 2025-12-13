@@ -81,13 +81,13 @@ export const getVouchers = async (page = 0, size = 10) => {
 
 /**
  * Get voucher detail by ID
- * Backend endpoint: GET /api/admin/voucher/{id}
+ * Backend endpoint: GET /api/admin/vouchers/{id}
  * Returns: ResponseDTO<AdminVoucherDetailDTO>
  */
-export const getVoucherDetail = async (id) => {
+export const getVoucherDetail = async (voucherId) => {
   try {
-    console.log('📡 [adminVoucherService] Calling GET /admin/voucher/' + id);
-    const response = await apiClient.get(`/admin/voucher/${id}`);
+    console.log('📡 [adminVoucherService] Calling GET /admin/vouchers/' + voucherId);
+    const response = await apiClient.get(`/admin/vouchers/${voucherId}`);
     console.log('✅ [adminVoucherService] Voucher detail response:', response.data);
     return response.data;
   } catch (error) {
@@ -128,16 +128,16 @@ export const searchVoucherByCode = async (code) => {
 
 /**
  * Create new voucher
- * Backend endpoint: POST /api/admin/voucher/add
- * Request Body: { code, description, discountAmount, minOrderValue, quantity, startDate, endDate }
- * Returns: ResponseDTO<Vouchers>
+ * Backend endpoint: POST /api/admin/vouchers
+ * Request Body: AdminVoucherCreateDTO
+ * Returns: ResponseDTO<AdminVoucherDetailDTO>
  */
 export const createVoucher = async (voucherData) => {
   try {
-    console.log('📝 [adminVoucherService] Calling POST /admin/voucher/add');
+    console.log('📝 [adminVoucherService] Calling POST /admin/vouchers');
     console.log('📝 [adminVoucherService] Voucher data:', voucherData);
     
-    const response = await apiClient.post('/admin/voucher/add', voucherData);
+    const response = await apiClient.post('/admin/vouchers', voucherData);
     console.log('✅ [adminVoucherService] Create voucher response:', response.data);
     return response.data;
   } catch (error) {
@@ -156,16 +156,16 @@ export const createVoucher = async (voucherData) => {
 
 /**
  * Update voucher
- * Backend endpoint: PUT /api/admin/voucher/{id}/update
- * Request Body: { code, description, discountAmount, minOrderValue, quantity, startDate, endDate, status }
- * Returns: ResponseDTO<Vouchers>
+ * Backend endpoint: PUT /api/admin/vouchers/{id}
+ * Request Body: AdminVoucherUpdateDTO
+ * Returns: ResponseDTO<AdminVoucherDetailDTO>
  */
 export const updateVoucher = async (id, voucherData) => {
   try {
-    console.log('📝 [adminVoucherService] Calling PUT /admin/voucher/' + id + '/update');
+    console.log('📝 [adminVoucherService] Calling PUT /admin/vouchers/' + id);
     console.log('📝 [adminVoucherService] Update data:', voucherData);
     
-    const response = await apiClient.put(`/admin/voucher/${id}/update`, voucherData);
+    const response = await apiClient.put(`/admin/vouchers/${id}`, voucherData);
     console.log('✅ [adminVoucherService] Update voucher response:', response.data);
     return response.data;
   } catch (error) {

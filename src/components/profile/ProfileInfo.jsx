@@ -150,20 +150,18 @@ const ProfileInfo = () => {
           </div>
         )}
 
-        {/* Phone */}
-        {displayUser?.phoneNumber && (
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-              <FiPhone className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 mb-1">Số điện thoại</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {displayUser.phoneNumber}
-              </p>
-            </div>
+        {/* Phone - Always show */}
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+            <FiPhone className="w-6 h-6 text-green-600" />
           </div>
-        )}
+          <div className="flex-1">
+            <p className="text-sm text-gray-600 mb-1">Số điện thoại</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {displayUser?.phoneNumber || <span className="text-gray-400 italic">Chưa cập nhật</span>}
+            </p>
+          </div>
+        </div>
 
         {/* Full Name */}
         <div className="flex items-start gap-4">

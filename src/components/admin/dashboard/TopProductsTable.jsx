@@ -5,18 +5,18 @@ const TopProductsTable = ({ products }) => {
   return (
     <div className="table-card">
       <div className="table-header">
-        <h3 className="table-title">Top Selling Products</h3>
-        <button className="view-all-btn">View All</button>
+        <h3 className="table-title">Top Sản Phẩm Bán Chạy</h3>
+        <button className="view-all-btn">Xem Tất Cả</button>
       </div>
       <div className="table-container">
         <table className="custom-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th>Category</th>
-              <th>Sales</th>
-              <th>Revenue</th>
-              <th>Status</th>
+              <th>Sản Phẩm</th>
+              <th>Danh Mục</th>
+              <th>Đã Bán</th>
+              <th>Doanh Thu</th>
+              <th>Trạng Thái</th>
             </tr>
           </thead>
           <tbody>
@@ -41,10 +41,10 @@ const TopProductsTable = ({ products }) => {
                   <span className="category-badge">{product.category}</span>
                 </td>
                 <td className="sales-count">{product.sales}</td>
-                <td className="revenue-amount">${product.revenue}</td>
+                <td className="revenue-amount">{product.revenue}đ</td>
                 <td>
                   <span className={`status-badge ${product.status.toLowerCase()}`}>
-                    {product.status}
+                    {product.status === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
                   </span>
                 </td>
               </tr>

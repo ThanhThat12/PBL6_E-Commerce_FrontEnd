@@ -1,15 +1,28 @@
 import React from "react";
 
 const CategoryChart = ({ data }) => {
-  const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'];
+  const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
   const total = data.reduce((sum, item) => sum + item.value, 0);
+  
+  if (total === 0 || data.length === 0) {
+    return (
+      <div className="chart-card">
+        <div className="chart-header">
+          <h3 className="chart-title">Doanh Số Theo Danh Mục</h3>
+        </div>
+        <div className="chart-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Chưa có dữ liệu</p>
+        </div>
+      </div>
+    );
+  }
   
   let cumulativePercentage = 0;
   
   return (
     <div className="chart-card">
       <div className="chart-header">
-        <h3 className="chart-title">Sales by Category</h3>
+        <h3 className="chart-title">Doanh Số Theo Danh Mục</h3>
       </div>
       <div className="chart-container">
         <div className="donut-chart-container">
@@ -35,7 +48,7 @@ const CategoryChart = ({ data }) => {
                   cy="60"
                   r="40"
                   fill="none"
-                  stroke={colors[index]}
+                  stroke={colors[index % colors.length]}
                   strokeWidth="20"
                   strokeDasharray={strokeDasharray}
                   strokeDashoffset={strokeDashoffset}
@@ -45,8 +58,8 @@ const CategoryChart = ({ data }) => {
             })}
           </svg>
           <div className="donut-center">
-            <span className="donut-total">${total}k</span>
-            <span className="donut-label">Total Sales</span>
+            <span className="donut-total">{total}K</span>
+            <span className="donut-label">Tổng Doanh Số</span>
           </div>
         </div>
         <div className="donut-legend">
@@ -54,10 +67,10 @@ const CategoryChart = ({ data }) => {
             <div key={index} className="legend-item">
               <div 
                 className="legend-color" 
-                style={{ backgroundColor: colors[index] }}
+                style={{ backgroundColor: colors[index % colors.length] }}
               ></div>
               <span className="legend-text">{item.name}</span>
-              <span className="legend-value">${item.value}k</span>
+              <span className="legend-value">{item.value}K ({item.orderCount} đơn)</span>
             </div>
           ))}
         </div>

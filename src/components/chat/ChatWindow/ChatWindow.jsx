@@ -288,7 +288,7 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
   if (!isOpen) return null;
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
-
+console.log('ChatWindow render - selectedConversation:', selectedConversation.logoUrl);
   return (
     <div className="chat-window">
       <div className="chat-window-header">
@@ -297,13 +297,25 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
             <ChevronLeft size={20} />
           </button>
         )}
-        <h3 className="chat-window-title">
-          {view === 'chat' && selectedConversation
-            ? selectedConversation.type === 'SHOP' 
-              ? (selectedConversation.shopName || `Shop #${selectedConversation.id}`)
-              : (selectedConversation.otherParticipantName || 'Hỗ trợ khách hàng')
-            : 'Tin nhắn'}
-        </h3>
+        <div className="chat-header-info">
+          {view === 'chat' && selectedConversation?.type === 'SHOP' && selectedConversation?.logoUrl && (
+            <img 
+              src={selectedConversation.logoUrl} 
+              alt={selectedConversation.shopName}
+              className="chat-header-avatar"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          )}
+          <h3 className="chat-window-title">
+            {view === 'chat' && selectedConversation
+              ? selectedConversation.type === 'SHOP' 
+                ? (selectedConversation.shopName || `Shop #${selectedConversation.id}`)
+                : (selectedConversation.otherParticipantName || 'Hỗ trợ khách hàng')
+              : 'Tin nhắn'}
+          </h3>
+        </div>
         <div className="chat-window-actions">
           {isConnected && view === 'chat' && (
             <span className="chat-connection-status">🟢</span>
