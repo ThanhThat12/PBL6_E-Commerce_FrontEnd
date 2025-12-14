@@ -19,6 +19,8 @@ export const useNotifications = (userId, role = 'BUYER') => {
   const stompClient = useRef(null);
   const connectionId = useRef(generateId());
 
+  console.log(`🔍 [useNotifications] Hook called with userId: ${userId}, role: ${role}`);
+
   // ✅ Load notifications từ DB khi component mount hoặc role thay đổi
   useEffect(() => {
     const loadNotifications = async () => {
@@ -36,9 +38,18 @@ export const useNotifications = (userId, role = 'BUYER') => {
         if (Array.isArray(data)) {
           // ✅ Filter notifications theo role
           // BUYER: ORDER_CONFIRMED, ORDER_SHIPPING, ORDER_DELIVERED, ORDER_CANCELLED
-          // SELLER: ORDER_PLACED (có đơn hàng mới)
+          // SELLER: NEW_ORDER, ORDER_PLACED, ORDER_CANCELLED, PAYMENT_RECEIVED, ORDER_COMPLETED
+          // ADMIN: NEW_ORDER, PAYMENT_RECEIVED, SELLER_PAYOUT
           const filteredData = data.filter(n => {
-            if (role === 'SELLER') {
+            if (role === 'ADMIN') {
+              // Admin thấy tất cả notification về đơn hàng mới, thanh toán và đăng ký seller
+              const match = n.type === 'NEW_ORDER' || 
+                           n.type === 'PAYMENT_RECEIVED' ||
+                           n.type === 'SELLER_PAYOUT' ||
+                           n.type === 'SELLER_REGISTRATION';
+              console.log(`📥 [FILTER] Notification ${n.id} (${n.type}): ${match ? '✅ KEEP' : '❌ REMOVE'}`);
+              return match;
+            } else if (role === 'SELLER') {
               // Seller chỉ thấy notification về đơn hàng mới từ buyer
               // ✅ Backend gửi NEW_ORDER (không phải ORDER_PLACED)
               const match = n.type === 'NEW_ORDER' || 
@@ -61,7 +72,7 @@ export const useNotifications = (userId, role = 'BUYER') => {
           
           console.log(`📥 [RELOAD] After filter: ${filteredData.length}/${data.length} notifications kept for ${role}`);
           setNotifications(filteredData);
-          const unread = filteredData.filter(n => !n.read).length;
+          const unread = filteredData.filter(n => !n.isRead && !n.read).length;
           setUnreadCount(unread);
           console.log(`✅ [RELOAD] Final state: ${filteredData.length} notifications (${unread} unread)`);
         }
@@ -121,7 +132,7 @@ export const useNotifications = (userId, role = 'BUYER') => {
             setNotifications(prev => [notification, ...prev]);
             
             // ✅ Tăng unread count nếu notification chưa đọc
-            if (!notification.read) {
+            if (!notification.isRead && !notification.read) {
               setUnreadCount(prev => prev + 1);
             }
 
@@ -152,7 +163,7 @@ export const useNotifications = (userId, role = 'BUYER') => {
       await notificationService.markAsRead(notificationId);
       
       setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        prev.map(n => n.id === notificationId ? { ...n, isRead: true, read: true } : n)
       );
       
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -168,7 +179,7 @@ export const useNotifications = (userId, role = 'BUYER') => {
     try {
       await notificationService.markAllAsRead();
       
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true, read: true })));
       setUnreadCount(0);
       
       console.log('✅ Marked all notifications as read');

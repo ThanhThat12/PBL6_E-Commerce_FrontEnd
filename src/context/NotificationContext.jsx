@@ -17,13 +17,21 @@ export const NotificationProvider = ({ children }) => {
   
   console.log('NotificationProvider render - user:', user?.id, user?.role);
   
-  // ✅ Determine role based on CURRENT PAGE, not user.role
+  // ✅ Determine role based on CURRENT PAGE or user.role
+  // If on admin pages → role = ADMIN
   // If on seller pages → role = SELLER
   // Otherwise → role = BUYER (even if user is a seller buying products)
   const role = useMemo(() => {
+    console.log('🔍 [NotificationContext] Determining role - pathname:', location.pathname);
+    if (location.pathname.startsWith('/admin')) {
+      console.log('✅ [NotificationContext] Role: ADMIN');
+      return 'ADMIN';
+    }
     if (location.pathname.startsWith('/seller')) {
+      console.log('✅ [NotificationContext] Role: SELLER');
       return 'SELLER';
     }
+    console.log('✅ [NotificationContext] Role: BUYER (default)');
     return 'BUYER';
   }, [location.pathname]);
   

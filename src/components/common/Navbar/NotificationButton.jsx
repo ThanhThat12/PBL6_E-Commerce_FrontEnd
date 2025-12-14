@@ -133,6 +133,28 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
           detail: {}
         }));
       }
+    } else if (variant === 'admin') {
+      // Admin notification navigation
+      console.log('🔧 Admin notification navigation:', notification.type);
+      
+      switch (notification.type) {
+        case 'SELLER_REGISTRATION':
+          // Navigate to seller registrations page
+          navigate('/admin/seller-registrations');
+          break;
+        case 'NEW_ORDER':
+        case 'PAYMENT_RECEIVED':
+        case 'SELLER_PAYOUT':
+          // Navigate to orders page or specific order
+          if (notification.orderId) {
+            navigate(`/admin/orders`);
+          } else {
+            navigate('/admin/orders');
+          }
+          break;
+        default:
+          console.log('⚠️ Unknown admin notification type:', notification.type);
+      }
     } else {
       // For order notifications, get orderId from notification.orderId or parse from message
       let orderId = notification.orderId;
