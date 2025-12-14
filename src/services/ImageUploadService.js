@@ -561,6 +561,33 @@ class ImageUploadService {
       handleUploadError(error, 'Variant images batch upload');
     }
   }
+
+  /**
+   * Upload refund request image
+   * @param {FormData} formData - FormData containing the image file
+   * @returns {Promise<Object>} Upload response with image URL
+   */
+  static async uploadRefundImage(formData) {
+    try {
+      const token = getAccessToken();
+      
+      const response = await axios.post(
+        `${API_BASE_URL}refund/upload-image`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': token ? `Bearer ${token}` : undefined,
+          }
+        }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading refund image:', error);
+      throw new Error('Không thể tải ảnh lên');
+    }
+  }
 }
 
 export default ImageUploadService;

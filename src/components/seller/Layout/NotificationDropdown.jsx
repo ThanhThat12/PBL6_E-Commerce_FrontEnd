@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useNotificationContext } from '../../../context/NotificationContext';
 
@@ -10,6 +10,7 @@ import { useNotificationContext } from '../../../context/NotificationContext';
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
   const { 
     notifications, 
     markAsRead, 
@@ -36,8 +37,12 @@ export default function NotificationDropdown() {
   }, [isOpen]);
 
   // Format time ago
-  const timeAgo = (timestamp) => {
-    if (!timestamp) return 'Vừa xong';
+  const timeAgo = (createdAt) => {
+    if (!createdAt) return 'Vừa xong';
+    
+    // Parse ISO string to milliseconds
+    const timestamp = new Date(createdAt).getTime();
+    if (isNaN(timestamp)) return 'Vừa xong';
     
     const now = Date.now();
     const diff = now - timestamp;
@@ -84,6 +89,37 @@ export default function NotificationDropdown() {
         return 'bg-red-50 hover:bg-red-100';
       default:
         return 'bg-gray-50 hover:bg-gray-100';
+    }
+  };
+
+  // Map notification type to order status tab
+  const getOrderStatusTab = (type) => {
+    switch (type) {
+      case 'NEW_ORDER':
+      case 'ORDER_PLACED':
+        return 'PENDING'; // Tab đơn mới
+      case 'ORDER_PAID':
+      case 'PAYMENT_RECEIVED':
+        return 'PROCESSING'; // Tab đang xử lý
+      case 'ORDER_COMPLETED':
+        return 'COMPLETED'; // Tab hoàn thành
+      case 'ORDER_CANCELLED':
+        return 'CANCELLED'; // Tab đã hủy
+      case 'RETURN_REQUESTED':
+        return 'REFUND'; // Tab hoàn trả
+      default:
+        return 'ALL'; // Tab tất cả
+    }
+  };
+
+  // Handle notification click
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    setIsOpen(false);
+    
+    // Navigate to orders page with orderId query param to open detail modal
+    if (notification.orderId) {
+      navigate(`/seller/orders?orderId=${notification.orderId}`);
     }
   };
 
@@ -146,11 +182,7 @@ export default function NotificationDropdown() {
                     ${!notification.read ? 'bg-blue-50' : 'hover:bg-gray-50'}
                     ${getNotificationColor(notification.type)}
                   `}
-                  onClick={() => {
-                    if (!notification.read) {
-                      markAsRead(notification.id);
-                    }
-                  }}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
                     {/* Icon */}
@@ -166,17 +198,13 @@ export default function NotificationDropdown() {
                       
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs text-gray-500">
-                          {timeAgo(notification.timestamp)}
+                          {timeAgo(notification.createdAt)}
                         </span>
                         
                         {notification.orderId && (
-                          <Link
-                            to="/seller/orders"
-                            onClick={() => setIsOpen(false)}
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                          >
-                            Xem đơn hàng →
-                          </Link>
+                          <span className="text-xs text-blue-600 font-medium">
+                            Đơn hàng #{notification.orderId}
+                          </span>
                         )}
                       </div>
                     </div>
