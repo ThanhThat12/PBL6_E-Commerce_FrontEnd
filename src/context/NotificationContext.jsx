@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import useNotifications from '../hooks/useNotifications';
 import useChatNotifications from '../hooks/useChatNotifications';
 import { useAuth } from './AuthContext';
@@ -12,11 +13,20 @@ const NotificationContext = createContext(null);
  */
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
+  const location = useLocation();
   
   console.log('NotificationProvider render - user:', user?.id, user?.role);
   
-  // Determine role based on user data - memoize to prevent re-calculation
-  const role = useMemo(() => user?.role === 'SELLER' ? 'SELLER' : 'BUYER', [user?.role]);
+  // ✅ Determine role based on CURRENT PAGE, not user.role
+  // If on seller pages → role = SELLER
+  // Otherwise → role = BUYER (even if user is a seller buying products)
+  const role = useMemo(() => {
+    if (location.pathname.startsWith('/seller')) {
+      return 'SELLER';
+    }
+    return 'BUYER';
+  }, [location.pathname]);
+  
   const userId = useMemo(() => user?.id, [user?.id]);
   
   console.log('NotificationProvider - userId:', userId, 'role:', role);

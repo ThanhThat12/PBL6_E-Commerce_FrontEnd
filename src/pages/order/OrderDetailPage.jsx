@@ -450,7 +450,23 @@ Xem chi tiet don hang:
                     
                     {/* Action Buttons - Only show for COMPLETED orders */}
                     {currentOrder.status === 'COMPLETED' && (
-                      <div className="mt-3 flex justify-end gap-2 items-start">
+                      <div className="mt-3 flex justify-end gap-2 items-start flex-wrap">
+                        {/* Return/Refund Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate(`/orders/return?orderId=${currentOrder.id}&itemId=${item.id}`);
+                          }}
+                          className="flex items-center gap-1 text-orange-600 border-orange-300 hover:bg-orange-50"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                          Trả hàng/Hoàn tiền
+                        </Button>
+                        
                         {/* Review Button with eligibility check */}
                         {renderReviewButton(item)}
                         

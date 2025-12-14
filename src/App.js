@@ -32,6 +32,7 @@ import CartPage from './pages/cart/CartPage';
 // Order Pages
 import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
 import ItemReturnPage from './pages/order/ItemReturnPage';
+import ReturnRequestPage from './pages/order/ReturnRequestPage';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -155,6 +156,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ItemReturnPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/orders/return" 
+                element={
+                  <ProtectedRoute>
+                    <ReturnRequestPage />
                   </ProtectedRoute>
                 } 
               />
