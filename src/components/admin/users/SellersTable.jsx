@@ -3,7 +3,7 @@ import { Search, Eye, Trash2, Users, CheckCircle, Clock, XCircle } from 'lucide-
 import SellerDetailModal from './SellerDetailModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import Toast from '../common/Toast';
-import { getSellerStats, getSellerDetail, getSellersPageByStatus, deleteUser } from '../../../services/adminService';
+import { getSellerStats, getSellerDetail, getSellersFromShop, deleteUser } from '../../../services/adminService';
 import './SellersTable.css';
 
 const SellersTable = () => {
@@ -36,10 +36,13 @@ const SellersTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]); // Re-fetch when page changes
 
-  // Fetch sellers when status filter changes
+  // Re-fetch when status filter changes (reset to first page)
   useEffect(() => {
-    setCurrentPage(0); // Reset to first page when filter changes
-    fetchSellers();
+    if (currentPage !== 0) {
+      setCurrentPage(0); // Reset to first page when filter changes
+    } else {
+      fetchSellers(); // If already on page 0, just refetch
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
@@ -95,14 +98,14 @@ const SellersTable = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log(`📡 [SellersTable] Fetching sellers page ${currentPage} with status filter: ${statusFilter}...`);
+      console.log(`📡 [SellersTable] Fetching sellers from shop table, page ${currentPage}, size ${pageSize}...`);
       
-      // Sử dụng API có phân trang theo status
-      const response = await getSellersPageByStatus(statusFilter, currentPage, pageSize);
+      // Sử dụng API mới lấy tất cả sellers từ bảng shop
+      const response = await getSellersFromShop(currentPage, pageSize);
       
       if (response.status === 200 && response.data) {
         // Response structure: ResponseDTO<Page<ListSellerUserDTO>>
-        const pageData = response.data.data || response.data;
+        const pageData = response.data;
         
         console.log('✅ [SellersTable] Page data:', pageData);
         
@@ -133,13 +136,13 @@ const SellersTable = () => {
         }));
         
         setSellersData(mappedSellers);
-        console.log(`📊 [SellersTable] Loaded ${mappedSellers.length} sellers with filter '${statusFilter}', Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
+        console.log(`📊 [SellersTable] Loaded ${mappedSellers.length} sellers from shop table, Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
       } else {
         console.warn('⚠️ [SellersTable] Unexpected response format:', response);
         setSellersData([]);
       }
     } catch (err) {
-      console.error('Error fetching sellers:', err);
+      console.error('❌ [SellersTable] Error fetching sellers:', err);
       setError('Failed to load sellers. Please try again later.');
     } finally {
       setLoading(false);
@@ -157,10 +160,13 @@ const SellersTable = () => {
   const getStatusClass = (status) => {
     const upperStatus = status?.toUpperCase();
     switch(upperStatus) {
-      case 'ACTIVE': return 'status-verified';
+      case 'ACTIVE': return 'status-active';
       case 'PENDING': return 'status-pending';
-      case 'INACTIVE': return 'status-suspended';
-      default: return 'status-default';
+      case 'INACTIVE': return 'status-inactive';
+      case 'REJECTED': return 'status-rejected';
+      case 'SUSPENDED': return 'status-suspended';
+      case 'CLOSED': return 'status-closed';
+      default: return 'status-pending';
     }
   };
 
@@ -317,11 +323,18 @@ const SellersTable = () => {
     setSelectedSeller(null);
   };
 
-  // Filter sellers based on search only (status filtering is done server-side)
+  // Filter sellers based on search and status
   const filteredSellers = sellersData.filter(seller => {
+    // Search filter
     const matchesSearch = seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          seller.email.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    
+    // Status filter (client-side since API doesn't support it yet)
+    const upperStatus = seller.status?.toUpperCase();
+    const matchesStatus = statusFilter === 'All' || 
+                         statusFilter.toUpperCase() === upperStatus;
+    
+    return matchesSearch && matchesStatus;
   });
 
   // Show loading state

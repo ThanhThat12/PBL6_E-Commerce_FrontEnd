@@ -52,12 +52,13 @@ import { ChatContainer } from './components/chat';
 const ConditionalChatContainer = () => {
   const location = useLocation();
   
-  // Hide chat on auth pages
+  // Hide chat on auth pages and admin pages
   const hideChat = [
     ROUTES.LOGIN,
     ROUTES.REGISTER,
     '/forgot-password',
-    '/admin/login'
+    '/admin/login',
+    // '/admin'  
   ].some(route => location.pathname.startsWith(route));
   
   return !hideChat ? <ChatContainer /> : null;
