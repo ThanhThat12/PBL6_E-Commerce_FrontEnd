@@ -1,6 +1,6 @@
 // API Base URL
 // Mặc định dùng HTTPS để phù hợp với frontend chạy qua HTTPS
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost:8081/api/';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://compose-backend-ayrt.onrender.com/api/';
 
 // API Endpoints
 export const API_ENDPOINTS = {
