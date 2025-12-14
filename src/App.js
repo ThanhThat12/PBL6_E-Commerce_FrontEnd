@@ -46,19 +46,18 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 // Chat Component
 import { ChatContainer } from './components/chat';
 
-// 🧑‍💼 Admin Pages
-import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 
 // Chat Wrapper - Only show on authenticated pages
 const ConditionalChatContainer = () => {
   const location = useLocation();
   
-  // Hide chat on auth pages
+  // Hide chat on auth pages and admin pages
   const hideChat = [
     ROUTES.LOGIN,
     ROUTES.REGISTER,
     '/forgot-password',
-    '/admin/login'
+    '/admin/login',
+    // '/admin'  
   ].some(route => location.pathname.startsWith(route));
   
   return !hideChat ? <ChatContainer /> : null;

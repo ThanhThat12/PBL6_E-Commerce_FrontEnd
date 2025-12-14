@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8081/api';
+const API_BASE_URL = 'https://localhost:8081/api';
 
 // Get token from localStorage
 const getAuthToken = () => {
@@ -95,9 +95,29 @@ export const getAdminOrdersByStatus = async (status, page = 0, size = 10) => {
   }
 };
 
+/**
+ * Search orders by keyword
+ * @param {string} keyword - Search keyword (ID, customer name, phone, date DD/MM/YYYY, address)
+ * @param {number} page - Page number (0-indexed)
+ * @param {number} size - Page size (default 10)
+ * @returns {Promise} Response with page of search results
+ */
+export const searchAdminOrders = async (keyword, page = 0, size = 10) => {
+  try {
+    const response = await apiClient.get('/admin/orders/search', {
+      params: { keyword, page, size }
+    });
+    return response;
+  } catch (error) {
+    console.error('Error searching orders:', error);
+    throw error;
+  }
+};
+
 export default {
   getAdminOrders,
   getAdminOrderDetail,
   getAdminOrderStats,
-  getAdminOrdersByStatus
+  getAdminOrdersByStatus,
+  searchAdminOrders
 };

@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'https://localhost:8081/api';
-const API_BASE_URL = 'http://localhost:8081/api';
+const API_BASE_URL = 'https://localhost:8081/api';
 // Lấy token từ localStorage
 const getAuthToken = () => {
   return localStorage.getItem('adminToken');
@@ -97,6 +96,26 @@ export const getCustomerDetail = async (userId) => {
 };
 
 /**
+ * Get customers by status with pagination
+ * Backend endpoint: GET /api/admin/users/customers/status?status=ACTIVE&page=0&size=10
+ * @param {string} status - 'ACTIVE', 'INACTIVE', or 'ALL'
+ * @param {number} page - Page number (starts from 0)
+ * @param {number} size - Page size (default 10)
+ * Returns: ResponseDTO<Page<ListCustomerUserDTO>>
+ */
+export const getCustomersByStatus = async (status = 'ALL', page = 0, size = 10) => {
+  try {
+    console.log(`📡 [adminService] Calling GET /admin/users/customers/status?status=${status}&page=${page}&size=${size}`);
+    const response = await apiClient.get(`/admin/users/customers/status?status=${status}&page=${page}&size=${size}`);
+    console.log('✅ [adminService] Customers by status response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminService] Error fetching customers by status:', error);
+    throw error;
+  }
+};
+
+/**
  * Get customer statistics
  * Backend endpoint: GET /api/admin/users/customers/stats
  * Returns: ResponseDTO<CustomerStatsDTO>
@@ -113,7 +132,22 @@ export const getCustomerStats = async () => {
   }
 };
 
-// ============ Seller APIs ============
+/**
+ * Get sellers from shop table with pagination
+ * Backend endpoint: GET /api/admin/users/seller?page=0&size=10
+ * Returns: ResponseDTO<Page<ListSellerUserDTO>>
+ */
+export const getSellersFromShop = async (page = 0, size = 10) => {
+  try {
+    console.log(`📡 [adminService] Calling GET /admin/users/seller?page=${page}&size=${size}`);
+    const response = await apiClient.get(`/admin/users/seller?page=${page}&size=${size}`);
+    console.log('✅ [adminService] Sellers from shop response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminService] Error fetching sellers from shop:', error);
+    throw error;
+  }
+};
 
 /**
  * Get all sellers (role = SELLER) - NO PAGINATION
@@ -599,11 +633,13 @@ const adminService = {
   
   getCustomers,
   getCustomersPage,
+  getCustomersByStatus,
   getCustomerDetail,
   getCustomerStats,
 
   getSellers,
   getSellersPage,
+  getSellersFromShop,
   getSellerDetail,
   getSellerStats,
   getSellersByStatus,

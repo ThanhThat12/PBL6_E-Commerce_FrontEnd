@@ -330,32 +330,47 @@
   margin: 0;
 }
 
-/* History Tabs */
-.history-tabs {
+/* Wallet Search Container */
+.wallet-search-container {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
 }
 
-.tab-btn {
-  padding: 8px 16px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
+.wallet-search-box {
+  position: relative;
+  width: 350px;
+}
+
+.wallet-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.wallet-search-input {
+  width: 100%;
+  padding: 10px 16px 10px 48px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
   font-size: 14px;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tab-btn:hover {
-  background: #f1f5f9;
   color: #334155;
+  background: #f8fafc;
+  transition: all 0.2s;
+  outline: none;
 }
 
-.tab-btn.active {
-  background: #10b981;
-  color: white;
-  font-weight: 600;
+.wallet-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.wallet-search-input:focus {
+  border-color: #10b981;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 /* Transaction Table */
@@ -498,27 +513,16 @@
 .icon-platform-fee { color: #64748b; }
 
 /* Pagination */
-.pagination-container {
+.wallet-pagination-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px 0;
-  border-top: 1px solid #e2e8f0;
+  gap: 16px;
 }
 
-.pagination-info {
-  font-size: 14px;
-  color: #64748b;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-btn {
-  padding: 8px 16px;
+.wallet-page-btn {
+  padding: 10px 20px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -527,20 +531,29 @@
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 100px;
 }
 
-.page-btn:hover:not(:disabled) {
+.wallet-page-btn:hover:not(:disabled) {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #1e293b;
 }
 
-.page-btn:disabled {
+.wallet-page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.page-number {
+.wallet-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  flex: 1;
+}
+
+.wallet-page-number {
   min-width: 40px;
   height: 40px;
   padding: 0 12px;
@@ -557,20 +570,20 @@
   justify-content: center;
 }
 
-.page-number:hover {
+.wallet-page-number:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #1e293b;
 }
 
-.page-number.active {
+.wallet-page-number.active {
   background: #3b82f6;
   border-color: #3b82f6;
   color: white;
   font-weight: 600;
 }
 
-.page-number.active:hover {
+.wallet-page-number.active:hover {
   background: #2563eb;
   border-color: #2563eb;
 }
@@ -703,4 +716,56 @@
   .td-description {
     max-width: 150px;
   }
+}
+
+/* Loading, Error, and Empty States */
+.loading-container,
+.error-container,
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-container p {
+  font-size: 16px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.error-container {
+  gap: 16px;
+}
+
+.error-message {
+  font-size: 16px;
+  color: #ef4444;
+  font-weight: 500;
+  margin: 0;
+}
+
+.error-container button {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.error-container button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.empty-container p {
+  font-size: 16px;
+  color: #94a3b8;
+  margin: 0;
 }

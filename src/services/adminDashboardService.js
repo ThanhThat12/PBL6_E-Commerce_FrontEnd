@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8081/api/admin/dashboard';
+const API_BASE_URL = 'https://localhost:8081/api/admin/dashboard';
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('adminToken');

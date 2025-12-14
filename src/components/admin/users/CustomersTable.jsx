@@ -5,7 +5,7 @@ import CustomerDetailModal from './CustomerDetailModal';
 import AddCustomerModal from './AddCustomerModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import Toast from '../common/Toast';
-import { getCustomersPage, getCustomerDetail, getCustomerStats, deleteUser } from '../../../services/adminService';
+import { getCustomersByStatus, getCustomerDetail, getCustomerStats, deleteUser } from '../../../services/adminService';
 import './CustomersTable.css';
 
 const CustomersTable = () => {
@@ -51,16 +51,21 @@ const CustomersTable = () => {
     setError(null);
     
     try {
-      console.log(`📡 [CustomersTable] Fetching customers page ${currentPage}...`);
-      const response = await getCustomersPage(currentPage, pageSize);
+      // Map frontend filter to backend status
+      // Frontend: 'All', 'Active', 'Inactive'
+      // Backend: 'ALL', 'ACTIVE', 'INACTIVE'
+      const backendStatus = statusFilter.toUpperCase();
+      
+      console.log(`📡 [CustomersTable] Fetching customers with status=${backendStatus}, page=${currentPage}, size=${pageSize}`);
+      const response = await getCustomersByStatus(backendStatus, currentPage, pageSize);
       
       if (response.status === 200 && response.data) {
         // Response structure: ResponseDTO<Page<ListCustomerUserDTO>>
-        const pageData = response.data.data || response.data;
+        const pageData = response.data;
         
         console.log('✅ [CustomersTable] Page data:', pageData);
         
-        // Backend trả về structure: {content: [], page: {totalPages, totalElements, size, number}}
+        // Backend response: {content: [...], page: {totalPages, totalElements, size, number}}
         const paginationInfo = pageData.page || {};
         setTotalPages(paginationInfo.totalPages || 0);
         setTotalElements(paginationInfo.totalElements || 0);
@@ -72,7 +77,7 @@ const CustomersTable = () => {
         const customersList = pageData.content || [];
         setCustomers(Array.isArray(customersList) ? customersList : []);
         
-        console.log(`📊 [CustomersTable] Loaded ${customersList.length} customers, Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
+        console.log(`📊 [CustomersTable] Loaded ${customersList.length} customers with status ${backendStatus}, Total: ${paginationInfo.totalElements}, Pages: ${paginationInfo.totalPages}`);
       }
     } catch (err) {
       console.error('❌ [CustomersTable] Error fetching customers:', err);
@@ -466,18 +471,13 @@ const CustomersTable = () => {
             <tbody>
               {customers
                 .filter(customer => {
-                  // Search filter
-                  const searchMatch = (customer.username || customer.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  // Only apply search filter here - status filter is already applied by backend
+                  const searchMatch = searchTerm === '' || 
+                    (customer.username || customer.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     (customer.phoneNumber || customer.phone)?.toLowerCase().includes(searchTerm.toLowerCase());
                   
-                  // Status filter
-                  const isActive = customer.activated !== undefined ? customer.activated : customer.status === 'Active';
-                  const statusMatch = statusFilter === 'All' || 
-                    (statusFilter === 'Active' && isActive) ||
-                    (statusFilter === 'Inactive' && !isActive);
-                  
-                  return searchMatch && statusMatch;
+                  return searchMatch;
                 })
                 .map((customer, index) => (
                   <tr key={customer.id || index} className="table-row">
