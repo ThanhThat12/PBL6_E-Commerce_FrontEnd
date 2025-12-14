@@ -14,23 +14,35 @@ const transformProduct = (product) => {
     return null;
   }
   
+  // Tính giá variant thấp nhất nếu có variants
+  let lowestPrice = product.basePrice || 0;
+  if (product.variants && product.variants.length > 0) {
+    const prices = product.variants.map(v => v.price).filter(p => p > 0);
+    if (prices.length > 0) {
+      lowestPrice = Math.min(...prices);
+    }
+  }
+  
   const transformed = {
     id: product.id,
     name: product.name,
     slug: product.name?.toLowerCase().replace(/\s+/g, '-'), // Generate slug from name
     image: product.mainImage || '/placeholder-product.jpg',
-    price: product.basePrice || 0,
-    originalPrice: product.basePrice ? product.basePrice * 1.2 : null, // Fake discount for demo
-    rating: 4.5, // Default rating
-    reviewCount: Math.floor(Math.random() * 200) + 50, // Random review count
+    basePrice: product.basePrice || 0,
+    price: lowestPrice, // Giá hiển thị = giá thấp nhất
+    originalPrice: lowestPrice < (product.basePrice || 0) ? product.basePrice : null,
+    rating: product.rating || 0, // ✅ Dùng rating thật từ backend
+    reviewCount: product.reviewCount || 0, // ✅ Dùng reviewCount thật từ backend
+    soldCount: product.soldCount || 0, // ✅ Dùng soldCount thật từ backend
     brand: product.shop?.name || 'SportZone',
     inStock: product.variants?.some(v => v.stock > 0) ?? true,
-    badge: product.badge || (Math.random() > 0.7 ? 'hot' : null), // Use provided badge or random
+    badge: product.badge || null,
+    variants: product.variants || [],
     // Keep original data
     ...product
   };
   
-  console.log('🔄 Transformed product:', product.name, '→', transformed);
+  console.log('🔄 Transformed product:', product.name, '| Sold:', transformed.soldCount, '| Rating:', transformed.rating, '| Price:', lowestPrice);
   return transformed;
 };
 
@@ -132,13 +144,11 @@ export const getCategories = async () => {
  */
 export const getBestSellingProducts = async (limit = 8) => {
   try {
-    // TODO: Replace with actual best-selling endpoint when available
-    const response = await api.get('products', {
+    // Updated to use new best-selling endpoint based on soldCount
+    const response = await api.get('products/best-selling', {
       params: {
         page: 0,
-        size: limit,
-        sortBy: 'basePrice',
-        sortDirection: 'DESC'
+        size: limit
       }
     });
     console.log('📦 getBestSellingProducts raw response:', response);
@@ -202,6 +212,81 @@ export const getProductsByCategory = async (categoryId, limit = 4) => {
     return transformed;
   } catch (error) {
     console.error(`Error fetching products for category ${categoryId}:`, error);
+    return [];
+  }
+};
+/**
+ * Get platform vouchers (issued by admin)
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export const getPlatformVouchers = async (limit = 8) => {
+  try {
+    const response = await api.get('public/vouchers/platform', {
+      params: {
+        page: 0,
+        size: limit
+      }
+    });
+    console.log('🎟️ getPlatformVouchers raw response:', response);
+    
+    const vouchers = response?.data?.content || [];
+    console.log('🎟️ getPlatformVouchers vouchers:', vouchers);
+    
+    return vouchers;
+  } catch (error) {
+    console.error('Error fetching platform vouchers:', error);
+    return [];
+  }
+};
+
+/**
+ * Get featured shops
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export const getFeaturedShops = async (limit = 6) => {
+  try {
+    const response = await api.get('public/shops/featured', {
+      params: {
+        page: 0,
+        size: limit
+      }
+    });
+    console.log('🏪 getFeaturedShops raw response:', response);
+    
+    const shops = response?.data?.content || [];
+    console.log('🏪 getFeaturedShops shops:', shops);
+    
+    return shops;
+  } catch (error) {
+    console.error('Error fetching featured shops:', error);
+    return [];
+  }
+};
+
+/**
+ * Get top-rated products
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export const getTopRatedProducts = async (limit = 10) => {
+  try {
+    const response = await api.get('products/top-rated', {
+      params: {
+        page: 0,
+        size: limit
+      }
+    });
+    console.log('⭐ getTopRatedProducts raw response:', response);
+    
+    const products = response?.data?.content || [];
+    const transformed = products.map(transformProduct).filter(p => p !== null);
+    console.log('⭐ getTopRatedProducts transformed:', transformed);
+    
+    return transformed;
+  } catch (error) {
+    console.error('Error fetching top-rated products:', error);
     return [];
   }
 };

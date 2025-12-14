@@ -24,13 +24,13 @@ import MobileMenu from './Navbar/MobileMenu';
  * Sử dụng color pattern từ Tailwind config và tích hợp với backend
  */
 
-// Menu items - Có thể fetch từ backend
+// Menu items - Điều hướng hợp lý
 const menuItems = [
   { label: "Trang chủ", href: "/", badge: null },
-  { label: "Hot Deals", href: "/deals", badge: "HOT" },
   { label: "Sản phẩm", href: "/products", badge: null },
-  { label: "Thương hiệu", href: "/brands", badge: null },
-  { label: "Tin tức", href: "/blog", badge: null },
+  { label: "Khuyến mãi", href: "/deals", badge: "HOT" },
+  { label: "Danh mục", href: "/categories", badge: null },
+  { label: "Đơn hàng", href: "/orders", badge: null },
   { label: "Liên hệ", href: "/contact", badge: null },
 ];
 
