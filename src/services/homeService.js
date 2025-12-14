@@ -6,6 +6,40 @@ import api from './api';
  */
 
 /**
+ * Transform backend voucher data to component format
+ */
+const transformVoucher = (voucher) => {
+  if (!voucher) {
+    console.warn('transformVoucher received null/undefined voucher');
+    return null;
+  }
+  
+  // Tính số lượng còn lại
+  const remainingQuantity = (voucher.usageLimit || 0) - (voucher.usedCount || 0);
+  
+  const transformed = {
+    id: voucher.id,
+    code: voucher.code,
+    description: voucher.description,
+    discountType: voucher.discountType, // PERCENTAGE, FIXED_AMOUNT
+    discountValue: voucher.discountValue,
+    minOrderValue: voucher.minOrderValue,
+    maxDiscountAmount: voucher.maxDiscountAmount,
+    startDate: voucher.startDate,
+    endDate: voucher.endDate,
+    usageLimit: voucher.usageLimit,
+    usedCount: voucher.usedCount || 0,
+    remainingQuantity: remainingQuantity,
+    status: voucher.status,
+    // Keep original data
+    ...voucher
+  };
+  
+  console.log('🏟️ Transformed voucher:', voucher.code, '| Remaining:', remainingQuantity, '| End:', voucher.endDate);
+  return transformed;
+};
+
+/**
  * Transform backend product data to component format
  */
 const transformProduct = (product) => {
@@ -217,26 +251,45 @@ export const getProductsByCategory = async (categoryId, limit = 4) => {
 };
 /**
  * Get platform vouchers (issued by admin)
- * @param {number} limit
- * @returns {Promise<Array>}
+ * @param {number} size - Số voucher mỗi trang
+ * @param {number} page - Số trang (bắt đầu từ 0)
+ * @returns {Promise<Object>} - { content: Array, totalPages: number, totalElements: number }
  */
-export const getPlatformVouchers = async (limit = 8) => {
+export const getPlatformVouchers = async (size = 8, page = 0) => {
   try {
-    const response = await api.get('public/vouchers/platform', {
+    const response = await api.get('vouchers/platform', {
       params: {
-        page: 0,
-        size: limit
+        page: page,
+        size: size
       }
     });
     console.log('🎟️ getPlatformVouchers raw response:', response);
     
-    const vouchers = response?.data?.content || [];
-    console.log('🎟️ getPlatformVouchers vouchers:', vouchers);
+    // Backend returns: { status: 200, data: { content: [...], page: {...} } }
+    const responseData = response?.data || {};
+    const vouchers = responseData.content || [];
+    const pageInfo = responseData.page || {};
     
-    return vouchers;
+    console.log('🎟️ Raw vouchers count:', vouchers.length);
+    console.log('🎟️ Page info:', pageInfo);
+    
+    const transformed = vouchers.map(transformVoucher).filter(v => v !== null);
+    console.log('🎟️ Transformed vouchers count:', transformed.length);
+    
+    return {
+      content: transformed,
+      totalPages: pageInfo.totalPages || 1,
+      totalElements: pageInfo.totalElements || transformed.length,
+      currentPage: page
+    };
   } catch (error) {
     console.error('Error fetching platform vouchers:', error);
-    return [];
+    return {
+      content: [],
+      totalPages: 1,
+      totalElements: 0,
+      currentPage: 0
+    };
   }
 };
 
