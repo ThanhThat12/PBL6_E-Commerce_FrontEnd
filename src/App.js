@@ -32,6 +32,7 @@ import CartPage from './pages/cart/CartPage';
 // Order Pages
 import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
 import ItemReturnPage from './pages/order/ItemReturnPage';
+import ReturnRequestPage from './pages/order/ReturnRequestPage';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -76,12 +77,13 @@ import AdminSellerRegistrationsPage from "./pages/admin/SellerRegistrations/Sell
 const ConditionalChatContainer = () => {
   const location = useLocation();
   
-  // Hide chat on auth pages
+  // Hide chat on auth pages and admin pages
   const hideChat = [
     ROUTES.LOGIN,
     ROUTES.REGISTER,
     '/forgot-password',
-    '/admin/login'
+    '/admin/login',
+    // '/admin'  
   ].some(route => location.pathname.startsWith(route));
   
   return !hideChat ? <ChatContainer /> : null;
@@ -160,6 +162,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ItemReturnPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/orders/return" 
+                element={
+                  <ProtectedRoute>
+                    <ReturnRequestPage />
                   </ProtectedRoute>
                 } 
               />
