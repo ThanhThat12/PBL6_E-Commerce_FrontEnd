@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid';
 
@@ -7,13 +7,87 @@ import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid';
  * NotificationButton Component
  * Hiển thị icon thông báo với badge số lượng và dropdown danh sách thông báo
  */
-export default function NotificationButton({ notifications = [], onMarkAsRead, onClearAll, variant = 'customer' }) {
+export default function NotificationButton({
+  notifications = [],
+  onMarkAsRead,
+  onClearAll,
+  variant = 'customer',
+  registrationStatus = null,
+  checkingRegistration = false,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const navigate = useNavigate();
-  
   const unreadCount = notifications.filter(n => !n.read).length;
-  const hasUnread = unreadCount > 0;
+
+  const shopStatusInfo = useMemo(() => {
+    if (checkingRegistration) {
+      return {
+        icon: '⏳',
+        title: 'Đang kiểm tra trạng thái đăng ký',
+        description: 'Vui lòng chờ trong giây lát...',
+        link: null,
+        cta: null,
+        bgClass: 'bg-gray-50',
+        borderClass: 'border-gray-200',
+        textClass: 'text-gray-700',
+        showBadge: false,
+      };
+    }
+
+    const status = registrationStatus?.status;
+    if (!status) {
+      return null;
+    }
+
+    switch (status) {
+      case 'PENDING':
+        return {
+          icon: '⏳',
+          title: 'Đơn đăng ký shop đang chờ duyệt',
+          description: 'Chúng tôi sẽ gửi thông báo ngay khi admin xử lý xong.',
+          link: '/seller/registration-status',
+          cta: 'Xem tình trạng',
+          bgClass: 'bg-yellow-50',
+          borderClass: 'border-yellow-200',
+          textClass: 'text-yellow-900',
+          showBadge: true,
+        };
+
+      case 'REJECTED':
+        return {
+          icon: '⚠️',
+          title: 'Đơn đăng ký shop bị từ chối',
+          description: registrationStatus?.rejectionReason
+            ? `Lý do: ${registrationStatus.rejectionReason}`
+            : 'Hãy chỉnh sửa thông tin theo yêu cầu và gửi lại.',
+          link: '/seller/rejected',
+          cta: 'Xem chi tiết',
+          bgClass: 'bg-red-50',
+          borderClass: 'border-red-200',
+          textClass: 'text-red-900',
+          showBadge: true,
+        };
+
+      case 'ACTIVE':
+        return {
+          icon: '✅',
+          title: 'Shop đã được phê duyệt',
+          description: 'Bạn có thể truy cập Kênh người bán để bắt đầu bán hàng.',
+          link: '/seller/dashboard',
+          cta: 'Mở kênh người bán',
+          bgClass: 'bg-green-50',
+          borderClass: 'border-green-200',
+          textClass: 'text-green-900',
+          showBadge: false,
+        };
+
+      default:
+        return null;
+    }
+  }, [registrationStatus, checkingRegistration]);
+
+  const badgeCount = unreadCount;
+  const hasUnread = badgeCount > 0;
 
   // Style variants
   const isAdmin = variant === 'admin';
@@ -196,7 +270,7 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
         {/* Badge */}
         {hasUnread && (
           <span className={badgeClass}>
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {badgeCount > 9 ? '9+' : badgeCount}
           </span>
         )}
         
@@ -248,6 +322,34 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
               )}
             </div>
           </div>
+
+          {shopStatusInfo && (
+            <div className={`px-4 py-3 border-b ${shopStatusInfo.bgClass} ${shopStatusInfo.borderClass}`}>
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">{shopStatusInfo.icon}</div>
+                <div className="flex-1">
+                  <p className={`text-sm font-semibold ${shopStatusInfo.textClass}`}>
+                    {shopStatusInfo.title}
+                  </p>
+                  {shopStatusInfo.description && (
+                    <p className="text-xs text-gray-700 mt-1">
+                      {shopStatusInfo.description}
+                    </p>
+                  )}
+                  {shopStatusInfo.link && shopStatusInfo.cta && (
+                    <Link
+                      to={shopStatusInfo.link}
+                      className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-semibold mt-2"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {shopStatusInfo.cta}
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Notification List */}
           <div className="max-h-96 overflow-y-auto">

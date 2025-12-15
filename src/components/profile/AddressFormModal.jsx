@@ -9,8 +9,10 @@ import { useAddressMaster } from '../../hooks/useAddressMaster';
  * AddressFormModal
  * Modal form để thêm/sửa địa chỉ
  * Sử dụng LocationDropdown với GHN Master Data API
+ * 
+ * @param {object} userProfile - Thông tin user để auto-fill (fullName, phoneNumber)
  */
-const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
+const AddressFormModal = ({ isOpen, onClose, onSave, initialData, typeAddress = 'HOME', userProfile }) => {
   const [formData, setFormData] = useState({
     recipientName: '',
     phoneNumber: '',
@@ -18,6 +20,7 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
     districtId: null,
     wardId: null,
     streetAddress: '',
+    typeAddress: 'HOME', // HOME or STORE
     isPrimary: false
   });
 
@@ -66,7 +69,8 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
         districtId: districtId,
         wardId: wardId,
         streetAddress: streetAddress,
-        isPrimary: initialData.isPrimary || false
+        typeAddress: initialData.typeAddress || typeAddress || 'HOME',
+        isPrimary: initialData.isPrimary || initialData.primaryAddress || false
       });
 
       // Load province và trigger load districts
@@ -129,14 +133,15 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
         setSelectedProvince(null);
       }
     } else {
-      // Reset form khi thêm mới
+      // Reset form khi thêm mới - Auto-fill từ userProfile
       setFormData({
-        recipientName: '',
-        phoneNumber: '',
+        recipientName: userProfile?.fullName || '',
+        phoneNumber: userProfile?.phoneNumber || '',
         provinceId: null,
         districtId: null,
         wardId: null,
         streetAddress: '',
+        typeAddress: typeAddress || 'HOME',
         isPrimary: false
       });
       setSelectedProvince(null);
@@ -282,12 +287,13 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
 
   const resetForm = () => {
     setFormData({
-      recipientName: '',
-      phoneNumber: '',
+      recipientName: userProfile?.fullName || '',
+      phoneNumber: userProfile?.phoneNumber || '',
       provinceId: null,
       districtId: null,
       wardId: null,
       streetAddress: '',
+      typeAddress: typeAddress || 'HOME',
       isPrimary: false
     });
     setSelectedProvince(null);
@@ -330,16 +336,16 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
       if (districtName) fullAddress += ', ' + districtName;
       if (provinceName) fullAddress += ', ' + provinceName;
 
-      // Always set label to 'Buyer', contact_name to recipientName
+      // Build address data for backend
       const addressData = {
-        label: 'Buyer',
         contactName: formData.recipientName,
         fullAddress,
         provinceId: formData.provinceId,
         districtId: formData.districtId,
         wardCode: String(formData.wardId),
         contactPhone: formData.phoneNumber,
-        primaryAddress: formData.isPrimary
+        typeAddress: formData.typeAddress || 'HOME',
+        primaryAddress: formData.typeAddress === 'HOME' ? formData.isPrimary : false // STORE cannot be primary
       };
 
       await onSave(addressData);
@@ -525,21 +531,37 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
               )}
             </div>
 
-            {/* Set as Primary */}
-            {!initialData?.isPrimary && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isPrimary"
-                  name="isPrimary"
-                  checked={formData.isPrimary}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  disabled={loading}
-                />
-                <label htmlFor="isPrimary" className="text-sm text-gray-700">
-                  Đặt làm địa chỉ mặc định
-                </label>
+            {/* Set as Primary - Only for HOME addresses */}
+            {formData.typeAddress === 'HOME' && !initialData?.primaryAddress && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isPrimary"
+                    name="isPrimary"
+                    checked={formData.isPrimary}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    disabled={loading}
+                  />
+                  <label htmlFor="isPrimary" className="text-sm text-gray-700">
+                    Đặt làm địa chỉ mặc định
+                  </label>
+                </div>
+                {formData.isPrimary && (
+                  <p className="text-xs text-orange-600 ml-6">
+                    ⚠️ Các địa chỉ khác sẽ tự động bỏ đánh dấu mặc định
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* Info message for STORE address */}
+            {formData.typeAddress === 'STORE' && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  ℹ️ Địa chỉ cửa hàng sẽ được dùng làm điểm gửi hàng cho GHN
+                </p>
               </div>
             )}
 

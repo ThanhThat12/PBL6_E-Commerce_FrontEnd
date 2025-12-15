@@ -12,10 +12,15 @@ import CategoryList from "../../components/feature/category/CategoryList";
 import ButtonUp from "../../components/ui/buttonUp/ButtonUp";
 import Footer from "../../components/layout/footer/Footer";
 import BestSellerSection from "../../components/feature/tab/BestSellerSection";
+import VoucherSection from "../../components/feature/home/VoucherSection";
 import Navbar from "../../components/common/Navbar";
+import { getPlatformVouchers } from "../../services/homeService";
 
 const HomePage = () => {
   const [showButton, setShowButton] = useState(false);
+  const [vouchers, setVouchers] = useState([]);
+  const [voucherPage, setVoucherPage] = useState(0);
+  const [voucherTotalPages, setVoucherTotalPages] = useState(1);
   const { user } = useContext(UserContext);
 
   useEffect(() => {
@@ -23,6 +28,36 @@ const HomePage = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      try {
+        console.log('🔄 Fetching vouchers for page:', voucherPage);
+        const response = await getPlatformVouchers(8, voucherPage);
+        console.log('📦 Response from getPlatformVouchers:', response);
+        
+        // Extract content array from response
+        const voucherData = response.content || [];
+        console.log('✅ Setting vouchers state to:', voucherData);
+        console.log('✅ Vouchers count:', voucherData.length);
+        
+        setVouchers(voucherData); // Pass array, not object
+        setVoucherTotalPages(response.totalPages || 1);
+      } catch (error) {
+        console.error('❌ Error fetching vouchers:', error);
+        setVouchers([]); // Set empty array on error
+      }
+    };
+    fetchVouchers();
+  }, [voucherPage]);
+
+  const handleVoucherPageChange = (newPage) => {
+    if (newPage >= 0 && newPage < voucherTotalPages) {
+      setVoucherPage(newPage);
+      // Scroll to voucher section
+      window.scrollTo({ top: 600, behavior: 'smooth' });
+    }
+  };
 
   // User context effect - kept for potential future use
   useEffect(() => {
@@ -51,6 +86,12 @@ const HomePage = () => {
         <FlashSaleSection />
         {/* <CategoryBrowser /> */}
         <BestSellerSection />
+        <VoucherSection 
+          vouchers={vouchers}
+          totalPages={voucherTotalPages}
+          currentPage={voucherPage}
+          onPageChange={handleVoucherPageChange}
+        />
         <ProductExplorer />
         <NewArrivalSection />
         <ServiceFeatures />
