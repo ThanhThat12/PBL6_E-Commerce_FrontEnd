@@ -5,11 +5,19 @@ import HeroSection from "../../components/feature/home/HeroSection";
 import CategorySection from "../../components/feature/home/CategorySection";
 import FlashDeals from "../../components/feature/home/FlashDeals";
 import FeaturedProducts from "../../components/feature/home/FeaturedProducts";
+import VoucherSection from "../../components/feature/home/VoucherSection";
+import TopRatedProducts from "../../components/feature/home/TopRatedProducts";
 import BrandShowcase from "../../components/feature/home/BrandShowcase";
 import ServiceFeatures from "../../components/feature/tab/ServiceFeatures";
 import ButtonUp from "../../components/ui/buttonUp/ButtonUp";
 import Footer from "../../components/layout/footer/Footer";
-import { getCategories, getFeaturedProducts, getBestSellingProducts } from "../../services/homeService";
+import { 
+  getCategories, 
+  getFeaturedProducts, 
+  getBestSellingProducts,
+  getPlatformVouchers,
+  getTopRatedProducts
+} from "../../services/homeService";
 // Note: useAuth and getNewArrivals available but not currently used
 
 /**
@@ -27,6 +35,8 @@ const HomePage = () => {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [flashDeals, setFlashDeals] = useState([]);
+  const [platformVouchers, setPlatformVouchers] = useState([]);
+  const [topRatedProducts, setTopRatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Scroll to top button
@@ -41,19 +51,27 @@ const HomePage = () => {
     const fetchHomeData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch tất cả data song song
-        const [categoriesData, featuredData, flashDealsData] = await Promise.all([
+        const [
+          categoriesData, 
+          featuredData, 
+          flashDealsData,
+          vouchersData,
+          topRatedData
+        ] = await Promise.all([
           getCategories(),
           getFeaturedProducts(8),
           getBestSellingProducts(8), // Flash deals = best sellers
+          getPlatformVouchers(12), // Tăng lên 12 vouchers cho tuần
+          getTopRatedProducts(10)
         ]);
 
         setCategories(categoriesData);
         setFeaturedProducts(featuredData);
         setFlashDeals(flashDealsData);
-      } catch {
-        // Silent error
+        setPlatformVouchers(vouchersData);
+        setTopRatedProducts(topRatedData);
+      } catch (error) {
+        console.error("Failed to load homepage data:", error);
       } finally {
         setLoading(false);
       }
@@ -68,38 +86,48 @@ const HomePage = () => {
       <Navbar isHomePage={true} />
 
       {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center min-h-screen">
+      {loading ? (
+        <div className="flex justify-center items-center min-h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Đang tải dữ liệu...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải...</p>
           </div>
         </div>
-      )}
-
-      {/* Main Content */}
-      {!loading && (
-        <main className="w-full">
-          <div className="container mx-auto px-4 lg:px-8 py-6">
-            {/* Hero Banner Section */}
+      ) : (
+        <main>
+          <div className="max-w-7xl mx-auto px-4 space-y-8 md:space-y-12">
+            {/* 1. Hero Banner Section */}
             <HeroSection autoPlayInterval={5000} />
 
-            {/* Flash Deals Section */}
-            <FlashDeals 
-              products={flashDeals}
-              title="⚡ Deals Hôm Nay"
-            />
-
-            {/* Category Section */}
+            {/* 2. Category Grid */}
             <CategorySection 
               categories={categories}
               title="Danh Mục Thể Thao"
             />
 
-            {/* Featured Products Section */}
+            {/* 3. Voucher giảm giá sàn phát trong tuần */}
+            <VoucherSection 
+              vouchers={platformVouchers}
+              title="🎁 Voucher Giảm Giá Sàn - Tuần Này"
+              subtitle="Săn ngay voucher độc quyền! Giảm giá khủng chỉ có trong tuần"
+            />
+
+            {/* 4. Sản phẩm bán chạy (Flash Deals) */}
+            <FlashDeals 
+              products={flashDeals}
+              title="🔥 Sản Phẩm Bán Chạy"
+            />
+
+            {/* 5. Sản phẩm đánh giá cao */}
+            <TopRatedProducts 
+              products={topRatedProducts}
+              title="⭐ Sản Phẩm Đánh Giá Cao"
+            />
+
+            {/* 7. Sản phẩm nổi bật */}
             <FeaturedProducts 
               products={featuredProducts}
-              title="Sản Phẩm Nổi Bật"
+              title="✨ Sản Phẩm Nổi Bật"
             />
 
             {/* Service Features */}

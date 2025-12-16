@@ -6,9 +6,11 @@ import api from './api';
  */
 
 // Lấy thông tin user hiện tại từ token
+// Backend returns: { status: 200, error: null, message: string, data: UserInfoDTO }
 export const getCurrentUser = async () => {
   const response = await api.get('/user/me');
-  return response.data;
+  // API interceptor returns response.data which is { status, error, message, data }
+  return response.status === 200 ? response.data : null;
 };
 
 export const registerUser = async (userData) => {
@@ -71,10 +73,19 @@ export const setAsPrimary = async (addressId) => {
 
 /**
  * Get full user profile with all fields including metadata
+ * Backend returns: { status: 200, error: null, message: string, data: ProfileDTO }
  */
 export const getProfile = async () => {
   const response = await api.get('/user/profile');
-  return response;
+  // API interceptor returns response.data which is { status, error, message, data }
+  // Return full response for backward compatibility with components expecting { statusCode, data }
+  return {
+    statusCode: response.status,
+    status: response.status,
+    message: response.message,
+    error: response.error,
+    data: response.data
+  };
 };
 
 /**

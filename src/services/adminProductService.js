@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'https://localhost:8081/api';
 const API_BASE_URL = 'https://localhost:8081/api';
 
 // Lấy token từ localStorage
@@ -182,3 +181,4 @@ export default {
   searchProducts,
   getProductDetail
 };
+
