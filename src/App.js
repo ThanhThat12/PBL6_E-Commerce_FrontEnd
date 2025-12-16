@@ -334,8 +334,10 @@ function App() {
               pauseOnHover
             />
             
-            {/* Chat Floating Window - Hidden on auth pages */}
+            {/* Floating Chat Window (existing system) */}
             <ConditionalChatContainer />
+
+            {/* Buyer Chatbot Floating Widget removed per request */}
               </OrderProvider>
             </CartProvider>
           </NotificationProvider>
