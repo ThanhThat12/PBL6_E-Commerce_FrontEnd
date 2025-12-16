@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select, Tabs } from 'antd';
+import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select } from 'antd';
 import { 
   UploadOutlined, CameraOutlined, CheckCircleOutlined, ClockCircleOutlined, 
   CloseCircleOutlined, ShopOutlined, UserOutlined,
   EnvironmentOutlined, PhoneOutlined, MailOutlined, StarOutlined,
-  EditOutlined, ApiOutlined, KeyOutlined, HomeOutlined
+  EditOutlined, ApiOutlined, KeyOutlined
 } from '@ant-design/icons';
 import { getShopDetail, updateShopProfile } from '../../services/seller/shopService';
 import { useAddressMaster } from '../../hooks/useAddressMaster';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import StoreAddressManagement from '../../components/profile/StoreAddressManagement';
-import SellerProfileInfo from '../../components/seller/SellerProfileInfo';
-
-const { TabPane } = Tabs;
 
 // Default images from environment
 const DEFAULT_LOGO = process.env.REACT_APP_DEFAULT_LOGO || 'https://res.cloudinary.com/dejjhkhl1/image/upload/v1764911991/xwz5cpybxo1g1_sppbqi.png';
@@ -359,7 +355,24 @@ const MyShop = () => {
         </Card>
       )}
 
-      {/* No status alert for ACTIVE - shop is operating normally */}
+      {shopData?.status === 'ACTIVE' && (
+        <Card className="shadow-sm border-l-4 border-l-green-400 bg-green-50" bodyStyle={{ padding: 16 }}>
+          <div className="flex items-start gap-3">
+            <CheckCircleOutlined className="text-green-600 text-xl flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="font-semibold text-green-800">Cửa hàng đã được xác thực ✓</h3>
+              <p className="text-sm text-green-700 mt-1">
+                Cửa hàng của bạn đang hoạt động bình thường và có thể bán hàng.
+              </p>
+              {shopData?.reviewedAt && (
+                <p className="text-xs text-green-600 mt-2">
+                  Phê duyệt lúc: {formatDate(shopData.reviewedAt)}
+                </p>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Shop Header with Banner & Logo */}
       <div className="relative rounded-xl overflow-hidden shadow-lg">
@@ -402,17 +415,7 @@ const MyShop = () => {
       </div>
 
       {/* Shop Info */}
-      <Tabs defaultActiveKey="info" className="custom-tabs">
-        <TabPane 
-          tab={
-            <span>
-              <ShopOutlined />
-              Thông Tin Cửa Hàng
-            </span>
-          } 
-          key="info"
-        >
-          <Row gutter={[24, 24]}>
+      <Row gutter={[24, 24]}>
                 {/* Left Column - Shop Info Display */}
                 <Col xs={24} lg={8}>
                   {/* Quick Stats */}
@@ -495,12 +498,6 @@ const MyShop = () => {
                         <div>
                           <span className="text-gray-500">Điện thoại:</span>
                           <p className="font-semibold">{shopData.ownerPhone}</p>
-                        </div>
-                      )}
-                      {shopData?.idCardName && (
-                        <div>
-                          <span className="text-gray-500">Tên liên hệ (CMND/CCCD):</span>
-                          <p className="font-semibold">{shopData.idCardName}</p>
                         </div>
                       )}
                       {shopData?.ownerCreatedAt && (
@@ -775,34 +772,6 @@ const MyShop = () => {
                   </Card>
                 </Col>
               </Row>
-        </TabPane>
-
-        {/* Store Address Tab */}
-        <TabPane 
-          tab={
-            <span>
-              <HomeOutlined />
-              Địa Chỉ Cửa Hàng
-            </span>
-          } 
-          key="address"
-        >
-          <StoreAddressManagement />
-        </TabPane>
-
-        {/* Personal Info Tab */}
-        <TabPane 
-          tab={
-            <span>
-              <UserOutlined />
-              Thông Tin Cá Nhân
-            </span>
-          } 
-          key="personal"
-        >
-          <SellerProfileInfo />
-        </TabPane>
-      </Tabs>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import Loading from '../common/Loading';
  */
 const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
   const [formData, setFormData] = useState({
+    username: '',
     email: '',
     phoneNumber: '',
     fullName: '',
@@ -22,6 +23,7 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
   useEffect(() => {
     if (currentProfile) {
       setFormData({
+        username: currentProfile.username || '',
         email: currentProfile.email || '',
         phoneNumber: currentProfile.phoneNumber || '',
         fullName: currentProfile.fullName || '',
@@ -32,6 +34,13 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
   // Validate form
   const validateForm = () => {
     const newErrors = {};
+
+    if (formData.username && formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+    if (formData.username && formData.username.length > 50) {
+      newErrors.username = 'Username must not exceed 50 characters';
+    }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
@@ -126,6 +135,28 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                <FiUser className="inline mr-2" />
+                Username
+              </label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.username ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter username"
+                disabled={loading}
+              />
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+              )}
+            </div>
+
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -43,55 +43,40 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       
       if (checkAuth()) {
-        // Get cached user first for immediate UI
         let userInfo = getUserInfo();
         
         if (userInfo) {
-          // Set cached user immediately to avoid blank screen
+          // User info exists in storage
           setUser(userInfo);
-          console.log('[initializeAuth] User loaded from cache:', userInfo);
-        }
-        
-        // Then fetch fresh data in background to update shopId and other fields
-        try {
-          const fetchedUser = await getCurrentUser();
+          console.log('[initializeAuth] User loaded from storage:', userInfo);
+        } else {
+          // Token exists but no user info - fetch from API
+          console.log('[initializeAuth] Token exists but no user info, fetching from API...');
           
-          if (fetchedUser) {
-            // Update with fresh data
-            saveUserInfo(fetchedUser);
-            setUser(fetchedUser);
-            console.log('[initializeAuth] ✅ Updated with fresh data:', fetchedUser);
-          } else if (!userInfo) {
-            // No cached user and API returned nothing - clear auth
-            console.warn('[initializeAuth] No user data available, clearing auth');
-            clearAuthData();
-          }
-        } catch (err) {
-          console.error('[initializeAuth] Error fetching user:', err);
-          // If it's 401, clear auth data
-          if (err.response?.status === 401) {
-            console.warn('[initializeAuth] Unauthorized, clearing auth');
-            clearAuthData();
-            setUser(null);
-          } else if (!userInfo) {
-            // No cached user and API failed - can't proceed
-            console.warn('[initializeAuth] No cached user and API failed, clearing auth');
-            clearAuthData();
-            setUser(null);
-          } else {
-            // Have cached user, continue with it
-            console.warn('[initializeAuth] Using cached user, API fetch failed');
+          try {
+            const fetchedUser = await getCurrentUser();
+            
+            if (fetchedUser) {
+              saveUserInfo(fetchedUser);
+              setUser(fetchedUser);
+              console.log('[initializeAuth] User fetched from API:', fetchedUser);
+            } else {
+              // Failed to fetch user - clear auth data
+              console.warn('[initializeAuth] Failed to fetch user, clearing auth data');
+              clearAuthData();
+            }
+          } catch (err) {
+            console.error('[initializeAuth] Error fetching user:', err);
+            // If it's an auth error, clear data
+            if (err.response?.status === 401) {
+              clearAuthData();
+            }
           }
         }
       }
     } catch (err) {
       console.error('Auth initialization error:', err);
-      // Don't clear auth on general errors, only on auth errors
-      const cachedUser = getUserInfo();
-      if (cachedUser) {
-        setUser(cachedUser);
-        console.warn('[initializeAuth] Using cached user after error');
-      }
+      clearAuthData();
     } finally {
       setLoading(false);
     }
@@ -135,17 +120,13 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       
       const response = await loginService(credentials);
-      console.log('[AuthContext] Login response:', response);
       
       // Backend may return status: 200 (number) or status: 'success' (string)
       if ((response.status === 200 || response.status === 'success') && response.data?.user) {
-        const userData = response.data.user;
-        setUser(userData);
-        console.log('[AuthContext] ✅ Login successful, user set:', userData);
+        setUser(response.data.user);
         return { success: true, data: response.data };
       }
       
-      console.warn('[AuthContext] ⚠️ Login response missing user data:', response);
       return { 
         success: false, 
         message: response.message || 'Đăng nhập thất bại' 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X, Package, DollarSign, Clock, TrendingUp, ChevronLeft, ChevronRight, Filter, Eye, Printer, Trash2 } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
-import { getAdminOrders, getAdminOrderStats, getAdminOrdersByStatus, searchAdminOrders } from '../../../services/adminOrderService';
+import { getAdminOrders, getAdminOrderStats, getAdminOrdersByStatus } from '../../../services/adminOrderService';
 import './OrdersTable.css';
 
 const OrdersTable = () => {
@@ -25,16 +25,7 @@ const OrdersTable = () => {
     totalRevenue: 0
   });
 
-  // Debounced search - wait 500ms after user stops typing
-  useEffect(() => {
-    const delaySearch = setTimeout(() => {
-      fetchOrders();
-    }, 500);
-
-    return () => clearTimeout(delaySearch);
-  }, [searchTerm]);
-
-  // Fetch orders when page or status changes (no debounce needed)
+  // Fetch orders from API
   useEffect(() => {
     fetchOrders();
   }, [currentPage, statusFilter]);
@@ -62,21 +53,12 @@ const OrdersTable = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`📡 Fetching orders - page: ${currentPage}, size: 10, status: ${statusFilter || 'ALL'}, search: "${searchTerm}"`);
+      console.log(`📡 Fetching orders - page: ${currentPage}, size: 10, status: ${statusFilter || 'ALL'}`);
       
-      let response;
-      
-      // Priority: 1. Search, 2. Status filter, 3. All orders
-      if (searchTerm && searchTerm.trim() !== '') {
-        // Use search API
-        response = await searchAdminOrders(searchTerm.trim(), currentPage, 10);
-      } else if (statusFilter) {
-        // Use status filter API
-        response = await getAdminOrdersByStatus(statusFilter, currentPage, 10);
-      } else {
-        // Get all orders
-        response = await getAdminOrders(currentPage, 10);
-      }
+      // Call different API based on filter
+      const response = statusFilter 
+        ? await getAdminOrdersByStatus(statusFilter, currentPage, 10)
+        : await getAdminOrders(currentPage, 10);
       
       console.log('📦 API Response:', response);
       
@@ -155,18 +137,6 @@ const OrdersTable = () => {
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
     setCurrentPage(0); // Reset to first page when filter changes
-  };
-
-  // Handle search change
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(0); // Reset to first page when searching
-  };
-
-  // Handle clear search
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    setCurrentPage(0);
   };
 
   // Handle view details
@@ -252,15 +222,15 @@ const OrdersTable = () => {
           <Search className="admin-order-search-icon" size={20} />
           <input
             type="text"
-            placeholder="Search by ID, name, phone, date (DD/MM/YYYY), address..."
+            placeholder="Search orders..."
             value={searchTerm}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="admin-order-search-input"
           />
           {searchTerm && (
             <button 
               className="clear-search"
-              onClick={handleClearSearch}
+              onClick={() => setSearchTerm('')}
             >
               <X size={16} />
             </button>

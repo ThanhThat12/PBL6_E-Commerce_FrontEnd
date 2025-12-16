@@ -6,12 +6,8 @@ import api from './api';
 
 // Create or get conversation
 export const createConversation = async (data) => {
-  // api.post already returns unwrapped response.data from interceptor
-  // Backend returns: { status, message, data: conversationObject }
-  // Interceptor returns: { status, message, data: conversationObject }
   const response = await api.post('/conversations', data);
-  // response is the ResponseDTO, so we need response.data to get conversation
-  return response;
+  return response.data;
 };
 
 // Get all conversations for current user

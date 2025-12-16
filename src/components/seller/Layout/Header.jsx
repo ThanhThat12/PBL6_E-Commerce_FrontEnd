@@ -74,18 +74,18 @@ const Header = () => {
   ];
 
   return (
-    <header className="h-16 bg-white border-b shadow-sm flex items-center justify-between px-6 sticky top-0 z-50">
+    <header className="h-16 bg-white border-b flex items-center justify-between px-6">
       {/* Left side - back to buyer button */}
       <div className="flex items-center gap-4">
         <Link 
           to="/" 
-          className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 rounded-lg transition-all shadow-sm hover:shadow-md"
+          className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
         >
           <HomeOutlined className="text-lg" />
           <span className="text-sm font-medium">Trở về trang mua hàng</span>
         </Link>
-        <div className="h-8 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
-        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Kênh Người Bán</h1>
+        <div className="h-6 w-px bg-gray-300"></div>
+        <h1 className="text-lg font-semibold text-gray-800">Kênh Người Bán</h1>
       </div>
 
       {/* Right side - notifications and user menu */}
@@ -95,7 +95,7 @@ const Header = () => {
 
         {/* User menu */}
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 px-4 py-2 rounded-full transition-all shadow-sm hover:shadow-md">
+          <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded">
             <Avatar 
               size={32} 
               icon={<UserOutlined />} 

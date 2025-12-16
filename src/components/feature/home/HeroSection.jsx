@@ -17,46 +17,32 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
     {
       id: 1,
       title: 'Bộ Sưu Tập Thể Thao Mùa Hè 2024',
-      subtitle: '🔥 Giảm đến 50% - Miễn phí vận chuyển',
-      description: 'Nâng tầm phong cách với thiết bị thể thao chất lượng cao. Hàng nghìn sản phẩm chính hãng.',
+      subtitle: 'Giảm giá lên đến 50% cho tất cả sản phẩm',
+      description: 'Nâng tầm phong cách thể thao của bạn với các thiết bị chất lượng cao',
       buttonText: 'Mua Ngay',
-      buttonLink: '/products',
+      buttonLink: '/products?category=summer-collection',
       image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&h=600&fit=crop',
-      bgGradient: 'from-primary-600 via-primary-700 to-primary-800',
-      badge: '50% OFF',
+      bgGradient: 'from-primary-500 to-primary-700',
     },
     {
       id: 2,
-      title: 'Giày Chạy Bộ Cao Cấp 2024',
-      subtitle: '⚡ Công nghệ đệm Air - Êm ái vượt trội',
-      description: 'Trải nghiệm cảm giác thoải mái tuyệt đối. Thiết kế thời trang, bền bỉ mọi địa hình.',
-      buttonText: 'Khám Phá Ngay',
+      title: 'Giày Chạy Bộ Cao Cấp',
+      subtitle: 'Công nghệ đệm mới nhất - Thoải mái vượt trội',
+      description: 'Trải nghiệm cảm giác êm ái trong từng bước chạy',
+      buttonText: 'Khám Phá',
       buttonLink: '/products?category=running-shoes',
       image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1200&h=600&fit=crop',
-      bgGradient: 'from-secondary-600 via-secondary-700 to-secondary-800',
-      badge: 'NEW',
+      bgGradient: 'from-secondary-500 to-secondary-700',
     },
     {
       id: 3,
-      title: 'Thiết Bị Gym Chuyên Nghiệp',
-      subtitle: '💪 Xây dựng phòng gym tại nhà',
-      description: 'Đầy đủ thiết bị tập luyện. Giá tốt nhất thị trường. Bảo hành chính hãng 24 tháng.',
-      buttonText: 'Xem Bộ Sưu Tập',
+      title: 'Phụ Kiện Tập Gym',
+      subtitle: 'Hoàn thiện phòng gym tại nhà của bạn',
+      description: 'Thiết bị chuyên nghiệp, giá cả phải chăng',
+      buttonText: 'Xem Thêm',
       buttonLink: '/products?category=gym-equipment',
       image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&h=600&fit=crop',
-      bgGradient: 'from-accent-green-600 via-accent-green-700 to-accent-green-800',
-      badge: 'HOT',
-    },
-    {
-      id: 4,
-      title: 'Bóng Đá & Phụ Kiện',
-      subtitle: '⚽ Thương hiệu chính hãng - Giá sốc',
-      description: 'Trang phục thi đấu, giày đá banh, quả bóng FIFA Quality. Ưu đãi đặc biệt cho đội nhóm.',
-      buttonText: 'Mua Sắm Ngay',
-      buttonLink: '/products?category=football',
-      image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=1200&h=600&fit=crop',
-      bgGradient: 'from-blue-600 via-blue-700 to-blue-800',
-      badge: 'SALE',
+      bgGradient: 'from-accent-green-500 to-accent-green-700',
     },
   ];
 
@@ -126,19 +112,12 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
               </p>
 
               {/* Title */}
-              <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight drop-shadow-lg">
+              <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
                 {currentBanner.title}
               </h1>
 
-              {/* Badge */}
-              {currentBanner.badge && (
-                <span className="inline-block px-4 py-2 bg-secondary-500 text-white font-bold rounded-lg mb-4 shadow-lg animate-pulse">
-                  {currentBanner.badge}
-                </span>
-              )}
-
               {/* Description */}
-              <p className="text-white/95 text-base md:text-lg mb-6 md:mb-8 drop-shadow-md">
+              <p className="text-white/90 text-base md:text-lg mb-6 md:mb-8">
                 {currentBanner.description}
               </p>
 
@@ -147,7 +126,7 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="shadow-colored-secondary hover:scale-105 transform transition-all duration-300 font-bold"
+                  className="shadow-colored-secondary hover:scale-105 transform transition-transform"
                 >
                   {currentBanner.buttonText}
                   <svg

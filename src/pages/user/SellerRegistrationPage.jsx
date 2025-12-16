@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { 
   FiShoppingBag as FiStore, FiPhone, FiMail, FiMapPin, FiCreditCard, 
   FiUser, FiCamera, FiCheck, FiLoader,
-  FiUpload, FiX, FiInfo, FiAlertCircle
+  FiUpload, FiX, FiInfo
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { useAddressMaster } from '../../hooks/useAddressMaster';
-import { submitSellerRegistration, canSubmitRegistration, checkShopName, checkCCCD } from '../../services/sellerRegistrationService';
-import { getRegistrationStatus, updateRejectedApplication } from '../../services/seller/shopService';
+import { submitSellerRegistration, getRegistrationStatus, canSubmitRegistration } from '../../services/sellerRegistrationService';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 
@@ -17,18 +16,9 @@ import Footer from '../../components/layout/footer/Footer';
  * SellerRegistrationPage
  * Form đăng ký trở thành người bán cho BUYER
  */
-
 const SellerRegistrationPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, hasRole } = useAuth();
-  const searchParams = new URLSearchParams(location.search);
-  
-  // Edit mode state (for updating rejected applications)
-  const isEditingFromQuery = searchParams.get('mode') === 'edit';
-  const isEditing = location.state?.isEditing || isEditingFromQuery;
-  const [editRejectionReason, setEditRejectionReason] = useState(location.state?.rejectionReason || '');
-  const hasLoadedEditData = useRef(false);
   
   // Check eligibility state
   const [canSubmit, setCanSubmit] = useState(true);
@@ -78,18 +68,6 @@ const SellerRegistrationPage = () => {
     banner: false,
   });
 
-  // Validation states for real-time checking
-  const [validation, setValidation] = useState({
-    shopName: { checking: false, available: null, message: '' },
-    cccd: { checking: false, available: null, message: '' },
-  });
-
-  // Track original data when editing (to detect changes)
-  const [originalData, setOriginalData] = useState({
-    shopName: '',
-    idCardNumber: '',
-  });
-
   // Form submission
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -106,94 +84,9 @@ const SellerRegistrationPage = () => {
     selectDistrict,
   } = useAddressMaster();
 
-  // Fetch rejected shop data when editing
-  useEffect(() => {
-    const fetchRejectedShopData = async () => {
-      if (isEditing && !hasLoadedEditData.current) {
-        try {
-          const shopData = await getRegistrationStatus();
-          
-          if (shopData && shopData.status === 'REJECTED') {
-            console.log('Fetched rejected shop data:', shopData);
-            
-            // Save original data to detect changes later
-            setOriginalData({
-              shopName: shopData.shopName || '',
-              idCardNumber: '', // Backend returns masked, we'll handle this
-            });
-            
-            // Pre-fill form with existing data
-            setFormData(prev => ({
-              ...prev,
-              // Shop basic info
-              shopName: shopData.shopName || '',
-              description: shopData.description || '',
-              shopPhone: shopData.shopPhone || '',
-              shopEmail: shopData.shopEmail || '',
-              
-              // Address info - NOW INCLUDES IDs from backend
-              fullAddress: shopData.fullAddress || '',
-              provinceId: shopData.provinceId ? String(shopData.provinceId) : '',
-              districtId: shopData.districtId ? String(shopData.districtId) : '',
-              wardCode: shopData.wardCode || '',
-              provinceName: shopData.provinceName || '',
-              districtName: shopData.districtName || '',
-              wardName: shopData.wardName || '',
-              
-              // KYC info (ID card number is masked, name is visible)
-              idCardNumber: '', // Backend returns masked, need full number for update
-              idCardName: shopData.idCardName || '',
-              
-              // Logo (can be kept)
-              logoUrl: shopData.logoUrl || '',
-              
-              // KYC Images: NOT returned by backend for security
-              // User MUST re-upload these images
-              // idCardFrontUrl, idCardBackUrl, selfieWithIdUrl will be empty
-            }));
-            
-            // Populate address dropdowns by calling hook functions
-            if (shopData.provinceId) {
-              selectProvince(shopData.provinceId);
-              
-              // Wait a bit for districts to load, then select district
-              if (shopData.districtId) {
-                setTimeout(() => {
-                  selectDistrict(shopData.districtId);
-                }, 300);
-              }
-            }
-            
-            setEditRejectionReason(shopData.rejectionReason || '');
-
-            hasLoadedEditData.current = true;
-
-            // Show info message about KYC re-upload requirement
-            toast('📝 Đơn đăng ký đã được tải. Vui lòng nhập lại số CMND/CCCD và upload lại ảnh xác minh', {
-              duration: 6000,
-              position: 'top-center'
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching rejected shop data:', error);
-          toast.error('Không thể tải thông tin đơn đăng ký');
-        }
-      }
-    };
-
-    fetchRejectedShopData();
-  }, [isEditing, selectProvince, selectDistrict]);
-
   // Check if user can submit registration
   useEffect(() => {
     const checkEligibility = async () => {
-      // Skip check if editing rejected application
-      if (isEditing) {
-        setCheckingEligibility(false);
-        setCanSubmit(true);
-        return;
-      }
-
       if (!user || hasRole('SELLER') || hasRole('ADMIN')) {
         setCheckingEligibility(false);
         return;
@@ -206,8 +99,8 @@ const SellerRegistrationPage = () => {
           setCanSubmit(false);
           // Get existing status
           try {
-            const statusData = await getRegistrationStatus();
-            setExistingStatus(statusData);
+            const statusRes = await getRegistrationStatus();
+            setExistingStatus(statusRes?.data);
           } catch (err) {
             console.log('No existing registration');
           }
@@ -220,120 +113,12 @@ const SellerRegistrationPage = () => {
     };
 
     checkEligibility();
-  }, [user, hasRole, isEditing]);
+  }, [user, hasRole]);
 
   // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Real-time validation for shop name
-  const handleShopNameBlur = async () => {
-    const shopName = formData.shopName?.trim();
-    if (!shopName) {
-      setValidation(prev => ({
-        ...prev,
-        shopName: { checking: false, available: null, message: '' }
-      }));
-      return;
-    }
-
-    // If editing and name hasn't changed, skip validation (allow keeping original name)
-    if (isEditing && shopName === originalData.shopName) {
-      setValidation(prev => ({
-        ...prev,
-        shopName: { checking: false, available: true, message: 'Tên shop hiện tại của bạn' }
-      }));
-      return;
-    }
-
-    setValidation(prev => ({
-      ...prev,
-      shopName: { checking: true, available: null, message: 'Đang kiểm tra...' }
-    }));
-
-    try {
-      // Pass excludeMyShop=true when editing to exclude user's own shop
-      const response = await checkShopName(shopName, isEditing);
-      const { available, message } = response.data;
-      
-      setValidation(prev => ({
-        ...prev,
-        shopName: { checking: false, available, message }
-      }));
-
-      if (!available) {
-        toast.error(message);
-      }
-    } catch (error) {
-      console.error('Error checking shop name:', error);
-      setValidation(prev => ({
-        ...prev,
-        shopName: { checking: false, available: null, message: '' }
-      }));
-    }
-  };
-
-  // Real-time validation for CCCD
-  const handleCCCDBlur = async () => {
-    const cccd = formData.idCardNumber?.trim();
-    if (!cccd) {
-      setValidation(prev => ({
-        ...prev,
-        cccd: { checking: false, available: null, message: '' }
-      }));
-      return;
-    }
-
-    // Check format first (9 or 12 digits)
-    if (!/^[0-9]{9}$|^[0-9]{12}$/.test(cccd)) {
-      setValidation(prev => ({
-        ...prev,
-        cccd: { checking: false, available: false, message: 'Số CMND/CCCD phải có 9 hoặc 12 số' }
-      }));
-      return;
-    }
-
-    // If editing and CCCD hasn't changed, skip validation (allow keeping original CCCD)
-    // Note: We can't compare with originalData.idCardNumber because backend returns masked value
-    // So when editing, we always pass excludeMyShop=true to allow user to keep their CCCD
-    if (isEditing && originalData.idCardNumber === '') {
-      // First time entering CCCD in edit mode - validate with excludeMyShop
-      // This allows user to re-enter their own CCCD after it was masked
-    }
-
-    setValidation(prev => ({
-      ...prev,
-      cccd: { checking: true, available: null, message: 'Đang kiểm tra...' }
-    }));
-
-    try {
-      // Pass excludeMyShop=true when editing to exclude user's own shop
-      const response = await checkCCCD(cccd, isEditing);
-      const { available, message } = response.data;
-      
-      setValidation(prev => ({
-        ...prev,
-        cccd: { checking: false, available, message }
-      }));
-
-      if (!available) {
-        toast.error(message);
-      } else if (isEditing) {
-        // Show friendly message when editing and CCCD is available
-        setValidation(prev => ({
-          ...prev,
-          cccd: { checking: false, available: true, message: 'CCCD khả dụng (có thể giữ CCCD cũ)' }
-        }));
-      }
-    } catch (error) {
-      console.error('Error checking CCCD:', error);
-      setValidation(prev => ({
-        ...prev,
-        cccd: { checking: false, available: null, message: '' }
-      }));
-    }
   };
 
   // Handle province change - use useAddressMaster hook
@@ -488,15 +273,6 @@ const SellerRegistrationPage = () => {
           toast.error('Vui lòng nhập tên shop');
           return false;
         }
-        // Check if shop name validation has been checked and is available
-        if (validation.shopName.available === false) {
-          toast.error('Tên shop đã tồn tại, vui lòng chọn tên khác');
-          return false;
-        }
-        if (validation.shopName.available === null && formData.shopName?.trim()) {
-          toast.error('Vui lòng kiểm tra tính khả dụng của tên shop');
-          return false;
-        }
         if (!formData.shopPhone?.trim()) {
           toast.error('Vui lòng nhập số điện thoại shop');
           return false;
@@ -543,15 +319,6 @@ const SellerRegistrationPage = () => {
           toast.error('Số CMND (9 số) hoặc CCCD (12 số) không hợp lệ');
           return false;
         }
-        // Check if CCCD validation has been checked and is available
-        if (validation.cccd.available === false) {
-          toast.error('Số CMND/CCCD này đã được sử dụng để đăng ký shop khác');
-          return false;
-        }
-        if (validation.cccd.available === null && formData.idCardNumber?.trim()) {
-          toast.error('Vui lòng kiểm tra tính khả dụng của số CMND/CCCD');
-          return false;
-        }
         if (!formData.idCardName?.trim()) {
           toast.error('Vui lòng nhập họ tên trên CMND/CCCD');
           return false;
@@ -589,53 +356,19 @@ const SellerRegistrationPage = () => {
 
     if (!validateStep(3)) return;
 
-    // Additional check for shop name and CCCD validation
-    if (validation.shopName.available === false) {
-      toast.error('Tên shop đã tồn tại. Vui lòng đổi tên khác.');
-      setCurrentStep(1);
-      return;
-    }
-
-    if (validation.cccd.available === false) {
-      toast.error('Số CMND/CCCD đã được sử dụng. Vui lòng kiểm tra lại.');
-      return;
-    }
-
     setSubmitting(true);
     try {
-      // Prepare submission data
-      const submissionData = { ...formData };
+      const response = await submitSellerRegistration(formData);
       
-      // For new registration (not editing), remove addressId to force backend to create new address
-      // Backend will create new STORE address with provided fullAddress + province/district/ward
-      if (!isEditing) {
-        delete submissionData.addressId;
-        
-        // Ensure all required address fields are present
-        if (!submissionData.fullAddress || !submissionData.provinceId || !submissionData.districtId || !submissionData.wardCode) {
-          toast.error('Vui lòng nhập đầy đủ thông tin địa chỉ');
-          setCurrentStep(2);
-          return;
-        }
-      }
-
-      if (isEditing) {
-        // Update rejected application
-        await updateRejectedApplication(submissionData);
-        toast.success('Đã cập nhật đơn đăng ký! Đang chờ admin xét duyệt lại.');
-      } else {
-        // New registration
-        await submitSellerRegistration(submissionData);
+      if (response?.statusCode === 201 || response?.data?.success) {
         toast.success('Đăng ký thành công! Đơn của bạn đang chờ xét duyệt.');
+        navigate('/seller/registration-status');
+      } else {
+        toast.error(response?.message || 'Đăng ký thất bại');
       }
-      
-      // Navigate to status page
-      navigate('/seller/registration-status');
-      
     } catch (error) {
       console.error('Submit error:', error);
-      const errorMsg = error?.response?.data?.error || error?.message || (isEditing ? 'Cập nhật thất bại' : 'Đăng ký thất bại');
-      toast.error(errorMsg);
+      toast.error(error?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
     }
@@ -768,51 +501,11 @@ const SellerRegistrationPage = () => {
             <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiStore className="w-8 h-8 text-primary-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {isEditing ? 'Cập nhật đơn đăng ký' : 'Đăng ký bán hàng'}
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng ký bán hàng</h1>
             <p className="text-gray-600">
-              {isEditing 
-                ? 'Chỉnh sửa thông tin theo yêu cầu và gửi lại đơn đăng ký' 
-                : 'Trở thành người bán trên SportZone và bắt đầu kinh doanh ngay hôm nay!'}
+              Trở thành người bán trên SportZone và bắt đầu kinh doanh ngay hôm nay!
             </p>
           </div>
-
-          {/* Rejection Reason Alert (MOVED TO TOP - before steps) */}
-          {isEditing && editRejectionReason && (
-            <div className="space-y-4 mb-8">
-              <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-5 shadow-md">
-                <div className="flex items-start gap-3">
-                  <FiAlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="text-red-900 font-bold mb-2 text-lg">⚠️ Đơn đăng ký bị từ chối</h3>
-                    <div className="bg-white rounded p-3 mb-2">
-                      <p className="text-sm text-gray-600 mb-1 font-semibold">Lý do từ Admin:</p>
-                      <p className="text-red-700 text-sm leading-relaxed font-medium">{editRejectionReason}</p>
-                    </div>
-                    <p className="text-red-700 text-sm">
-                      📝 Vui lòng chỉnh sửa thông tin theo yêu cầu trên và gửi lại đơn đăng ký.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <FiInfo className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="text-blue-900 font-semibold mb-1">📋 Yêu cầu cập nhật:</h3>
-                    <ul className="text-blue-800 text-sm space-y-1 ml-4 list-disc">
-                      <li>Nhập lại <strong>đầy đủ số CMND/CCCD</strong> (9 hoặc 12 số)</li>
-                      <li>Upload lại <strong>ảnh CMND/CCCD mặt trước và mặt sau</strong></li>
-                      <li>Upload lại <strong>ảnh selfie cầm CMND/CCCD</strong></li>
-                      <li>Các thông tin khác đã được điền sẵn từ đơn trước</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Progress Steps */}
           <div className="flex items-center justify-center mb-8">
@@ -857,46 +550,15 @@ const SellerRegistrationPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Tên Shop <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="shopName"
-                      value={formData.shopName}
-                      onChange={handleChange}
-                      onBlur={handleShopNameBlur}
-                      placeholder="VD: Sport Pro Shop"
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                        validation.shopName.available === false 
-                          ? 'border-red-500' 
-                          : validation.shopName.available === true 
-                          ? 'border-green-500' 
-                          : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {validation.shopName.checking && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <FiLoader className="w-5 h-5 text-gray-400 animate-spin" />
-                      </div>
-                    )}
-                    {validation.shopName.available === true && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <FiCheck className="w-5 h-5 text-green-500" />
-                      </div>
-                    )}
-                    {validation.shopName.available === false && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <FiAlertCircle className="w-5 h-5 text-red-500" />
-                      </div>
-                    )}
-                  </div>
-                  {validation.shopName.message && (
-                    <p className={`mt-1 text-sm ${
-                      validation.shopName.available === false ? 'text-red-500' : 'text-green-500'
-                    }`}>
-                      {validation.shopName.message}
-                    </p>
-                  )}
+                  <input
+                    type="text"
+                    name="shopName"
+                    value={formData.shopName}
+                    onChange={handleChange}
+                    placeholder="VD: Sport Pro Shop"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
                 </div>
 
                 {/* Description */}
@@ -1176,46 +838,15 @@ const SellerRegistrationPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Số CMND/CCCD <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="idCardNumber"
-                        value={formData.idCardNumber}
-                        onChange={handleChange}
-                        onBlur={handleCCCDBlur}
-                        placeholder="9 hoặc 12 số"
-                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                          validation.cccd.available === false 
-                            ? 'border-red-500' 
-                            : validation.cccd.available === true 
-                            ? 'border-green-500' 
-                            : 'border-gray-300'
-                        }`}
-                        required
-                      />
-                      {validation.cccd.checking && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <FiLoader className="w-5 h-5 text-gray-400 animate-spin" />
-                        </div>
-                      )}
-                      {validation.cccd.available === true && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <FiCheck className="w-5 h-5 text-green-500" />
-                        </div>
-                      )}
-                      {validation.cccd.available === false && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <FiAlertCircle className="w-5 h-5 text-red-500" />
-                        </div>
-                      )}
-                    </div>
-                    {validation.cccd.message && (
-                      <p className={`mt-1 text-sm ${
-                        validation.cccd.available === false ? 'text-red-500' : 'text-green-500'
-                      }`}>
-                        {validation.cccd.message}
-                      </p>
-                    )}
+                    <input
+                      type="text"
+                      name="idCardNumber"
+                      value={formData.idCardNumber}
+                      onChange={handleChange}
+                      placeholder="9 hoặc 12 số"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      required
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1414,12 +1045,12 @@ const SellerRegistrationPage = () => {
                   {submitting ? (
                     <>
                       <FiLoader className="w-5 h-5 animate-spin" />
-                      {isEditing ? 'Đang cập nhật...' : 'Đang gửi...'}
+                      Đang gửi...
                     </>
                   ) : (
                     <>
                       <FiCheck className="w-5 h-5" />
-                      {isEditing ? 'Cập nhật đơn đăng ký' : 'Gửi đăng ký'}
+                      Gửi đăng ký
                     </>
                   )}
                 </button>

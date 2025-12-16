@@ -76,10 +76,9 @@ export const loginWithGoogle = async (idToken) => {
     
     console.log('[loginWithGoogle] Response:', response);
     
-    // Backend returns: { status: 200, error: null, message: string, data: { token, refreshToken } }
-    // API interceptor returns response.data, so we get this structure directly
+    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
     // Note: Backend does NOT return user object, need to fetch separately
-    if (response.status === 200 && response.data) {
+    if (response.statusCode === 200 && response.data) {
       const { token, refreshToken } = response.data;
       
       // Save tokens first (without user info)
@@ -91,8 +90,8 @@ export const loginWithGoogle = async (idToken) => {
         const userResponse = await api.get(API_ENDPOINTS.PROFILE.ME);
         console.log('[loginWithGoogle] User info:', userResponse);
         
-        // userResponse: { status: 200, error: null, message: string, data: UserInfoDTO }
-        if (userResponse.status === 200 && userResponse.data) {
+        // userResponse is ResponseDTO<UserInfoDTO>
+        if (userResponse.statusCode === 200 && userResponse.data) {
           const user = userResponse.data;
           saveUserInfo(user);
           
@@ -137,10 +136,9 @@ export const loginWithFacebook = async (accessToken) => {
     
     console.log('[loginWithFacebook] Response:', response);
     
-    // Backend returns: { status: 200, error: null, message: string, data: { token, refreshToken } }
-    // API interceptor returns response.data, so we get this structure directly
+    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
     // Note: Backend does NOT return user object, need to fetch separately
-    if (response.status === 200 && response.data) {
+    if (response.statusCode === 200 && response.data) {
       const { token, refreshToken } = response.data;
       
       // Save tokens first (without user info)
@@ -152,8 +150,8 @@ export const loginWithFacebook = async (accessToken) => {
         const userResponse = await api.get(API_ENDPOINTS.PROFILE.ME);
         console.log('[loginWithFacebook] User info:', userResponse);
         
-        // userResponse: { status: 200, error: null, message: string, data: UserInfoDTO }
-        if (userResponse.status === 200 && userResponse.data) {
+        // userResponse is ResponseDTO<UserInfoDTO>
+        if (userResponse.statusCode === 200 && userResponse.data) {
           const user = userResponse.data;
           saveUserInfo(user);
           
@@ -376,11 +374,11 @@ export const getCurrentUser = async () => {
     const response = await api.get(API_ENDPOINTS.PROFILE.ME);
     console.log('[getCurrentUser] Response:', response);
     
-    // Backend returns: { status: 200, error: null, message: string, data: UserInfoDTO }
-    // API interceptor returns response.data, so we get this structure directly
-    if (response.status === 200 && response.data) {
+    // Response is ResponseDTO<UserInfoDTO> structure:
+    // { statusCode, message, data: UserInfoDTO }
+    if (response.statusCode === 200 && response.data) {
       console.log('[getCurrentUser] User data:', response.data);
-      return response.data;  // Returns UserInfoDTO
+      return response.data;  // Returns UserInfoDTO with id, email, username, role
     }
     
     console.warn('[getCurrentUser] Invalid response structure:', response);

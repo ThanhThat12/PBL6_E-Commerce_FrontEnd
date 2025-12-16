@@ -205,41 +205,6 @@
 .admin-chat-header-actions {
   display: flex;
   gap: 8px;
-  align-items: center;
-}
-
-.admin-chat-header-search-box {
-  display: flex;
-  align-items: center;
-  background-color: #f0f2f5;
-  border-radius: 20px;
-  padding: 6px 16px;
-  min-width: 250px;
-  animation: slideIn 0.2s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.admin-chat-header-search-input {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: #050505;
-  width: 100%;
-}
-
-.admin-chat-header-search-input::placeholder {
-  color: #65676b;
 }
 
 .admin-chat-action-btn {
@@ -339,73 +304,17 @@
   background-color: #ffffff;
   display: flex;
   gap: 8px;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
-.admin-chat-image-btn {
-  background-color: transparent;
-  border: none;
-  color: #0084ff;
-  width: 36px;
-  height: 36px;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: background-color 0.2s;
   flex-shrink: 0;
-}
-
-.admin-chat-image-btn:hover {
-  background-color: #f0f2f5;
 }
 
 .admin-chat-input-wrapper {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   background-color: #f0f2f5;
   border-radius: 20px;
   padding: 8px 16px;
-}
-
-.admin-chat-image-preview {
-  position: relative;
-  margin-bottom: 8px;
-  display: inline-block;
-  max-width: 200px;
-}
-
-.admin-chat-image-preview img {
-  max-width: 100%;
-  max-height: 150px;
-  border-radius: 8px;
-  display: block;
-}
-
-.admin-chat-remove-image {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background-color: #ff4444;
-  color: white;
-  border: 2px solid white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  font-weight: bold;
-}
-
-.admin-chat-remove-image:hover {
-  background-color: #cc0000;
 }
 
 .admin-chat-message-input {
@@ -420,14 +329,6 @@
 
 .admin-chat-message-input::placeholder {
   color: #65676b;
-}
-
-.admin-chat-message-image {
-  max-width: 300px;
-  max-height: 300px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  display: block;
 }
 
 .admin-chat-send-btn {

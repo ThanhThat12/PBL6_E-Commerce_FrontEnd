@@ -111,7 +111,7 @@ const CategorySection = ({ categories = [], title = 'Danh Mục Sản Phẩm' })
         {displayCategories.map((category) => (
           <Link
             key={category.id}
-            to={`/products?category=${category.id}`}
+            to={`/category/${category.slug}`}
             className="group no-underline"
           >
             <Card

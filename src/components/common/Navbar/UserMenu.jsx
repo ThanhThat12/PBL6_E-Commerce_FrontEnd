@@ -71,17 +71,17 @@ const UserMenu = ({
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        {user?.avatarUrl || user?.avatar ? (
+        {user?.avatar ? (
           <img 
-            src={user.avatarUrl || user.avatar} 
-            alt={user.username || user.fullName || 'User'}
+            src={user.avatar} 
+            alt={user.username}
             className="w-6 h-6 rounded-full object-cover border-2 border-white"
           />
         ) : (
           <UserCircleIcon className="w-6 h-6 group-hover:text-primary-100 transition-colors" />
         )}
         <span className="hidden lg:inline text-sm font-medium group-hover:text-primary-100 transition-colors">
-          {user?.fullName || user?.username || user?.email?.split('@')[0] || 'Tài khoản'}
+          {user?.username || user?.email?.split('@')[0] || 'Tài khoản'}
         </span>
         <ChevronDownIcon 
           className={`w-4 h-4 transition-transform group-hover:text-primary-100 ${isOpen ? 'rotate-180' : ''}`}
@@ -107,7 +107,7 @@ const UserMenu = ({
           {user ? (
             <div className="px-4 py-3 bg-gradient-primary border-b border-border">
               <p className="text-sm font-semibold text-white">
-                Xin chào, {user.fullName || user.username || user.email?.split('@')[0] || 'Bạn'}!
+                Xin chào, {user.username || user.email?.split('@')[0] || 'Bạn'}!
               </p>
               {user.email && (
                 <p className="text-xs text-primary-100 truncate">

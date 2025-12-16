@@ -6,7 +6,6 @@
  * - POST /api/seller/register - Submit registration
  * - GET /api/seller/registration/status - Check registration status
  * - DELETE /api/seller/registration - Cancel rejected application
- * - PUT /api/seller/registration - Update rejected application
  * - GET /api/seller/registration/can-submit - Check if can submit
  * 
  * Admin Endpoints:
@@ -74,57 +73,6 @@ export const canSubmitRegistration = async () => {
     return response;
   } catch (error) {
     console.error('Error checking registration eligibility:', error);
-    throw error;
-  }
-};
-
-/**
- * Check if shop name is available (real-time validation)
- * @param {string} name - Shop name to check
- * @param {boolean} excludeMyShop - Exclude current user's shop (for editing mode)
- * @returns {Promise<object>} { available: boolean, message: string }
- */
-export const checkShopName = async (name, excludeMyShop = false) => {
-  try {
-    const response = await api.get('/seller/registration/check-name', {
-      params: { name, excludeMyShop }
-    });
-    return response;
-  } catch (error) {
-    console.error('Error checking shop name:', error);
-    throw error;
-  }
-};
-
-/**
- * Check if CCCD is available (real-time validation)
- * @param {string} cccd - CCCD number to check
- * @param {boolean} excludeMyShop - Exclude current user's shop (for editing mode)
- * @returns {Promise<object>} { available: boolean, message: string }
- */
-export const checkCCCD = async (cccd, excludeMyShop = false) => {
-  try {
-    const response = await api.get('/seller/registration/check-cccd', {
-      params: { cccd, excludeMyShop }
-    });
-    return response;
-  } catch (error) {
-    console.error('Error checking CCCD:', error);
-    throw error;
-  }
-};
-
-/**
- * Update rejected registration application
- * @param {object} data - Updated registration data with KYC
- * @returns {Promise<object>} SellerRegistrationResponseDTO
- */
-export const updateRejectedApplication = async (data) => {
-  try {
-    const response = await api.put('/seller/registration', data);
-    return response;
-  } catch (error) {
-    console.error('Error updating rejected application:', error);
     throw error;
   }
 };
@@ -251,10 +199,7 @@ export default {
   submitSellerRegistration,
   getRegistrationStatus,
   cancelRejectedApplication,
-  updateRejectedApplication,
   canSubmitRegistration,
-  checkShopName,
-  checkCCCD,
   // Admin APIs
   getPendingApplications,
   searchPendingApplications,

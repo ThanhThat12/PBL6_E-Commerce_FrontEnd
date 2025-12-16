@@ -1,28 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import ProductList from "../../common/ProductList";
 import { addToCart } from '../../../services/cartService';
-import { getBestSellingProducts } from '../../../services/homeService';
 import colorPattern from "../../../styles/colorPattern";
+import { bestSellerProducts } from '../../../mockDataBestSeller';
 
-const BestSellerSection = ({ onViewAll }) => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchBestSellers = async () => {
-      try {
-        setLoading(true);
-        const data = await getBestSellingProducts(8);
-        setProducts(data);
-      } catch (error) {
-        console.error('Error fetching best selling products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBestSellers();
-  }, []);
-
+const BestSellerSection = ({
+  products = bestSellerProducts,
+  onViewAll,
+}) => {
   const handleAddToCart = async (product) => {
     try {
       await addToCart(product.id, 1);
@@ -31,24 +16,6 @@ const BestSellerSection = ({ onViewAll }) => {
       alert("Thêm vào giỏ hàng thất bại!");
     }
   };
-
-  if (loading) {
-    return (
-      <section 
-        className="rounded-xl shadow p-6 md:p-10 mb-8"
-        style={{ 
-          backgroundColor: colorPattern.background,
-          boxShadow: `0 4px 16px ${colorPattern.shadow}`,
-        }}
-      >
-        <div className="text-center py-8">Đang tải...</div>
-      </section>
-    );
-  }
-
-  if (!products || products.length === 0) {
-    return null;
-  }
   return (
     <section 
       className="rounded-xl shadow p-6 md:p-10 mb-8"

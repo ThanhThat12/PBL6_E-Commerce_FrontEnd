@@ -29,20 +29,6 @@ const orderService = {
   },
 
   /**
-   * Buyer gửi yêu cầu hoàn tiền cho từng sản phẩm
-   * @param {Object} data { orderItemId, reason, description, imageUrls, requestedAmount }
-   * @returns {Promise}
-   */
-  createRefundRequest: async (data) => {
-    try {
-      const response = await api.post('refund/create', data);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
    * Seller lấy danh sách yêu cầu hoàn tiền
    */
   getRefundRequests: async () => {
