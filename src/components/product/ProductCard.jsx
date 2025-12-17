@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiHeart, FiStar, FiMapPin } from 'react-icons/fi';
 import { getProductImage } from '../../utils/placeholderImage';
+import { DEFAULT_PRODUCT_IMAGE, handleImageError } from '../../utils/imageDefaults';
 
 /**
  * ProductCard Component
@@ -59,9 +60,7 @@ const ProductCard = ({ product, onWishlist }) => {
             objectFit: 'cover',
             display: 'block'
           }}
-          onError={(e) => {
-            e.target.onerror = null;
-          }}
+          onError={(e) => handleImageError(e, DEFAULT_PRODUCT_IMAGE)}
         />
 
         {/* Overlay gradient on hover */}

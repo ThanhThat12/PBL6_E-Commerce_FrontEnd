@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReturnInstructionModal from './ReturnInstructionModal';
+import { DEFAULT_PRODUCT_IMAGE, handleImageError } from '../../utils/imageDefaults';
 
 /**
  * ReturnItemCard Component
@@ -88,12 +89,10 @@ const ReturnItemCard = ({ refund, onUpdate }) => {
           {orderItem.productName && (
             <div className="flex gap-4 mb-4">
               <img
-                src={orderItem.mainImage || orderItem.productImage || '/placeholder.png'}
+                src={orderItem.mainImage || orderItem.productImage || DEFAULT_PRODUCT_IMAGE}
                 alt={orderItem.productName}
                 className="w-24 h-24 object-cover rounded-lg"
-                onError={(e) => {
-                  e.target.src = '/placeholder.png';
-                }}
+                onError={(e) => handleImageError(e, DEFAULT_PRODUCT_IMAGE)}
               />
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 mb-1">{orderItem.productName}</h3>

@@ -229,7 +229,3 @@ export async function fetchWithAuth(url, options = {}) {
   }
 }
 
-export async function getWishlist() {
-  const res = await fetchWithAuth('/api/wishlist');
-  return res.json();
-}

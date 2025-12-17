@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import RatingInput from './RatingInput';
 import ImageUploader from './ImageUploader';
 import reviewService from '../../services/reviewService';
+import { DEFAULT_PRODUCT_IMAGE, handleImageError } from '../../utils/imageDefaults';
 
 /**
  * WriteReviewModal Component

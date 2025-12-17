@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Button from '../common/Button';
+import { DEFAULT_PRODUCT_IMAGE, handleImageError } from '../../utils/imageDefaults';
 
 /**
  * Order Status Badge Colors
@@ -119,10 +120,10 @@ const OrderCard = ({ order, onCancelSuccess }) => {
             {/* Product Image */}
             <div className="relative flex-shrink-0">
               <img 
-                src={firstProduct.mainImage || firstProduct.productMainImage || firstProduct.productImage || firstProduct.image || '/placeholder.png'} 
+                src={firstProduct.mainImage || firstProduct.productMainImage || firstProduct.productImage || firstProduct.image || DEFAULT_PRODUCT_IMAGE} 
                 alt={firstProduct.productName}
                 className="w-24 h-24 object-cover rounded-lg border border-gray-200"
-                onError={(e) => { e.target.src = '/placeholder.png'; }}
+                onError={(e) => handleImageError(e, DEFAULT_PRODUCT_IMAGE)}
               />
               {totalItems > 1 && (
                 <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md">

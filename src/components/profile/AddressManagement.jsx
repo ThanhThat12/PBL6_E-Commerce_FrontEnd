@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { FiPlus, FiEdit2, FiTrash2, FiMapPin, FiCheck } from 'react-icons/fi';
 import { getAddresses, createAddress, updateAddress, deleteAddress, setAsPrimary } from '../../services/userService';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
 import AddressFormModal from './AddressFormModal';
 
 /**
  * AddressManagement
- * Component quản lý địa chỉ người dùng
+ * Component quản lý địa chỉ HOME trong profile buyer
+ * - Luôn chỉ hiển thị địa chỉ HOME (không phân biệt role)
+ * - Địa chỉ STORE được quản lý riêng trong kênh người bán (MyShop)
  */
 const AddressManagement = () => {
+  const { user } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -30,7 +34,20 @@ const AddressManagement = () => {
       console.log('loadAddresses response:', response);
       // Backend returns ResponseDTO { status, message, data }
       if (response.status === 200 && Array.isArray(response.data)) {
-        setAddresses(response.data);
+        const allAddresses = response.data;
+        
+        // Profile Buyer: Always show HOME addresses only (regardless of user role)
+        const filteredAddresses = allAddresses.filter(addr => addr.typeAddress === 'HOME');
+        console.log(`Filtered ${filteredAddresses.length} HOME addresses (Profile Buyer view)`);
+        
+        // Sort: Primary address first, then others
+        const sorted = filteredAddresses.sort((a, b) => {
+          if (a.primaryAddress && !b.primaryAddress) return -1;
+          if (!a.primaryAddress && b.primaryAddress) return 1;
+          return 0;
+        });
+        
+        setAddresses(sorted);
       } else {
         console.warn('Unexpected response structure:', response);
         setAddresses([]);
@@ -82,11 +99,19 @@ const AddressManagement = () => {
         response = await createAddress(addressData);
       }
 
+      console.log('Save address response:', response);
+      
+      // Interceptor returns ResponseDTO directly
+      // response = { status: 200/201, message: "...", data: {...} }
+      
       // Backend returns status 200 for update, 201 for create
       if (response.status === 200 || response.status === 201) {
         toast.success(editingAddress ? 'Cập nhật địa chỉ thành công' : 'Thêm địa chỉ thành công');
         setModalOpen(false);
-        loadAddresses();
+        await loadAddresses(); // Await to ensure state is updated
+      } else {
+        // Unexpected status
+        toast.error(response.message || 'Lưu địa chỉ thất bại');
       }
     } catch (error) {
       console.error('Failed to save address:', error);
@@ -102,22 +127,31 @@ const AddressManagement = () => {
 
     setActionLoading(addressId);
     try {
+      // Interceptor returns ResponseDTO directly
       const response = await deleteAddress(addressId);
-      // Luôn reload danh sách sau khi xóa
-      await loadAddresses();
-      if (response && response.status === 200) {
+      console.log('deleteAddress response:', response);
+      
+      if (response.status === 200) {
         toast.success('Xóa địa chỉ thành công');
       } else {
-        toast.error((response && response.message) || 'Xóa địa chỉ thất bại');
+        toast.error(response.message || 'Xóa địa chỉ thất bại');
       }
+      
+      // Reload addresses after delete
+      await loadAddresses();
     } catch (error) {
       console.error('Failed to delete address:', error);
-      await loadAddresses();
-      if (error && error.response && error.response.status === 404) {
-        toast.error('Địa chỉ không tồn tại hoặc đã bị xóa. Danh sách đã được cập nhật.');
+      
+      if (error.response?.status === 404) {
+        toast.error('Địa chỉ không tồn tại hoặc đã bị xóa');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || 'Không thể xóa địa chỉ mặc định');
       } else {
         toast.error('Xóa địa chỉ thất bại');
       }
+      
+      // Reload to sync state
+      await loadAddresses();
     } finally {
       setActionLoading(null);
     }
@@ -126,32 +160,34 @@ const AddressManagement = () => {
   const handleSetPrimary = async (addressId) => {
     setActionLoading(addressId);
     try {
+      // Interceptor returns ResponseDTO directly
+      // response = { status: 200, message: "...", data: {...} }
       const response = await setAsPrimary(addressId);
-      // Fix: check response.status (API returns status 200)
+      console.log('setAsPrimary response:', response);
+      
       if (response.status === 200) {
         toast.success('Đặt làm địa chỉ mặc định thành công');
-        // Reload addresses, then move primary to top and auto-select
+        // Reload addresses (will auto-sort with primary first)
         await loadAddresses();
-        // Find new primary address
-        const updated = await getAddresses();
-        if (updated.status === 200 && Array.isArray(updated.data)) {
-          const primary = updated.data.find(a => a.primaryAddress);
-          if (primary) {
-            // Move primary to top
-            setAddresses(prev => {
-              const others = updated.data.filter(a => a.id !== primary.id);
-              return [primary, ...others];
-            });
-            // Auto-select (open modal for edit)
-            handleEditAddress(primary);
-          }
-        }
       } else {
-        toast.error('Đặt địa chỉ mặc định thất bại');
+        // Unexpected status but not error thrown
+        toast.error(response.message || 'Đặt địa chỉ mặc định thất bại');
+        await loadAddresses(); // Still reload to sync
       }
     } catch (error) {
       console.error('Failed to set primary address:', error);
-      toast.error('Đặt địa chỉ mặc định thất bại');
+      
+      // Handle specific error cases
+      if (error.response?.status === 404) {
+        toast.error('Địa chỉ không tồn tại');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || 'Yêu cầu không hợp lệ');
+      } else {
+        toast.error('Đặt địa chỉ mặc định thất bại');
+      }
+      
+      // Reload to sync state even on error
+      await loadAddresses();
     } finally {
       setActionLoading(null);
     }
@@ -170,8 +206,12 @@ const AddressManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Địa Chỉ Của Tôi</h2>
-          <p className="text-sm text-gray-600 mt-1">Quản lý địa chỉ giao hàng của bạn</p>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Địa Chỉ Của Tôi
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Quản lý địa chễ giao hàng của bạn (chỉ hiển thị địa chỉ loại HOME)
+          </p>
         </div>
         <Button
           onClick={handleAddAddress}
@@ -187,7 +227,9 @@ const AddressManagement = () => {
       {addresses.length === 0 ? (
         <div className="text-center py-12">
           <FiMapPin className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-600 mb-4">Bạn chưa có địa chỉ nào</p>
+          <p className="text-gray-600 mb-4">
+            Bạn chưa có địa chỉ nào
+          </p>
           <Button onClick={handleAddAddress} variant="primary">
             Thêm Địa Chỉ Đầu Tiên
           </Button>
@@ -277,6 +319,7 @@ const AddressManagement = () => {
         onClose={() => setModalOpen(false)}
         onSave={handleSaveAddress}
         initialData={editingAddress}
+        typeAddress="HOME"
       />
     </div>
   );

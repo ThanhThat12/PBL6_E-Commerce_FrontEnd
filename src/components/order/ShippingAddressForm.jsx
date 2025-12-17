@@ -286,10 +286,25 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       try {
         const response = await userService.getAddresses();
         if (response.status === 200) {
-          setAddresses(response.data || []);
-          const primaryAddress = response.data.find(addr => addr.primaryAddress);
+          // Checkout: Only load HOME addresses (chỉ cho phép chọn địa chỉ HOME)
+          const allAddresses = response.data || [];
+          const filteredAddresses = allAddresses.filter(addr => addr.typeAddress === 'HOME');
+          console.log(`Checkout: Filtered ${filteredAddresses.length} HOME addresses from ${allAddresses.length} total`);
+          
+          setAddresses(filteredAddresses);
+          
+          // Auto-select primary address if not already selected
+          const primaryAddress = filteredAddresses.find(addr => addr.primaryAddress);
           const saved = getItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
-          if (!saved && primaryAddress && !selectedAddressId) {
+          
+          // Auto-select primary address when:
+          // 1. No saved address in storage OR saved address is not in filtered list
+          // 2. Primary address exists
+          // 3. No address currently selected
+          const savedAddressExists = saved?.addressId && filteredAddresses.some(a => a.id === saved.addressId);
+          
+          if (primaryAddress && !selectedAddressId && !savedAddressExists) {
+            console.log('Auto-selecting primary address:', primaryAddress.id);
             handleSelectAddress(primaryAddress);
           }
         }
@@ -390,8 +405,12 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
           // Reload addresses list and select the new address
           const addressesResponse = await userService.getAddresses();
           if (addressesResponse.status === 200) {
-            setAddresses(addressesResponse.data || []);
-            const newAddress = addressesResponse.data[addressesResponse.data.length - 1];
+            // Checkout: Only load HOME addresses (chỉ cho phép chọn địa chỉ HOME)
+            const allAddresses = response.data || [];
+            const filteredAddresses = allAddresses.filter(addr => addr.typeAddress === 'HOME');
+            
+            setAddresses(filteredAddresses);
+            const newAddress = filteredAddresses[filteredAddresses.length - 1];
             if (newAddress) {
               setSelectedAddressId(newAddress.id);
               const persisted = { ...formData, addressId: newAddress.id, fullAddress };

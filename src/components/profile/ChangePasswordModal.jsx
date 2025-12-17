@@ -95,27 +95,31 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
 
     try {
+      // Interceptor returns ResponseDTO directly
+      // response = { status: 200, message: "...", data: null }
       const response = await changePassword({
         oldPassword: formData.oldPassword,
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
       });
 
-      if (response.statusCode === 200) {
-        toast.success('Password changed successfully');
+      console.log('changePassword response:', response);
+
+      if (response.status === 200) {
+        toast.success('Đổi mật khẩu thành công');
         handleClose();
       } else {
-        toast.error(response.message || 'Failed to change password');
+        toast.error(response.message || 'Đổi mật khẩu thất bại');
       }
     } catch (error) {
       console.error('Change password error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to change password';
+      const errorMessage = error.response?.data?.message || error.message || 'Đổi mật khẩu thất bại';
       
       // Handle specific error cases
-      if (errorMessage.includes('incorrect') || errorMessage.includes('wrong')) {
-        setErrors({ oldPassword: 'Old password is incorrect' });
-      } else if (errorMessage.includes('match')) {
-        setErrors({ confirmPassword: 'Passwords do not match' });
+      if (errorMessage.includes('incorrect') || errorMessage.includes('wrong') || errorMessage.includes('sai')) {
+        setErrors({ oldPassword: 'Mật khẩu cũ không đúng' });
+      } else if (errorMessage.includes('match') || errorMessage.includes('khớp')) {
+        setErrors({ confirmPassword: 'Mật khẩu xác nhận không khớp' });
       }
       
       toast.error(errorMessage);
