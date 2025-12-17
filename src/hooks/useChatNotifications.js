@@ -66,13 +66,6 @@ export default function useChatNotifications(userId) {
     
     // Fetch initial count
     fetchUnreadCount();
-
-    // Get JWT token from localStorage
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('❌ No JWT token found in localStorage for chat WebSocket');
-      return;
-    }
     
     // Append token as query parameter to WebSocket URL
     const socketUrlWithToken = `${SOCKET_URL}?token=${token}`;

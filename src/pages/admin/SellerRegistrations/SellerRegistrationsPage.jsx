@@ -225,12 +225,12 @@ const SellerRegistrationsPage = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Duyệt đăng ký Seller</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Seller Registration Approval</h1>
             <p className="text-gray-600 mt-1">
-              Quản lý các đơn đăng ký trở thành người bán
+              Manage seller registration applications
               {pendingCount > 0 && (
                 <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
-                  {pendingCount} chờ duyệt
+                  {pendingCount} pending
                 </span>
               )}
             </p>
@@ -241,7 +241,7 @@ const SellerRegistrationsPage = () => {
             className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
+            Refresh
           </button>
         </div>
 
