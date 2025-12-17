@@ -76,9 +76,9 @@ export const loginWithGoogle = async (idToken) => {
     
     console.log('[loginWithGoogle] Response:', response);
     
-    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
+    // Backend returns: ResponseDTO { status: 200, error: null, message: "...", data: { token, refreshToken } }
     // Note: Backend does NOT return user object, need to fetch separately
-    if (response.statusCode === 200 && response.data) {
+    if (response.status === 200 && response.data) {
       const { token, refreshToken } = response.data;
       
       // Save tokens first (without user info)
@@ -91,7 +91,7 @@ export const loginWithGoogle = async (idToken) => {
         console.log('[loginWithGoogle] User info:', userResponse);
         
         // userResponse is ResponseDTO<UserInfoDTO>
-        if (userResponse.statusCode === 200 && userResponse.data) {
+        if (userResponse.status === 200 && userResponse.data) {
           const user = userResponse.data;
           saveUserInfo(user);
           
@@ -136,9 +136,9 @@ export const loginWithFacebook = async (accessToken) => {
     
     console.log('[loginWithFacebook] Response:', response);
     
-    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
+    // Backend returns: ResponseDTO { status: 200, error: null, message: "...", data: { token, refreshToken } }
     // Note: Backend does NOT return user object, need to fetch separately
-    if (response.statusCode === 200 && response.data) {
+    if (response.status === 200 && response.data) {
       const { token, refreshToken } = response.data;
       
       // Save tokens first (without user info)
@@ -151,7 +151,7 @@ export const loginWithFacebook = async (accessToken) => {
         console.log('[loginWithFacebook] User info:', userResponse);
         
         // userResponse is ResponseDTO<UserInfoDTO>
-        if (userResponse.statusCode === 200 && userResponse.data) {
+        if (userResponse.status === 200 && userResponse.data) {
           const user = userResponse.data;
           saveUserInfo(user);
           
