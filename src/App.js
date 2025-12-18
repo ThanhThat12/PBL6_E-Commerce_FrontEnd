@@ -32,7 +32,6 @@ import CartPage from './pages/cart/CartPage';
 // Order Pages
 import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
 import ItemReturnPage from './pages/order/ItemReturnPage';
-import ReturnRequestPage from './pages/order/ReturnRequestPage';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -52,13 +51,12 @@ import { ChatContainer } from './components/chat';
 const ConditionalChatContainer = () => {
   const location = useLocation();
   
-  // Hide chat on auth pages and admin pages
+  // Hide chat on auth pages
   const hideChat = [
     ROUTES.LOGIN,
     ROUTES.REGISTER,
     '/forgot-password',
-    '/admin/login',
-    // '/admin'  
+    '/admin/login'
   ].some(route => location.pathname.startsWith(route));
   
   return !hideChat ? <ChatContainer /> : null;
@@ -157,14 +155,6 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ItemReturnPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/orders/return" 
-                element={
-                  <ProtectedRoute>
-                    <ReturnRequestPage />
                   </ProtectedRoute>
                 } 
               />
@@ -316,8 +306,10 @@ function App() {
               pauseOnHover
             />
             
-            {/* Chat Floating Window - Hidden on auth pages */}
+            {/* Floating Chat Window (existing system) */}
             <ConditionalChatContainer />
+
+            {/* Buyer Chatbot Floating Widget removed per request */}
               </OrderProvider>
             </CartProvider>
           </NotificationProvider>

@@ -343,12 +343,28 @@ export const STATUS_LABELS = {
 };
 
 // Action APIs for seller order management
-export const confirmOrder = async (orderId) => {
+export const confirmOrder = async (orderId, ghnParams = {}) => {
   try {
-    const response = await api.patch(`/seller/orders/${orderId}/confirm`);
+    console.log('🚀 Confirming order and creating GHN shipment:', orderId, ghnParams);
+    
+    // Chuẩn bị request body với GHN parameters
+    const requestBody = {
+      serviceId: ghnParams.serviceId || 53320, // Default GHN service ID
+      serviceTypeId: ghnParams.serviceTypeId || 2, // Default: E-commerce Standard
+      note: ghnParams.note || 'Giao hàng cẩn thận'
+    };
+    
+    console.log('📦 Request body:', requestBody);
+    
+    // Gọi API mới: POST /seller/orders/{orderId}/confirm-and-ship
+    const response = await api.post(`/seller/orders/${orderId}/confirm-and-ship`, requestBody);
+    
+    console.log('✅ Confirm and ship response:', response.data);
+    
     return response.data;
   } catch (error) {
-    console.error('Error confirming order:', error);
+    console.error('❌ Error confirming order:', error);
+    console.error('❌ Error response:', error.response?.data);
     throw error;
   }
 };

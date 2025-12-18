@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MessageSquare, Search as SearchIcon, Image as ImageIcon } from 'lucide-react';
+import { Send, MessageSquare, Search as SearchIcon } from 'lucide-react';
 import './ChatInterface.css';
 
 const ChatInterface = () => {
@@ -180,12 +180,7 @@ const ChatInterface = () => {
   const [messages, setMessages] = useState(mockMessagesData[1]);
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [showMessageSearch, setShowMessageSearch] = useState(false);
-  const [messageSearchQuery, setMessageSearchQuery] = useState('');
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const messageSearchRef = useRef(null);
 
   // Scroll to bottom function
   const scrollToBottom = () => {
@@ -197,33 +192,6 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Handle click outside to close message search
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (messageSearchRef.current && !messageSearchRef.current.contains(event.target)) {
-        setShowMessageSearch(false);
-        setMessageSearchQuery('');
-      }
-    };
-
-    const handleEscapeKey = (event) => {
-      if (event.key === 'Escape' && showMessageSearch) {
-        setShowMessageSearch(false);
-        setMessageSearchQuery('');
-      }
-    };
-
-    if (showMessageSearch) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEscapeKey);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscapeKey);
-    };
-  }, [showMessageSearch]);
-
   // Handle user selection
   const handleSelectUser = (user) => {
     setSelectedUser(user);
@@ -233,52 +201,18 @@ const ChatInterface = () => {
   // Handle send message
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (inputText.trim() === '' && !selectedImage) return;
+    if (inputText.trim() === '') return;
 
     const newMessage = {
       id: messages.length + 1,
       sender: 'me',
       text: inputText,
-      image: selectedImage,
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages([...messages, newMessage]);
     setInputText('');
-    setSelectedImage(null);
   };
-
-  // Handle image upload
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Trigger file input click
-  const handleImageButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Toggle message search
-  const handleToggleMessageSearch = () => {
-    setShowMessageSearch(!showMessageSearch);
-    if (!showMessageSearch) {
-      setMessageSearchQuery('');
-    }
-  };
-
-  // Filter messages based on search query
-  const filteredMessages = messageSearchQuery
-    ? messages.filter(message =>
-        message.text.toLowerCase().includes(messageSearchQuery.toLowerCase())
-      )
-    : messages;
 
   // Filter users based on search
   const filteredUsers = mockUsers.filter(user =>
@@ -343,38 +277,22 @@ const ChatInterface = () => {
                   </span>
                 </div>
               </div>
-              <div className="admin-chat-header-actions" ref={messageSearchRef}>
-                {showMessageSearch ? (
-                  <div className="admin-chat-header-search-box">
-                    <input
-                      type="text"
-                      placeholder="Search in messages..."
-                      value={messageSearchQuery}
-                      onChange={(e) => setMessageSearchQuery(e.target.value)}
-                      className="admin-chat-header-search-input"
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <button className="admin-chat-action-btn" onClick={handleToggleMessageSearch}>
-                    <SearchIcon size={20} />
-                  </button>
-                )}
+              <div className="admin-chat-header-actions">
+                <button className="admin-chat-action-btn">
+                  <SearchIcon size={20} />
+                </button>
               </div>
             </div>
 
             {/* Messages */}
             <div className="admin-chat-messages-container">
-              {filteredMessages.map((message) => (
+              {messages.map((message) => (
                 <div key={message.id} className={`admin-chat-message ${message.sender === 'other' ? 'received' : 'sent'}`}>
                   {message.sender === 'other' && (
                     <img src={selectedUser.avatar} alt="" className="admin-chat-message-avatar" />
                   )}
                   <div>
                     <div className="admin-chat-message-bubble">
-                      {message.image && (
-                        <img src={message.image} alt="Uploaded" className="admin-chat-message-image" />
-                      )}
                       {message.text}
                     </div>
                     <div className="admin-chat-message-timestamp">{message.time}</div>
@@ -386,34 +304,7 @@ const ChatInterface = () => {
 
             {/* Input */}
             <form className="admin-chat-message-input-area" onSubmit={handleSendMessage}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                style={{ display: 'none' }}
-              />
-              <button
-                type="button"
-                className="admin-chat-image-btn"
-                onClick={handleImageButtonClick}
-                title="Upload image"
-              >
-                <ImageIcon size={20} />
-              </button>
               <div className="admin-chat-input-wrapper">
-                {selectedImage && (
-                  <div className="admin-chat-image-preview">
-                    <img src={selectedImage} alt="Preview" />
-                    <button
-                      type="button"
-                      className="admin-chat-remove-image"
-                      onClick={() => setSelectedImage(null)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
                 <input
                   type="text"
                   className="admin-chat-message-input"
@@ -425,7 +316,7 @@ const ChatInterface = () => {
               <button
                 type="submit"
                 className="admin-chat-send-btn"
-                disabled={inputText.trim() === '' && !selectedImage}
+                disabled={inputText.trim() === ''}
               >
                 <Send size={18} />
               </button>
