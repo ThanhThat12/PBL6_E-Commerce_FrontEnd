@@ -561,6 +561,32 @@ class ImageUploadService {
       handleUploadError(error, 'Variant images batch upload');
     }
   }
+
+  /**
+   * Upload refund evidence image
+   * @param {File} file - Image file
+   * @param {Function} onProgress - Progress callback (0-100)
+   * @returns {Promise<Object>} Upload result with URL
+   */
+  static async uploadRefundImage(file, onProgress) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'refund'); // Store in refund folder
+
+      const requestFn = () =>
+        axios.post(
+          `${API_BASE_URL}images/upload`,
+          formData,
+          createUploadConfig(onProgress)
+        );
+
+      const response = await retryRequest(requestFn);
+      return response.data;
+    } catch (error) {
+      handleUploadError(error, 'Refund image upload');
+    }
+  }
 }
 
 export default ImageUploadService;

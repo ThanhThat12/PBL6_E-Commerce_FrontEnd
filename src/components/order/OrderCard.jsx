@@ -6,6 +6,27 @@ import Button from '../common/Button';
 import { DEFAULT_PRODUCT_IMAGE, handleImageError } from '../../utils/imageDefaults';
 
 /**
+ * Calculate days remaining for refund eligibility (15 days from completion)
+ * Uses completedAt, falls back to updatedAt or createdAt
+ */
+const calculateRefundEligibility = (completedAt, updatedAt, createdAt) => {
+  // Use completedAt, fallback to updatedAt, then createdAt
+  const referenceDate = completedAt || updatedAt || createdAt;
+  if (!referenceDate) return { eligible: false, daysLeft: 0 };
+  
+  const refDate = new Date(referenceDate);
+  const now = new Date();
+  const daysSinceCompletion = Math.floor((now - refDate) / (1000 * 60 * 60 * 24));
+  const daysLeft = 15 - daysSinceCompletion;
+  
+  return {
+    eligible: daysLeft > 0,
+    daysLeft: daysLeft > 0 ? daysLeft : 0,
+    daysSinceCompletion
+  };
+};
+
+/**
  * Order Status Badge Colors
  */
 const statusColors = {
@@ -93,6 +114,11 @@ const OrderCard = ({ order, onCancelSuccess }) => {
       toast.error('Xác nhận thất bại!');
     }
   };
+
+  // Calculate refund eligibility for COMPLETED orders
+  const refundEligibility = order.status === 'COMPLETED' 
+    ? calculateRefundEligibility(order.completedAt, order.updatedAt, order.createdAt)
+    : { eligible: false, daysLeft: 0 };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -206,6 +232,16 @@ const OrderCard = ({ order, onCancelSuccess }) => {
               onClick={handleConfirmReceived}
             >
               Đã nhận hàng
+            </Button>
+          )}
+          {order.status === 'COMPLETED' && refundEligibility.eligible && !order.refundStatus && (
+            <Button
+              variant="outline"
+              className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50"
+              onClick={handleViewDetail}
+            >
+              Yêu cầu hoàn tiền
+              <span className="ml-1 text-xs">({refundEligibility.daysLeft} ngày còn lại)</span>
             </Button>
           )}
           <Button
