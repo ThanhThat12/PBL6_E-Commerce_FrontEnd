@@ -4,6 +4,35 @@
   border-top: 1px solid #e5e7eb;
 }
 
+/* Mode toggle */
+.message-mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.message-mode-toggle .mode-btn {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.message-mode-toggle .mode-btn:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.message-mode-toggle .mode-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
 .message-input-wrapper {
   display: flex;
   align-items: flex-end;

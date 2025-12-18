@@ -30,17 +30,17 @@
   width: 90%;
   max-width: 500px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: scaleIn 0.2s ease-out;
+  animation: slideUp 0.3s ease-out;
   overflow: hidden;
 }
 
-@keyframes scaleIn {
+@keyframes slideUp {
   from {
-    transform: scale(0.95);
+    transform: translateY(30px);
     opacity: 0;
   }
   to {
-    transform: scale(1);
+    transform: translateY(0);
     opacity: 1;
   }
 }

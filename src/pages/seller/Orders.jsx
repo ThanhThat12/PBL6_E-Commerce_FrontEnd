@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
 import { Table, Button, Tag, Space, Modal, message, Tabs, Spin, Input, DatePicker, Card, Badge, Avatar } from 'antd';
 import { EyeOutlined, CheckOutlined, CloseOutlined, SendOutlined, SearchOutlined, ExportOutlined, CarOutlined } from '@ant-design/icons';
-import { useNotificationContext } from '../../context/NotificationContext';
 import { 
   getOrders, 
   getOrderDetail,
@@ -23,9 +21,6 @@ const { RangePicker } = DatePicker;
  * Display and manage all orders
  */
 const Orders = () => {
-  const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { notifications } = useNotificationContext(); // ✅ Get notifications context
   const [allOrders, setAllOrders] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -41,35 +36,6 @@ const Orders = () => {
     pageSize: 10,
     total: 0,
   });
-
-  // ✅ Set active tab from navigation state (from notification)
-  useEffect(() => {
-    if (location.state?.activeTab) {
-      setActiveTab(location.state.activeTab);
-    }
-  }, [location.state]);
-
-  // ✅ Auto-open order detail modal from query param (from notification click)
-  useEffect(() => {
-    const orderIdParam = searchParams.get('orderId');
-    if (orderIdParam) {
-      const orderId = parseInt(orderIdParam);
-      if (!isNaN(orderId)) {
-        handleViewDetail(orderId);
-        // Clear query param after opening modal
-        setSearchParams({});
-      }
-    }
-  }, [searchParams, setSearchParams]);
-
-  // ✅ Reload orders khi có notification NEW_ORDER mới (backend dùng NEW_ORDER thay vì ORDER_PLACED)
-  useEffect(() => {
-    const latestNotification = notifications[0];
-    if (latestNotification && (latestNotification.type === 'NEW_ORDER' || latestNotification.type === 'ORDER_PLACED')) {
-      console.log('🔔 New order notification received, refreshing orders...');
-      fetchOrders();
-    }
-  }, [notifications]); // Re-run khi notifications thay đổi
 
   useEffect(() => {
     fetchOrders();
@@ -227,20 +193,6 @@ const Orders = () => {
     } catch (error) {
       console.error('Error cancelling order:', error);
       message.error(error.response?.data?.message || 'Không thể hủy đơn hàng');
-    }
-  };
-
-  const handleViewDetail = async (orderId) => {
-    try {
-      setDetailLoading(true);
-      const detail = await getOrderDetail(orderId);
-      setSelectedOrder(detail);
-      setDetailModalVisible(true);
-    } catch (err) {
-      console.error('Error fetching order detail:', err);
-      message.error('Không thể tải chi tiết đơn hàng');
-    } finally {
-      setDetailLoading(false);
     }
   };
 
@@ -441,7 +393,19 @@ const Orders = () => {
             type="link"
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => handleViewDetail(record.id)}
+            onClick={async () => {
+              try {
+                setDetailLoading(true);
+                const detail = await getOrderDetail(record.id);
+                setSelectedOrder(detail);
+                setDetailModalVisible(true);
+              } catch (err) {
+                console.error('Error fetching order detail:', err);
+                message.error('Không thể tải chi tiết đơn hàng');
+              } finally {
+                setDetailLoading(false);
+              }
+            }}
           >
             Xem chi tiết
           </Button>
