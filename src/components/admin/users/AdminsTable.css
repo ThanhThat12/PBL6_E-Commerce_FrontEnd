@@ -39,12 +39,12 @@
   align-items: center;
 }
 
-.search-icon {
+/* .search-icon {
   position: absolute;
   left: 12px;
   color: #64748b;
   z-index: 1;
-}
+} */
 
 .search-input {
   padding: 8px 16px 8px 40px;

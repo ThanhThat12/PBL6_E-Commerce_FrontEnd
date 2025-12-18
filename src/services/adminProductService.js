@@ -87,12 +87,15 @@ export const getProductStats = async () => {
  */
 export const getProductsByCategory = async (categoryName, page = 0, size = 10) => {
   try {
+    console.log('📂 [adminProductService] Fetching products by category:', categoryName, 'page:', page, 'size:', size);
     const response = await apiClient.get('/admin/products/category', {
       params: { categoryName, page, size }
     });
+    console.log('✅ [adminProductService] Products by category response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching products by category:', error);
+    console.error('❌ [adminProductService] Error fetching products by category:', error);
+    console.error('❌ Error response:', error.response?.data);
     throw error;
   }
 };
@@ -153,13 +156,29 @@ export const searchProducts = async (name, page = 0, size = 10) => {
   }
 };
 
-const adminProductService = {
+/**
+ * Get product detail by ID
+ * Backend endpoint: GET /api/admin/products/{productId}/detail
+ * @param {number} productId - Product ID
+ * @returns {Promise} - Response with AdminProductDetailDTO
+ */
+export const getProductDetail = async (productId) => {
+  try {
+    const response = await apiClient.get(`/admin/products/${productId}/detail`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product detail:', error);
+    throw error;
+  }
+};
+
+export default {
   getProductsWithPaging,
   getProductStats,
   getProductsByCategory,
   getProductsByStatus,
   deleteProduct,
-  searchProducts
+  searchProducts,
+  getProductDetail
 };
 
-export default adminProductService;

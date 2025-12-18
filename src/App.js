@@ -32,6 +32,7 @@ import CartPage from './pages/cart/CartPage';
 // Order Pages
 import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
 import ItemReturnPage from './pages/order/ItemReturnPage';
+import ReturnRequestPage from './pages/order/ReturnRequestPage';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -42,12 +43,26 @@ import RegistrationStatusPage from './pages/user/RegistrationStatusPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+
 // Chat Component
 import { ChatContainer } from './components/chat';
 
-// 🧑‍💼 Admin Pages
-import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 
+// Chat Wrapper - Only show on authenticated pages
+const ConditionalChatContainer = () => {
+  const location = useLocation();
+  
+  // Hide chat on auth pages and admin pages
+  const hideChat = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    '/forgot-password',
+    '/admin/login',
+    // '/admin'  
+  ].some(route => location.pathname.startsWith(route));
+  
+  return !hideChat ? <ChatContainer /> : null;
+};
 
 // 🏪 Seller Pages & Components
 import SellerProtectedRoute from './components/seller/ProtectedRoute';
@@ -55,6 +70,9 @@ import { SellerLayout } from './components/seller/Layout';
 import * as SellerPages from './pages/seller';
 import ReviewsPage from './pages/seller/Review';
 import RejectionStatusPage from './pages/seller/RejectionStatusPage';
+
+// 🧑‍💼 Admin Pages
+import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
 import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
 import ProductsPage from "./pages/admin/Products/ProductsPage"; 
 import OrdersPage from "./pages/admin/Orders/OrdersPage";
@@ -65,6 +83,8 @@ import Admins from "./pages/admin/Users/Admins";
 import SettingsPage from "./pages/admin/Settings/SettingsPage";
 import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
 import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
+import ChatPage from './pages/admin/Chat/ChatPage';
+import WalletPage from './pages/admin/Wallet/WalletPage';
 import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 import SellerRegistrationGuard from './components/seller/SellerRegistrationGuard';
 
@@ -159,6 +179,14 @@ function App() {
                 } 
               />
               <Route 
+                path="/orders/return" 
+                element={
+                  <ProtectedRoute>
+                    <ReturnRequestPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/orders/:orderId" 
                 element={
                   <ProtectedRoute>
@@ -209,6 +237,8 @@ function App() {
             <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
             <Route path="/admin/seller-registrations" element={<ProtectedRouteAdmin><SellerRegistrationsPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/chat" element={<ProtectedRouteAdmin><ChatPage/></ProtectedRouteAdmin>} />            
+            <Route path="/admin/wallet" element={<ProtectedRouteAdmin><WalletPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
 

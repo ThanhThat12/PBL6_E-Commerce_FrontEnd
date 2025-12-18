@@ -17,6 +17,8 @@ export default function NotificationButton({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+  
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const shopStatusInfo = useMemo(() => {
@@ -123,8 +125,12 @@ export default function NotificationButton({
   }, [isOpen]);
 
   // Format time ago
-  const timeAgo = (timestamp) => {
-    if (!timestamp) return 'Vừa xong'; // Handle undefined/null timestamp
+  const timeAgo = (createdAt) => {
+    if (!createdAt) return 'Vừa xong';
+    
+    // Parse ISO string to milliseconds
+    const timestamp = new Date(createdAt).getTime();
+    if (isNaN(timestamp)) return 'Vừa xong';
     
     const now = Date.now();
     const diff = now - timestamp;
@@ -144,10 +150,13 @@ export default function NotificationButton({
       case 'CHAT_MESSAGE':
         return '💬';
       case 'ORDER_CONFIRMED':
+      case 'NEW_ORDER':
+      case 'ORDER_PLACED':
         return '✅';
       case 'ORDER_SHIPPING':
         return '🚚';
       case 'ORDER_COMPLETED':
+      case 'PAYMENT_RECEIVED':
         return '🎉';
       case 'ORDER_CANCELLED':
         return '❌';
@@ -156,8 +165,30 @@ export default function NotificationButton({
     }
   };
 
+  // Map notification type to order status tab
+  const getOrderStatusTab = (type) => {
+    switch (type) {
+      case 'NEW_ORDER':
+      case 'ORDER_PLACED':
+        return 'PENDING'; // Tab đơn mới (cho seller)
+      case 'ORDER_CONFIRMED':
+        return 'PROCESSING'; // Tab đang xử lý (cho buyer)
+      case 'ORDER_SHIPPING':
+        return 'SHIPPING'; // Tab đang giao
+      case 'ORDER_COMPLETED':
+      case 'PAYMENT_RECEIVED':
+        return 'COMPLETED'; // Tab hoàn thành
+      case 'ORDER_CANCELLED':
+        return 'CANCELLED'; // Tab đã hủy
+      default:
+        return 'ALL'; // Tab tất cả
+    }
+  };
+
   // Handle notification click
   const handleNotificationClick = (notification) => {
+    console.log('🔔 Notification clicked:', notification);
+    
     // Mark as read
     onMarkAsRead?.(notification.id);
     
@@ -166,6 +197,7 @@ export default function NotificationButton({
     
     // If chat message, open chat
     if (notification.type === 'CHAT_MESSAGE') {
+      console.log('💬 Opening chat for notification');
       if (notification.conversationId) {
         // Open specific conversation
         window.dispatchEvent(new CustomEvent('openChat', {
@@ -176,6 +208,49 @@ export default function NotificationButton({
         window.dispatchEvent(new CustomEvent('openChat', {
           detail: {}
         }));
+      }
+    } else if (variant === 'admin') {
+      // Admin notification navigation
+      console.log('🔧 Admin notification navigation:', notification.type);
+      
+      switch (notification.type) {
+        case 'SELLER_REGISTRATION':
+          // Navigate to seller registrations page
+          navigate('/admin/seller-registrations');
+          break;
+        case 'NEW_ORDER':
+        case 'PAYMENT_RECEIVED':
+        case 'SELLER_PAYOUT':
+          // Navigate to orders page or specific order
+          if (notification.orderId) {
+            navigate(`/admin/orders`);
+          } else {
+            navigate('/admin/orders');
+          }
+          break;
+        default:
+          console.log('⚠️ Unknown admin notification type:', notification.type);
+      }
+    } else {
+      // For order notifications, get orderId from notification.orderId or parse from message
+      let orderId = notification.orderId;
+      
+      // Fallback: Extract orderId from message if orderId is null
+      // Message format: "Đơn hàng #29 đang được giao"
+      if (!orderId && notification.message) {
+        const match = notification.message.match(/#(\d+)/);
+        if (match) {
+          orderId = parseInt(match[1]);
+          console.log(`📝 Extracted orderId from message: ${orderId}`);
+        }
+      }
+      
+      if (orderId) {
+        // Navigate to order detail page
+        console.log('📦 Navigating to order:', orderId);
+        navigate(`/orders/${orderId}`);
+      } else {
+        console.log('⚠️ No orderId found in notification');
       }
     }
   };
@@ -325,7 +400,7 @@ export default function NotificationButton({
                           </p>
                         )}
                         <p className="text-xs text-gray-500 mt-1">
-                          {timeAgo(notification.timestamp)}
+                          {timeAgo(notification.createdAt)}
                         </p>
                       </div>
 

@@ -29,7 +29,7 @@ const Header = () => {
       {/* --- Left: Title --- */}
       <div className="flex items-center">
         <h1 className="text-2xl font-bold text-green-600">
-          DEALPORT
+          SPORT ZONE
         </h1>
       </div>
 

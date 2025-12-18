@@ -41,7 +41,7 @@
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 190px;
   color: #64748b;
   z-index: 1;
 }
@@ -346,15 +346,17 @@
   font-size: 8px;
 }
 
-.status-verified {
+/* ACTIVE - Shop đang hoạt động (Xanh lá) */
+.status-active {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.status-verified .status-dot {
+.status-active .status-dot {
   color: #16a34a;
 }
 
+/* PENDING - Shop chờ duyệt (Vàng) */
 .status-pending {
   background: #fef3c7;
   color: #d97706;
@@ -364,13 +366,58 @@
   color: #d97706;
 }
 
+/* INACTIVE - Shop tạm ngưng (Xám đậm hơn) */
+.status-inactive {
+  background: #ab4141;
+  color: #6d0000;
+  border: 1px solid #fee2e2;
+}
+
+.status-inactive .status-dot {
+  color: #bf0023;
+}
+
+/* REJECTED - Shop bị từ chối (Đỏ đậm hơn) */
+.status-rejected {
+  background: #ffc6ff;
+  color: #6e0061;
+  border: 1px solid #ffc6ff;
+}
+
+.status-rejected .status-dot {
+  color: #780066;
+}
+
+/* SUSPENDED - Shop bị đình chỉ (Cam đậm) */
 .status-suspended {
-  background: #fee2e2;
-  color: #dc2626;
+  background: #fed7aa;
+  color: #ea580c;
 }
 
 .status-suspended .status-dot {
-  color: #dc2626;
+  color: #ea580c;
+}
+
+/* CLOSED - Shop đóng cửa vĩnh viễn (Đen/Xám đậm) */
+.status-closed {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.status-closed .status-dot {
+  color: #334155;
+}
+
+
+
+/* Legacy - kept for backward compatibility */
+.status-verified {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-verified .status-dot {
+  color: #16a34a;
 }
 
 /* Products Column */
