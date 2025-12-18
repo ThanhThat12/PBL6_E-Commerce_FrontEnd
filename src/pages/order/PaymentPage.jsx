@@ -199,6 +199,10 @@ const PaymentPage = () => {
   // Handle shipping address change
   const handleAddressChange = useCallback((addressData) => {
     setShippingAddress(addressData);
+    // Reset services and fees when address changes to force recalculation
+    setSelectedServices({});
+    setShopShippingFees({});
+    setGhnServices({});
   }, []); // No dependencies - just update state
 
   // Fetch GHN services when address changes
@@ -227,20 +231,15 @@ const PaymentPage = () => {
             // silent request data for GHN
             const response = await api.post('/checkout/available-services', requestData);
 
-            // handle GHN response - backend returns [{buyerAddress, totalWeight, services: [...], shopAddress}]
+            // Backend returns ResponseDTO with structure: { code, message, data: [...] }
+            // Axios interceptor unwraps response.data, so we get: { code, message, data: [...] }
             let servicesArray = [];
-            if (response.data) {
-              if (Array.isArray(response.data)) {
-                // Check if it's array of wrapper objects with nested services
-                if (response.data[0]?.services && Array.isArray(response.data[0].services)) {
-                  servicesArray = response.data[0].services;
-                } else if (response.data[0]?.service_id) {
-                  // Direct array of service objects
-                  servicesArray = response.data;
-                }
-              } else if (response.data.services && Array.isArray(response.data.services)) {
-                // Object with nested services array
-                servicesArray = response.data.services;
+            
+            // Response structure from backend: data is Array<{ services: [...], totalWeight, ... }>
+            if (response && response.data && Array.isArray(response.data)) {
+              const firstShopData = response.data[0];
+              if (firstShopData && firstShopData.services && Array.isArray(firstShopData.services)) {
+                servicesArray = firstShopData.services;
               }
             }
 
@@ -390,23 +389,21 @@ const PaymentPage = () => {
       };
       const response = await api.post('/checkout/calculate-fee', payload);
 
-      // calculate fee response (store/handle errors as needed)
-
-      // GHN API trả về: { code, message, data: { total, service_fee, ... } }
-      // Backend ResponseDTO trả về: { code, message, data: { ... GHN response ... } }
+      // Backend returns ResponseDTO: { code, message, data: <GHN fee response> }
+      // Axios interceptor unwraps to: { code, message, data: <GHN fee response> }
+      // GHN fee response structure: { code, message, data: { total, service_fee, ... } }
       let shippingFee = 0;
 
-      if (response.data) {
-        // Kiểm tra các trường hợp có thể có
-        if (response.data.data && response.data.data.total !== undefined) {
-          // Trường hợp: ResponseDTO.ok(feeResponse) -> data: { data: { total: ... } }
-          shippingFee = response.data.data.total;
-        } else if (response.data.total !== undefined) {
-          // Trường hợp: data: { total: ... }
-          shippingFee = response.data.total;
-        } else if (response.data.shippingFee !== undefined) {
-          // Trường hợp: data: { shippingFee: ... }
-          shippingFee = response.data.shippingFee;
+      if (response && response.data) {
+        // response.data is GHN response object
+        const ghnResponse = response.data;
+        
+        if (ghnResponse.data && ghnResponse.data.total !== undefined) {
+          // GHN structure: { code, message, data: { total, ... } }
+          shippingFee = ghnResponse.data.total;
+        } else if (ghnResponse.total !== undefined) {
+          // Fallback: direct total field
+          shippingFee = ghnResponse.total;
         }
       }
 
@@ -496,22 +493,16 @@ const PaymentPage = () => {
         // Get cart item IDs
         const cartItemIds = items.map(item => item.cartItemId || item.id).filter(Boolean);
 
-        // Prepare checkout confirm request
+        // Prepare checkout confirm request - ONLY send fields required by backend DTO
         const confirmData = {
           shopId: parseInt(shopId),
-          addressId: parseInt(shippingAddress?.addressId || shippingAddress?.id), // Đảm bảo truyền addressId
+          addressId: parseInt(shippingAddress?.addressId || shippingAddress?.id),
           serviceId: parseInt(selectedService.service_id),
           serviceTypeId: parseInt(selectedService.service_type_id),
           cartItemIds: cartItemIds.map(id => parseInt(id)),
           paymentMethod: paymentMethod,
-          note: orderNotes || '',
-          // Bổ sung đầy đủ thông tin địa chỉ nhận hàng
-          receiverName: shippingAddress?.toName || shippingAddress?.contactName || '',
-          receiverPhone: shippingAddress?.toPhone || shippingAddress?.contactPhone || '',
-          receiverAddress: shippingAddress?.toAddress || shippingAddress?.full_address || shippingAddress?.fullAddress || '',
-          province: shippingAddress?.provinceName || shippingAddress?.province || '',
-          district: shippingAddress?.districtName || shippingAddress?.district || '',
-          ward: shippingAddress?.wardName || shippingAddress?.ward || ''
+          note: orderNotes || ''
+          // Backend DTO ONLY expects these 7 fields - remove all receiver* fields
         };
 
         try {

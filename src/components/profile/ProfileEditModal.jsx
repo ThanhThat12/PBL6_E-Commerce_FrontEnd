@@ -90,18 +90,21 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
         }
       });
 
+      // Interceptor returns ResponseDTO directly
+      // response = { status: 200, message: "...", data: {...} }
       const response = await updateProfile(updateData);
+      console.log('updateProfile response:', response);
       
-      if (response.statusCode === 200) {
-        toast.success('Profile updated successfully');
+      if (response.status === 200 && response.data) {
+        toast.success('Cập nhật hồ sơ thành công');
         onSuccess(response.data);
         onClose();
       } else {
-        toast.error(response.message || 'Failed to update profile');
+        toast.error(response.message || 'Cập nhật hồ sơ thất bại');
       }
     } catch (error) {
       console.error('Update profile error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
+      const errorMessage = error.response?.data?.message || error.message || 'Cập nhật hồ sơ thất bại';
       toast.error(errorMessage);
     } finally {
       setLoading(false);

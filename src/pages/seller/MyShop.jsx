@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select } from 'antd';
+import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select, Tabs } from 'antd';
 import { 
   UploadOutlined, CameraOutlined, CheckCircleOutlined, ClockCircleOutlined, 
   CloseCircleOutlined, ShopOutlined, UserOutlined,
@@ -10,6 +10,9 @@ import { getShopDetail, updateShopProfile } from '../../services/seller/shopServ
 import { useAddressMaster } from '../../hooks/useAddressMaster';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import SellerAddressTab from '../../components/seller/SellerAddressTab';
+
+const { TabPane } = Tabs;
 
 // Default images from environment
 const DEFAULT_LOGO = process.env.REACT_APP_DEFAULT_LOGO || 'https://res.cloudinary.com/dejjhkhl1/image/upload/v1764911991/xwz5cpybxo1g1_sppbqi.png';
@@ -510,8 +513,19 @@ const MyShop = () => {
                   </Card>
                 </Col>
 
-                {/* Right Column - Edit Form */}
+                {/* Right Column - Tabs with Edit Form and Address */}
                 <Col xs={24} lg={16}>
+                  <Tabs defaultActiveKey="info" className="custom-tabs">
+                    {/* Tab 1: Thông tin cửa hàng */}
+                    <TabPane 
+                      tab={
+                        <span>
+                          <EditOutlined className="mr-2" />
+                          Thông tin cửa hàng
+                        </span>
+                      }
+                      key="info"
+                    >
                   <Card 
                     className="shadow-sm" 
                     title={<span><EditOutlined className="mr-2" />Chỉnh sửa thông tin</span>}
@@ -770,6 +784,21 @@ const MyShop = () => {
                       )}
                     </Form>
                   </Card>
+                    </TabPane>
+
+                    {/* Tab 2: Địa chỉ cửa hàng */}
+                    <TabPane 
+                      tab={
+                        <span>
+                          <EnvironmentOutlined className="mr-2" />
+                          Địa chỉ cửa hàng
+                        </span>
+                      }
+                      key="address"
+                    >
+                      <SellerAddressTab />
+                    </TabPane>
+                  </Tabs>
                 </Col>
               </Row>
     </div>

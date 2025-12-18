@@ -1,6 +1,7 @@
 import React from "react";
 import { products } from "../../mockProductData";
 import colorPattern, { withOpacity } from "../../styles/colorPattern";
+import { DEFAULT_PRODUCT_IMAGE, handleImageError } from "../../utils/imageDefaults";
 
 function formatVND(number) {
   return Number(number).toLocaleString("vi-VN") + " ₫";

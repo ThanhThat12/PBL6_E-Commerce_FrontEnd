@@ -4,7 +4,7 @@ import { useOrder } from '../../context/OrderContext';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 import OrderTimeline from '../../components/order/OrderTimeline';
-// RefundRequestForm - moved to separate component
+import RefundRequestForm from '../../components/order/RefundRequestForm';
 import Loading from '../../components/common/Loading';
 import Button from '../../components/common/Button';
 import { toast } from 'react-hot-toast';
@@ -12,6 +12,27 @@ import { ArrowLeftIcon, ChatBubbleLeftRightIcon, StarIcon, ClockIcon } from '@he
 import { WriteReviewModal } from '../../components/review';
 import reviewService from '../../services/reviewService';
 import chatService from '../../services/chatService';
+
+/**
+ * Calculate refund eligibility (15 days from completion)
+ * Uses completedAt, falls back to updatedAt or createdAt
+ */
+const calculateRefundEligibility = (completedAt, updatedAt, createdAt) => {
+  // Use completedAt, fallback to updatedAt, then createdAt
+  const referenceDate = completedAt || updatedAt || createdAt;
+  if (!referenceDate) return { eligible: false, daysLeft: 0 };
+  
+  const refDate = new Date(referenceDate);
+  const now = new Date();
+  const daysSinceCompletion = Math.floor((now - refDate) / (1000 * 60 * 60 * 24));
+  const daysLeft = 15 - daysSinceCompletion;
+  
+  return {
+    eligible: daysLeft > 0,
+    daysLeft: daysLeft > 0 ? daysLeft : 0,
+    daysSinceCompletion
+  };
+};
 
 /**
  * OrderDetailPage Component
@@ -29,6 +50,8 @@ const OrderDetailPage = () => {
   // Track reviewed products with eligibility info
   const [productEligibility, setProductEligibility] = useState({}); // { productId: eligibilityData }
   const [loadingEligibility, setLoadingEligibility] = useState(false);
+  // Refund state
+  const [showRefundForm, setShowRefundForm] = useState(false);
 
   const fromCheckout = location.state?.fromCheckout;
 
@@ -212,6 +235,11 @@ Xem chi tiet don hang:
       toast.error('Không thể mở chat với shop');
     }
   };
+
+  // Calculate refund eligibility for COMPLETED orders
+  const refundEligibility = currentOrder?.status === 'COMPLETED'
+    ? calculateRefundEligibility(currentOrder.completedAt, currentOrder.updatedAt, currentOrder.createdAt)
+    : { eligible: false, daysLeft: 0 };
 
   // Render review button based on eligibility
   const renderReviewButton = (item) => {
@@ -515,6 +543,35 @@ Xem chi tiet don hang:
                 </Button>
               )}
 
+              {/* Refund Button - Only for COMPLETED status within 15 days */}
+              {currentOrder.status === 'COMPLETED' && refundEligibility.eligible && !currentOrder.refundStatus && (
+                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-orange-800">Yêu cầu hoàn tiền</span>
+                    <span className="text-xs text-orange-600 flex items-center gap-1">
+                      <ClockIcon className="h-3 w-3" />
+                      Còn {refundEligibility.daysLeft} ngày
+                    </span>
+                  </div>
+                  <Button
+                    onClick={() => setShowRefundForm(true)}
+                    variant="primary"
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    Gửi yêu cầu hoàn tiền
+                  </Button>
+                </div>
+              )}
+
+              {/* Refund expired message */}
+              {currentOrder.status === 'COMPLETED' && !refundEligibility.eligible && !currentOrder.refundStatus && (
+                <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-sm text-gray-600 text-center">
+                    Đã hết thời hạn yêu cầu hoàn tiền (15 ngày)
+                  </p>
+                </div>
+              )}
+
               {/* Support Button */}
               <Button
                 variant="outline"
@@ -566,6 +623,38 @@ Xem chi tiet don hang:
           onSuccess={handleReviewSuccess}
           requireImages={true}
         />
+
+        {/* Refund Request Modal */}
+        {showRefundForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Yêu cầu hoàn tiền - Đơn hàng #{currentOrder.id}
+                  </h3>
+                  <button
+                    onClick={() => setShowRefundForm(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <RefundRequestForm
+                  orderId={currentOrder.id}
+                  onSuccess={() => {
+                    setShowRefundForm(false);
+                    fetchOrderDetail(currentOrder.id);
+                    toast.success('Đã gửi yêu cầu hoàn tiền thành công!');
+                  }}
+                  onCancel={() => setShowRefundForm(false)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       </main>
 

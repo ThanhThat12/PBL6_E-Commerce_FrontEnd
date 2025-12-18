@@ -66,7 +66,7 @@ export const deleteAddress = async (addressId) => {
  */
 export const setAsPrimary = async (addressId) => {
   const response = await api.post(`me/addresses/${addressId}/primary`);
-  return response.data;
+  return response; // Interceptor already unwraps to ResponseDTO
 };
 
 /**

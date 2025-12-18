@@ -9,8 +9,9 @@ import { useAddressMaster } from '../../hooks/useAddressMaster';
  * AddressFormModal
  * Modal form để thêm/sửa địa chỉ
  * Sử dụng LocationDropdown với GHN Master Data API
+ * @param {string} typeAddress - 'HOME' for BUYER, 'STORE' for SELLER
  */
-const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
+const AddressFormModal = ({ isOpen, onClose, onSave, initialData, typeAddress = 'HOME' }) => {
   const [formData, setFormData] = useState({
     recipientName: '',
     phoneNumber: '',
@@ -339,7 +340,8 @@ const AddressFormModal = ({ isOpen, onClose, onSave, initialData }) => {
         districtId: formData.districtId,
         wardCode: String(formData.wardId),
         contactPhone: formData.phoneNumber,
-        primaryAddress: formData.isPrimary
+        primaryAddress: formData.isPrimary,
+        typeAddress: typeAddress // Set based on user role (HOME/STORE)
       };
 
       await onSave(addressData);

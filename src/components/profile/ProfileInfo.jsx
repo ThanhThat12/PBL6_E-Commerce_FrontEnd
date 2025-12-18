@@ -5,6 +5,7 @@ import Button from '../common/Button';
 import Loading from '../common/Loading';
 import ProfileEditModal from './ProfileEditModal';
 import ChangePasswordModal from './ChangePasswordModal';
+import AvatarUpload from './AvatarUpload';
 import { useAuth } from '../../hooks/useAuth';
 import { getProfile } from '../../services/userService';
 
@@ -24,9 +25,23 @@ const ProfileInfo = () => {
     const loadProfile = async () => {
       setLoading(true);
       try {
+        // Interceptor returns response.data (ResponseDTO) directly
+        // So response = { status: 200, message: "...", data: {...} }
         const response = await getProfile();
-        if (response.statusCode === 200) {
+        console.log('getProfile response:', response);
+        
+        if (response.status === 200 && response.data) {
           setUser(response.data);
+          // Update AuthContext once (not in dependencies to avoid loop)
+          if (updateUser) {
+            updateUser(response.data);
+          }
+        } else {
+          console.warn('Unexpected profile response:', response);
+          // Fallback to authUser
+          if (authUser) {
+            setUser(authUser);
+          }
         }
       } catch (error) {
         console.error('Failed to load profile:', error);
@@ -42,13 +57,24 @@ const ProfileInfo = () => {
     };
 
     loadProfile();
-  }, [authUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const handleProfileUpdate = (updatedProfile) => {
     setUser(updatedProfile);
     // Update AuthContext if available
     if (updateUser) {
       updateUser(updatedProfile);
+    }
+  };
+
+  const handleAvatarUpdate = (avatarUrl) => {
+    // Update local user state with new avatar
+    const updatedUser = { ...displayUser, avatarUrl };
+    setUser(updatedUser);
+    // Update AuthContext if available
+    if (updateUser) {
+      updateUser(updatedUser);
     }
   };
 
@@ -100,6 +126,14 @@ const ProfileInfo = () => {
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Hồ Sơ Của Tôi</h2>
         <p className="text-sm text-gray-600 mt-1">Quản lý thông tin hồ sơ để bảo mật tài khoản</p>
+      </div>
+
+      {/* Avatar Section */}
+      <div className="mb-8 pb-6 border-b">
+        <AvatarUpload
+          currentAvatar={displayUser?.avatarUrl}
+          onAvatarUpdate={handleAvatarUpdate}
+        />
       </div>
 
       {/* Profile Information */}

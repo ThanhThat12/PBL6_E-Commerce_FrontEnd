@@ -144,6 +144,11 @@ const LoginForm = () => {
         console.log('[LoginForm] Google login result:', result);
         console.log('[LoginForm] Google login - User role:', userRole);
         
+        // Log if account was linked
+        if (result.message && result.message.includes('liên kết')) {
+          console.log('[LoginForm] ✓ Tài khoản Google đã được liên kết với email hiện có');
+        }
+        
         setTimeout(() => {
           if (userRole === 'ADMIN') {
             console.log('[LoginForm] Redirecting to admin dashboard');
@@ -326,17 +331,36 @@ const LoginForm = () => {
       <div className="space-y-3">
         {/* Google Login */}
         {GOOGLE_CLIENT_ID ? (
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              useOneTap
-              theme="outline"
-              size="large"
-              text="continue_with"
-              shape="rectangular"
-              locale="vi"
-            />
+          <div>
+            {/* Custom styled button that triggers hidden GoogleLogin */}
+            <Button
+              variant="outline"
+              size="lg"
+              fullWidth
+              onClick={() => {
+                // Trigger the hidden GoogleLogin button
+                const googleBtn = document.querySelector('[aria-labelledby="button-label"]');
+                if (googleBtn) googleBtn.click();
+              }}
+              disabled={loading}
+              className="border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+            >
+              <FcGoogle className="w-5 h-5 mr-2" />
+              Đăng nhập với Google
+            </Button>
+            {/* Hidden GoogleLogin component */}
+            <div className="hidden">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap={false}
+                theme="outline"
+                size="large"
+                text="continue_with"
+                shape="rectangular"
+                locale="vi"
+              />
+            </div>
           </div>
         ) : (
           <Button
