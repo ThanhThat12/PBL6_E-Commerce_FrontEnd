@@ -80,6 +80,43 @@ export const getVouchers = async (page = 0, size = 10) => {
 };
 
 /**
+ * Get vouchers by status with pagination
+ * Backend endpoint: GET /api/admin/vouchers/status/{status}?page=0&size=10
+ * Returns: ResponseDTO<Page<AdminVoucherListDTO>>
+ */
+export const getVouchersByStatus = async (status, page = 0, size = 10) => {
+  try {
+    console.log(`📡 [adminVoucherService] Calling GET /admin/vouchers/status/${status}?page=${page}&size=${size}`);
+    const response = await apiClient.get(`/admin/vouchers/status/${status}?page=${page}&size=${size}`);
+    console.log('✅ [adminVoucherService] Vouchers by status response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminVoucherService] Error fetching vouchers by status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Search vouchers by keyword
+ * Backend endpoint: GET /api/admin/vouchers/search?keyword={keyword}&page={page}&size={size}
+ * Search by: code, discount type, discount value, date (DD/MM/YYYY)
+ * Returns: ResponseDTO<Page<AdminVoucherListDTO>>
+ */
+export const searchVouchers = async (keyword, page = 0, size = 10) => {
+  try {
+    console.log(`🔍 [adminVoucherService] Calling GET /admin/vouchers/search?keyword=${keyword}&page=${page}&size=${size}`);
+    const response = await apiClient.get(`/admin/vouchers/search`, {
+      params: { keyword, page, size }
+    });
+    console.log('✅ [adminVoucherService] Search vouchers response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminVoucherService] Error searching vouchers:', error);
+    throw error;
+  }
+};
+
+/**
  * Get voucher detail by ID
  * Backend endpoint: GET /api/admin/vouchers/{id}
  * Returns: ResponseDTO<AdminVoucherDetailDTO>
@@ -207,25 +244,6 @@ export const deleteVoucher = async (id) => {
   }
 };
 
-/**
- * Get vouchers filtered by status with pagination
- * Backend endpoint: GET /api/admin/vouchers/status?status=ACTIVE&page=0&size=10
- * Returns: ResponseDTO<Page<AdminVoucherListDTO>>
- */
-export const getVouchersByStatus = async (status, page = 0, size = 10) => {
-  try {
-    console.log(`📡 [adminVoucherService] Calling GET /admin/vouchers/status?status=${status}&page=${page}&size=${size}`);
-    const response = await apiClient.get('/admin/vouchers/status', {
-      params: { status, page, size }
-    });
-    console.log('✅ [adminVoucherService] Vouchers by status response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('❌ [adminVoucherService] Error fetching vouchers by status:', error);
-    throw error;
-  }
-};
-
 const adminVoucherService = {
   getVoucherStats,
   getVouchers,
@@ -234,6 +252,7 @@ const adminVoucherService = {
   updateVoucher,
   deleteVoucher,
   getVouchersByStatus,
+  searchVouchers,
 };
 
 export default adminVoucherService;

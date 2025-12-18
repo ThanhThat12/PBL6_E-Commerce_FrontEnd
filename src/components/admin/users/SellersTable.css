@@ -33,15 +33,15 @@
 }
 
 /* Search Styles */
-.search-container {
+.sellers-search-container {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.search-icon {
+.sellers-search-icon {
   position: absolute;
-  left: 190px;
+  left: 10px;
   color: #64748b;
   z-index: 1;
 }

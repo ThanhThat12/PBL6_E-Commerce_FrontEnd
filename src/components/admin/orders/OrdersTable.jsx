@@ -25,9 +25,24 @@ const OrdersTable = () => {
     totalRevenue: 0
   });
 
-  // Fetch orders from API
+  // Debounce search term only
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      if (currentPage !== 0) {
+        setCurrentPage(0); // Reset to page 0 when search changes
+      } else {
+        fetchOrders(); // If already on page 0, just fetch
+      }
+    }, 500);
+
+    return () => clearTimeout(delaySearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+  // Fetch orders when page or status changes
   useEffect(() => {
     fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter]);
 
   // Fetch stats on mount
@@ -53,12 +68,25 @@ const OrdersTable = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`📡 Fetching orders - page: ${currentPage}, size: 10, status: ${statusFilter || 'ALL'}`);
+      const trimmedSearch = searchTerm?.trim() || '';
+      console.log(`📡 Fetching orders - page: ${currentPage}, size: 10, status: "${statusFilter || 'ALL'}", search: "${trimmedSearch}"`);
       
-      // Call different API based on filter
-      const response = statusFilter 
-        ? await getAdminOrdersByStatus(statusFilter, currentPage, 10)
-        : await getAdminOrders(currentPage, 10);
+      let response;
+      
+      // Priority: 1. Search, 2. Status filter, 3. All orders
+      if (trimmedSearch !== '') {
+        // Use search API
+        console.log('🔍 Using search API with keyword:', trimmedSearch);
+        response = await searchAdminOrders(trimmedSearch, currentPage, 10);
+      } else if (statusFilter) {
+        // Use status filter API
+        console.log('🏷️ Using status filter API with status:', statusFilter);
+        response = await getAdminOrdersByStatus(statusFilter, currentPage, 10);
+      } else {
+        // Get all orders
+        console.log('📋 Using get all orders API');
+        response = await getAdminOrders(currentPage, 10);
+      }
       
       console.log('📦 API Response:', response);
       
@@ -78,6 +106,7 @@ const OrdersTable = () => {
       }
     } catch (err) {
       console.error('❌ Error fetching orders:', err);
+      console.error('❌ Error details:', err.response?.data || err.message);
       setError('Failed to load orders. Please try again later.');
     } finally {
       setLoading(false);
