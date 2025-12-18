@@ -21,21 +21,28 @@ const ChatContainer = () => {
   // Listen for openChat event from other components
   useEffect(() => {
     const handleOpenChat = (event) => {
-      console.log('ChatContainer received openChat event:', event.detail);
+      console.log('📨 ChatContainer received openChat event:', event.detail);
       const { conversationId, autoMessage: message, shouldAutoSend } = event.detail;
+      
+      if (!conversationId) {
+        console.error('❌ No conversationId in event detail!');
+        return;
+      }
+      
+      console.log('✅ Setting conversation:', conversationId);
       setSelectedConversationId(conversationId);
-      // Only set autoMessage if shouldAutoSend is true
       setAutoMessage(shouldAutoSend ? message : null);
       setIsOpen(true);
       setIsMinimized(false);
+      console.log('✅ ChatWindow should now be open');
     };
 
     window.addEventListener('openChat', handleOpenChat);
-    console.log('ChatContainer: openChat event listener registered');
+    console.log('🎧 ChatContainer: openChat event listener registered');
     
     return () => {
       window.removeEventListener('openChat', handleOpenChat);
-      console.log('ChatContainer: openChat event listener removed');
+      console.log('🔇 ChatContainer: openChat event listener removed');
     };
   }, []);
 

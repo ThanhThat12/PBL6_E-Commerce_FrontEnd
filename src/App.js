@@ -69,6 +69,7 @@ import SellerProtectedRoute from './components/seller/ProtectedRoute';
 import { SellerLayout } from './components/seller/Layout';
 import * as SellerPages from './pages/seller';
 import ReviewsPage from './pages/seller/Review';
+import RejectionStatusPage from './pages/seller/RejectionStatusPage';
 
 // 🧑‍💼 Admin Pages
 import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
@@ -85,6 +86,23 @@ import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
 import ChatPage from './pages/admin/Chat/ChatPage';
 import WalletPage from './pages/admin/Wallet/WalletPage';
 import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
+import SellerRegistrationGuard from './components/seller/SellerRegistrationGuard';
+
+// Chat Wrapper - Only show on authenticated pages
+const ConditionalChatContainer = () => {
+  const location = useLocation();
+  
+  // Hide chat on auth pages
+  const hideChat = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    '/forgot-password',
+    '/admin/login'
+  ].some(route => location.pathname.startsWith(route));
+  
+  return !hideChat ? <ChatContainer /> : null;
+};
+
 
 function App() {
   return (
@@ -225,14 +243,18 @@ function App() {
             {/* ================================================= */}
 
                         {/* ================= SELLER REGISTRATION ROUTES ================= */}
+            {/* Entry point uses Guard - other pages handle their own routing */}
             <Route 
               path="/seller/register" 
               element={
                 <ProtectedRoute>
-                  <SellerRegistrationPage />
+                  <SellerRegistrationGuard>
+                    <SellerRegistrationPage />
+                  </SellerRegistrationGuard>
                 </ProtectedRoute>
               } 
             />
+            {/* Status pages don't use Guard to avoid redirect loops */}
             <Route 
               path="/seller/registration-status" 
               element={
@@ -241,9 +263,18 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/seller/rejected" 
+              element={
+                <ProtectedRoute>
+                  <RejectionStatusPage />
+                </ProtectedRoute>
+              } 
+            />
             {/* ============================================================= */}
 
             {/* ================= SELLER ROUTES ================= */}
+
             <Route 
               path="/seller" 
               element={

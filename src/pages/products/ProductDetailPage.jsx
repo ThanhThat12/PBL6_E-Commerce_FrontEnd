@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FiShoppingCart, FiMinus, FiPlus, FiChevronRight, FiStar, FiPackage, FiMapPin, FiMessageCircle } from 'react-icons/fi';
+import { FiShoppingCart, FiMinus, FiPlus, FiChevronRight, FiStar, FiPackage, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiEye, FiShare2, FiHeart, FiTruck, FiRotateCcw, FiAward, FiGrid, FiThumbsUp, FiThumbsDown, FiClock } from 'react-icons/fi';
 
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
@@ -32,23 +32,60 @@ const ProductDetailPage = () => {
   const [productImages, setProductImages] = useState(null);
   const [imageGallery, setImageGallery] = useState([]);
   const [adding, setAdding] = useState(false);
+  const [activeTab, setActiveTab] = useState('details'); // details, reviews, shipping
+  const [currentImagePage, setCurrentImagePage] = useState(0);
   const { user, isAuthenticated, hasRole } = useAuth();
+
+  // Check if current user is product owner - cached with useMemo
+  const isProductOwner = useMemo(() => {
+    // Early return if data not ready
+    if (!user || !product) return false;
+    
+    // Check SELLER role
+    if (!hasRole || !hasRole('SELLER')) return false;
+
+    // Get shop IDs
+    const userShopId = user.shopId || user.shop?.id;
+    const productShopId = product.shopId || product.shop?.id;
+    
+    // Both must exist to compare
+    if (!userShopId || !productShopId) return false;
+
+    // Compare shop IDs
+    return String(userShopId) === String(productShopId);
+  }, [user, product, hasRole]);
+
+  // Computed permission flags based on markdown spec
+  const canChat = useMemo(() => {
+    return !isProductOwner && isAuthenticated;
+  }, [isProductOwner, isAuthenticated]);
+
+  const canAddToCart = useMemo(() => {
+    if (isProductOwner) return false;
+    if (!product) return false;
+    if (!selectedVariant) return false;
+    return selectedVariant.stock > 0 && product.isActive;
+  }, [isProductOwner, product, selectedVariant]);
 
   // Handle chat with shop
   const handleChatWithShop = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e?.preventDefault();
+    e?.stopPropagation();
     
-    console.log('Chat button clicked!');
-    
+    // Verify authentication
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để chat với shop');
       navigate('/login');
       return;
     }
 
+    // Check ownership - only block if user is owner of THIS shop
+    if (isProductOwner) {
+      toast.error('Bạn không thể chat với shop của chính mình');
+      return;
+    }
+
     const shopId = product.shop?.id || product.shopId;
-    console.log('Shop ID:', shopId);
     
     if (!shopId) {
       toast.error('Không tìm thấy thông tin shop');
@@ -56,38 +93,44 @@ const ProductDetailPage = () => {
     }
 
     try {
-      console.log('Creating conversation with shop:', shopId);
+      // Show loading toast
+      const loadingToast = toast.loading('Đang mở chat với shop...');
       
       // Create or get conversation with shop
-      const response = await chatService.createConversation({
+      const apiResponse = await chatService.createConversation({
         type: 'SHOP',
         shopId: shopId,
       });
 
-      console.log('Conversation response:', response);
+      toast.dismiss(loadingToast);
 
-      // API trả về object trực tiếp, không có response.data
-      const conversationData = response.data || response;
+      // apiResponse is ResponseDTO: { status, message, data: conversationObject }
+      const conversationData = apiResponse.data;
       
       if (conversationData && conversationData.id) {
-        toast.success('Đã mở chat với shop');
-        
-        console.log('Dispatching openChat event with conversationId:', conversationData.id);
+        console.log('[ProductDetailPage] ✅ Conversation created:', conversationData);
         
         // Dispatch event to open chat window
         const event = new CustomEvent('openChat', { 
           detail: { conversationId: conversationData.id } 
         });
+        console.log('[ProductDetailPage] 📤 Dispatching openChat event');
         window.dispatchEvent(event);
         
-        console.log('Event dispatched successfully');
+        toast.success('Chat đã mở!');
       } else {
-        console.error('Invalid conversation response:', conversationData);
-        toast.error('Không nhận được thông tin conversation');
+        console.error('Invalid conversation response:', apiResponse);
+        toast.error('Không thể tạo cuộc trò chuyện');
       }
     } catch (error) {
       console.error('Error opening chat:', error);
-      toast.error('Không thể mở chat với shop. Vui lòng thử lại.');
+      // Check for specific backend error about self-chat
+      const errorMessage = error.response?.data?.message || '';
+      if (error.response?.status === 403 || errorMessage.includes('shop của chính mình') || errorMessage.includes('own shop')) {
+        toast.error('Bạn không thể chat với shop của chính mình');
+      } else {
+        toast.error(errorMessage || 'Không thể mở chat với shop');
+      }
     }
   };
 
@@ -221,6 +264,18 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = async () => {
+    // Frontend validation before API call
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng');
+      navigate('/login');
+      return;
+    }
+
+    if (isProductOwner) {
+      toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      return;
+    }
+
     if (!selectedVariant) {
       toast.error('Vui lòng chọn phiên bản sản phẩm');
       return;
@@ -238,16 +293,79 @@ const ProductDetailPage = () => {
 
     setAdding(true);
     try {
-      await addItemToCart(selectedVariant.id, quantity);
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+      const result = await addItemToCart(selectedVariant.id, quantity);
+      // Check if result indicates success
+      if (result && result.success === false) {
+        toast.error(result.error || 'Không thể thêm vào giỏ hàng');
+      } else {
+        toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+      }
     } catch (error) {
       console.error('Add to cart error:', error);
-      if (error.response?.status === 404) {
+      // Handle backend rejection (403 Forbidden = own product)
+      if (error.response?.status === 403) {
+        toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      } else if (error.response?.status === 404) {
         toast.error('Không tìm thấy sản phẩm');
       } else if (error.response?.status === 400) {
-        toast.error(error.response.data.message || 'Số lượng không hợp lệ');
+        toast.error(error.response.data?.message || 'Số lượng không hợp lệ');
       } else {
-        toast.error('Không thể thêm vào giỏ hàng');
+        toast.error(error.message || 'Không thể thêm vào giỏ hàng');
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    // Validation for authentication only
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để mua hàng');
+      navigate('/login');
+      return;
+    }
+
+    // Block own product purchase
+    if (isProductOwner) {
+      toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      return;
+    }
+
+    if (!selectedVariant) {
+      toast.error('Vui lòng chọn phiên bản sản phẩm');
+      return;
+    }
+
+    if (!product.isActive) {
+      toast.error('Sản phẩm hiện không khả dụng');
+      return;
+    }
+
+    if (selectedVariant.stock < quantity) {
+      toast.error('Số lượng vượt quá hàng có sẵn');
+      return;
+    }
+
+    // Add to cart first, then navigate to cart page for user to select and checkout
+    setAdding(true);
+    try {
+      const result = await addItemToCart(selectedVariant.id, quantity);
+      if (result && result.success === false) {
+        toast.error(result.error || 'Không thể thêm vào giỏ hàng');
+      } else {
+        // Navigate to cart page for user to select items and checkout
+        navigate('/cart');
+      }
+    } catch (error) {
+      console.error('Buy now error:', error);
+      if (error.response?.status === 403) {
+        toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+      } else if (error.response?.status === 404) {
+        toast.error('Không tìm thấy sản phẩm');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response.data?.message || 'Số lượng không hợp lệ');
+      } else {
+        toast.error(error.message || 'Không thể mua ngay');
       }
     } finally {
       setAdding(false);
@@ -284,44 +402,65 @@ const ProductDetailPage = () => {
     );
   }
 
-  const isProductOwner = () => {
-    if (!user || !product || !hasRole) return false;
-    // Must be seller role
-    if (!hasRole('SELLER')) return false;
-
-    const uid = user.id || user.userId || user._id || user.userId || user.uid;
-    const shop = product.shop || {};
-
-    // Collect many possible owner/shop fields used by different backends
-    const ownerIds = [
-      shop.ownerId,
-      shop.owner?.id,
-      shop.userId,
-      shop.user?.id,
-      shop.sellerId,
-      shop.seller?.id,
-      shop.id,
-      product.sellerId,
-      product.seller?.id,
-      product.shopId,
-    ].filter(Boolean);
-
-    // Also check if user has a shopId that matches
-    const userShopId = user.shopId || user.shop?.id || null;
-
-    const match = ownerIds.some(i => String(i) === String(uid)) || (userShopId && String(userShopId) === String(shop.id || product.shopId || product.shop?.id));
-
-    // Debug logging to help identify why seller cannot reply
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[isProductOwner] uid:', uid, 'userShopId:', userShopId, 'shop:', shop, 'ownerIds:', ownerIds, 'match:', match);
-    }
-
-    return !!match;
-  };
-
   const displayPrice = selectedVariant?.price || product.basePrice || 0;
   const isInStock = selectedVariant ? selectedVariant.stock > 0 : false;
   const maxQuantity = selectedVariant ? Math.min(selectedVariant.stock, 100) : 100;
+
+  // Helper functions
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN').format(price);
+  };
+
+  const getDiscountPercentage = () => {
+    if (!product.originalPrice || !displayPrice || displayPrice >= product.originalPrice) return 0;
+    return Math.round(((product.originalPrice - displayPrice) / product.originalPrice) * 100);
+  };
+
+  const renderStars = (rating, size = 'sm') => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    const sizeClass = size === 'md' ? 'w-5 h-5' : 'w-4 h-4';
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <FiStar key={i} className={`${sizeClass} text-yellow-400 fill-current`} />
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <div key={i} className="relative">
+            <FiStar className={`${sizeClass} text-gray-300`} />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <FiStar className={`${sizeClass} text-yellow-400 fill-current`} />
+            </div>
+          </div>
+        );
+      } else {
+        stars.push(
+          <FiStar key={i} className={`${sizeClass} text-gray-300`} />
+        );
+      }
+    }
+    return <div className="flex items-center gap-0.5">{stars}</div>;
+  };
+
+  // Shop info from product data
+  const shopInfo = {
+    id: product.shop?.id || product.shopId,
+    name: product.shop?.name || product.shopName || 'Shop',
+    logo: product.shop?.logoUrl || product.shopLogo || '',
+    rating: product.shop?.rating || product.shopRating || 0,
+    productCount: product.shop?.productCount || product.shopProductCount || 0,
+    location: product.shop?.location || product.shopLocation || '',
+    isVerified: product.shop?.isVerified ?? false,
+    isOnline: product.shop?.isOnline ?? false,
+  };
+
+  const discount = getDiscountPercentage();
+  const rating = product.averageRating || 0;
+  const soldCount = product.soldCount || 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -343,189 +482,157 @@ const ProductDetailPage = () => {
 
       {/* Product Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Images */}
-          <div>
+          <div className="space-y-4">
             {/* Main Image */}
-            <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-lg mb-4">
+            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative">
               <img
                 src={selectedImage || product.mainImage || '/placeholder-product.jpg'}
                 alt={product.name}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/placeholder-product.jpg';
+                }}
               />
+              
+              {discount > 0 && (
+                <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-lg font-bold">
+                  -{discount}%
+                </div>
+              )}
+              
+              <div className="absolute top-4 right-4 flex gap-2">
+                <button className="p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-all">
+                  <FiShare2 className="w-4 h-4 text-gray-600" />
+                </button>
+                <button className="p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full transition-all">
+                  <FiHeart className="w-4 h-4 text-gray-600 hover:text-red-500" />
+                </button>
+              </div>
             </div>
-
-            {/* Thumbnail Images - Show variant-aware gallery */}
+            
+            {/* Thumbnail Images - Show variant-aware gallery with pagination */}
             {imageGallery && imageGallery.length > 1 && (
-              <div className="grid grid-cols-4 gap-4">
-                {imageGallery.map((imgUrl, index) => (
-                  <button
-                    key={`gallery-${index}-${imgUrl}`}
-                    onClick={() => setSelectedImage(imgUrl)}
-                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                      selectedImage === imgUrl
-                        ? 'border-primary-500 ring-2 ring-primary-200'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={`${product.name} - Ảnh ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/placeholder-product.jpg';
-                      }}
-                    />
-                  </button>
-                ))}
+              <div className="relative">
+                <div className="grid grid-cols-5 gap-2">
+                  {imageGallery.slice(currentImagePage * 5, (currentImagePage * 5) + 5).map((imgUrl, index) => (
+                    <button
+                      key={`gallery-${currentImagePage}-${index}-${imgUrl}`}
+                      onClick={() => setSelectedImage(imgUrl)}
+                      className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedImage === imgUrl
+                          ? 'border-primary-500 ring-2 ring-primary-500 ring-opacity-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`${product.name} ${currentImagePage * 5 + index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Pagination Controls */}
+                {imageGallery.length > 5 && (
+                  <div className="flex items-center justify-between mt-3">
+                    <button
+                      onClick={() => setCurrentImagePage(prev => Math.max(0, prev - 1))}
+                      disabled={currentImagePage === 0}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <FiChevronRight className="w-4 h-4 rotate-180" />
+                    </button>
+                    
+                    <span className="text-sm text-gray-600">
+                      {currentImagePage * 5 + 1} - {Math.min((currentImagePage + 1) * 5, imageGallery.length)} / {imageGallery.length}
+                    </span>
+                    
+                    <button
+                      onClick={() => setCurrentImagePage(prev => Math.min(Math.ceil(imageGallery.length / 5) - 1, prev + 1))}
+                      disabled={currentImagePage >= Math.ceil(imageGallery.length / 5) - 1}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <FiChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Product Info */}
-          <div>
-            {/* Shop Info Card */}
-            {(product.shop || product.shopName) && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl border border-primary-200 hover:shadow-md transition-all">
-                <div className="flex items-center gap-4">
-                  {/* Shop Logo */}
-                  <Link 
-                    to={`/shops/${product.shop?.id || product.shopId}`}
-                    className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0 no-underline"
-                  >
-                    <img
-                      src={product.shop?.logoUrl || product.shopLogo || '/default-shop.png'}
-                      alt={product.shop?.name || product.shopName}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/default-shop.png';
-                      }}
-                    />
-                  </Link>
-                  
-                  {/* Shop Info */}
-                  <div className="flex-1 min-w-0">
-                    <Link 
-                      to={`/shops/${product.shop?.id || product.shopId}`}
-                      className="no-underline"
-                    >
-                      <h3 className="font-bold text-gray-900 hover:text-primary-600 transition-colors truncate">
-                        {product.shop?.name || product.shopName}
-                      </h3>
-                    </Link>
-                    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-600">
-                      {(product.shop?.rating || product.shopRating) && (
-                        <span className="flex items-center gap-1">
-                          <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
-                          {(product.shop?.rating || product.shopRating).toFixed(1)}
-                        </span>
-                      )}
-                      {(product.shop?.productCount || product.shopProductCount) && (
-                        <span className="flex items-center gap-1">
-                          <FiPackage className="w-4 h-4" />
-                          {product.shop?.productCount || product.shopProductCount} sản phẩm
-                        </span>
-                      )}
-                      {(product.shop?.location || product.shopLocation) && (
-                        <span className="flex items-center gap-1">
-                          <FiMapPin className="w-4 h-4" />
-                          {product.shop?.location || product.shopLocation}
-                        </span>
-                      )}
+          <div className="space-y-6">
+            {/* Product Name and Rating */}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                {rating > 0 && (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500">★</span>
+                      <span className="font-medium text-gray-900">{rating.toFixed(1)}</span>
                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex-shrink-0 flex flex-col gap-2">
-                    {/* Chat Button */}
-                    <button
-                      onClick={handleChatWithShop}
-                      className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm"
-                    >
-                      <FiMessageCircle className="w-4 h-4" />
-                      Chat Ngay
-                    </button>
-                    
-                    {/* View Shop Link */}
-                    <Link 
-                      to={`/shops/${product.shop?.id || product.shopId}`}
-                      className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-white text-primary-600 rounded-lg text-sm font-medium border border-primary-200 hover:bg-primary-50 transition-colors no-underline"
-                    >
-                      <FiChevronRight className="w-4 h-4" />
-                      Xem Shop
-                    </Link>
-                  </div>
+                    <span>•</span>
+                  </>
+                )}
+                {soldCount > 0 && (
+                  <>
+                    <span>Đã bán {soldCount.toLocaleString()}</span>
+                    <span>•</span>
+                  </>
+                )}
+                <div className="flex items-center gap-1 text-green-600">
+                  <FiEye className="w-3 h-3" />
+                  <span>Đang xem</span>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Category */}
-            {product.category && (
-              <p className="text-sm text-primary-600 font-semibold uppercase tracking-wide mb-2">
-                {product.category.name}
-              </p>
-            )}
-
-            {/* Product Name */}
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              {product.name}
-            </h1>
-
-            {/* Price */}
-            <div className="mb-6">
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-primary-600">
-                  {displayPrice.toLocaleString('vi-VN')}₫
+            {/* Price and Promotions */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-baseline gap-3 mb-2">
+                <span className="text-3xl font-bold text-primary-600">
+                  ₫{formatPrice(displayPrice)}
                 </span>
-                {product.basePrice && selectedVariant && selectedVariant.price !== product.basePrice && (
-                  <span className="text-xl text-gray-400 line-through">
-                    {product.basePrice.toLocaleString('vi-VN')}₫
+                {product.originalPrice && product.originalPrice > displayPrice && (
+                  <span className="text-lg text-gray-400 line-through">
+                    ₫{formatPrice(product.originalPrice)}
+                  </span>
+                )}
+                {discount > 0 && (
+                  <span className="bg-red-100 text-red-600 px-2 py-1 rounded-md text-sm font-bold">
+                    -{discount}% GIẢM
                   </span>
                 )}
               </div>
-            </div>
-
-            {/* Stock Status */}
-            <div className="mb-6">
-              {!product.isActive ? (
-                <p className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                  Sản phẩm không khả dụng
-                </p>
-              ) : (
-                <p className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  isInStock 
-                    ? selectedVariant && selectedVariant.stock < 10
-                      ? 'bg-orange-100 text-orange-800'
-                      : 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {isInStock 
-                    ? selectedVariant.stock < 10
-                      ? `Chỉ còn ${selectedVariant.stock} sản phẩm`
-                      : `Còn hàng (${selectedVariant.stock} sản phẩm)`
-                    : 'Hết hàng'
-                  }
-                </p>
-              )}
-            </div>
-
-            {/* Description */}
-            {product.description && (
-              <div className="mb-8 pb-8 border-b">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Mô tả sản phẩm
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {product.description}
-                </p>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <FiTruck className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600">Miễn phí vận chuyển</span>
+                </div>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <FiRotateCcw className="w-4 h-4 text-blue-500" />
+                  <span className="text-blue-600">Đổi trả 15 ngày</span>
+                </div>
               </div>
-            )}
+            </div>
 
             {/* Variant Selector */}
             {product.variants && product.variants.length > 0 && (
-              <div className="mb-8 pb-8 border-b">
+              <div className="pb-6 border-b">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Chọn phiên bản</h3>
                 <VariantSelector
                   variants={product.variants}
                   selectedVariant={selectedVariant}
@@ -534,106 +641,233 @@ const ProductDetailPage = () => {
               </div>
             )}
 
-            {/* Quantity Selector */}
-            <div className="mb-8">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                Số lượng
-              </h4>
+            {/* Quantity and Actions */}
+            <div className="space-y-4">
+              {/* Quantity Selector */}
               <div className="flex items-center gap-4">
-                <div className="flex items-center border-2 border-gray-300 rounded-lg">
+                <span className="text-gray-700 font-medium">Số lượng:</span>
+                <div className="flex items-center border border-gray-300 rounded-lg">
                   <button
                     onClick={() => handleQuantityChange(-1)}
                     disabled={quantity <= 1}
-                    className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-white transition-colors"
                   >
-                    <FiMinus className="w-5 h-5" />
+                    <FiMinus className="w-4 h-4" />
                   </button>
-                  <span className="px-6 py-3 font-semibold text-lg">
-                    {quantity}
-                  </span>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => {
+                      const newQty = parseInt(e.target.value) || 1;
+                      const maxStock = selectedVariant?.stock || 100;
+                      const maxAllowed = Math.min(maxStock, 100);
+                      setQuantity(Math.max(1, Math.min(newQty, maxAllowed)));
+                    }}
+                    className="w-16 text-center py-2 border-0 focus:ring-0"
+                    min="1"
+                    max={selectedVariant?.stock || 999}
+                  />
                   <button
                     onClick={() => handleQuantityChange(1)}
                     disabled={!selectedVariant || quantity >= maxQuantity}
-                    className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-white transition-colors"
                   >
-                    <FiPlus className="w-5 h-5" />
+                    <FiPlus className="w-4 h-4" />
                   </button>
                 </div>
-                {selectedVariant && selectedVariant.stock < 10 && (
-                  <p className="text-sm text-orange-600">
-                    Chỉ còn {selectedVariant.stock} sản phẩm
-                  </p>
+                
+                {selectedVariant && (
+                  <span className="text-sm text-gray-500">
+                    {selectedVariant.stock} sản phẩm có sẵn
+                  </span>
                 )}
               </div>
-            </div>
 
-            {/* Action Button */}
-            <div className="flex gap-4">
-              <Button
-                onClick={handleAddToCart}
-                disabled={!product.isActive || !isInStock || adding}
-                loading={adding}
-                variant="primary"
-                className="flex-1 py-4"
-              >
-                <FiShoppingCart className="w-5 h-5 mr-2" />
-                Thêm vào giỏ hàng
-              </Button>
-            </div>
-
-            {/* Product Details */}
-            {selectedVariant && (
-              <div className="mt-8 pt-8 border-t">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                  Thông tin chi tiết
-                </h4>
-                <dl className="space-y-3">
-                  <div className="flex justify-between py-2 border-b border-gray-100">
-                    <dt className="text-gray-600">SKU:</dt>
-                    <dd className="font-mono font-semibold text-gray-900">{selectedVariant.sku}</dd>
-                  </div>
-                  {product.category && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <dt className="text-gray-600">Danh mục:</dt>
-                      <dd className="font-semibold text-gray-900">{product.category.name}</dd>
-                    </div>
-                  )}
-                  {(product.shop?.name || product.shopName) && (
-                    <div className="flex justify-between py-2 border-b border-gray-100">
-                      <dt className="text-gray-600">Shop:</dt>
-                      <dd>
-                        <Link 
-                          to={`/shops/${product.shop?.id || product.shopId}`}
-                          className="font-semibold text-primary-600 hover:text-primary-700 no-underline"
-                        >
-                          {product.shop?.name || product.shopName}
-                        </Link>
-                      </dd>
-                    </div>
-                  )}
-                  {selectedVariant.variantValues && selectedVariant.variantValues.length > 0 && (
-                    selectedVariant.variantValues.map((vv, idx) => (
-                      <div key={idx} className="flex justify-between py-2 border-b border-gray-100">
-                        <dt className="text-gray-600">{vv.productAttribute?.name || 'Thuộc tính'}:</dt>
-                        <dd className="font-semibold text-gray-900">{vv.value}</dd>
-                      </div>
-                    ))
-                  )}
-                </dl>
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={!canAddToCart || adding}
+                  variant="outline"
+                  className={`flex-1 ${
+                    isProductOwner 
+                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                      : 'border-primary-500 text-primary-600 hover:bg-primary-50'
+                  }`}
+                  title={
+                    !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
+                    isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
+                    !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
+                    selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
+                    !product.isActive ? 'Sản phẩm không khả dụng' : ''
+                  }
+                >
+                  <FiShoppingCart className="w-5 h-5 mr-2" />
+                  {isProductOwner ? 'Sản phẩm của bạn' : adding ? 'Đang thêm...' : 'Thêm Vào Giỏ Hàng'}
+                </Button>
+                
+                <Button
+                  onClick={handleBuyNow}
+                  disabled={!canAddToCart || adding}
+                  variant="primary"
+                  className={`flex-1 ${
+                    isProductOwner ? 'bg-gray-400 cursor-not-allowed' : ''
+                  }`}
+                  title={
+                    !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
+                    isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
+                    !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
+                    selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
+                    !product.isActive ? 'Sản phẩm không khả dụng' : ''
+                  }
+                >
+                  {isProductOwner ? 'Không thể mua' : 'Mua Ngay'}
+                </Button>
               </div>
-            )}
+            </div>
+
+            {/* Trust Badges */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiShield className="w-4 h-4 text-green-500" />
+                <span>Đảm bảo chính hãng</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiTruck className="w-4 h-4 text-blue-500" />
+                <span>Giao hàng toàn quốc</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiRotateCcw className="w-4 h-4 text-purple-500" />
+                <span>Đổi trả dễ dàng</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiAward className="w-4 h-4 text-yellow-500" />
+                <span>Chất lượng đảm bảo</span>
+              </div>
+            </div>
+
           </div>
         </div>
+        </div>
+
+        {/* Shop Info Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            {/* Shop Info */}
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-primary-100 shadow-lg flex-shrink-0">
+                {shopInfo.logo ? (
+                  <img src={shopInfo.logo} alt={shopInfo.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-2xl">
+                      {shopInfo.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900">{shopInfo.name}</h2>
+                  {shopInfo.isVerified && (
+                    <div className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded-full">
+                      <FiShield className="w-3 h-3" />
+                      <span className="text-xs font-medium">Official</span>
+                    </div>
+                  )}
+                  {shopInfo.isOnline && (
+                    <div className="flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded-full">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      <span className="text-xs font-medium">Online</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  {shopInfo.rating > 0 && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span className="font-medium text-gray-900">{shopInfo.rating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-gray-300">|</span>
+                    </>
+                  )}
+                  {shopInfo.productCount > 0 && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <FiPackage className="w-4 h-4" />
+                        <span>{shopInfo.productCount} Sản phẩm</span>
+                      </div>
+                      <span className="text-gray-300">|</span>
+                    </>
+                  )}
+                  {shopInfo.location && (
+                    <div className="flex items-center gap-1">
+                      <FiMapPin className="w-4 h-4" />
+                      <span>{shopInfo.location}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Shop Actions */}
+            <div className="flex items-center gap-3">
+              {/* Conditional render: Hide Chat button completely for shop owner (per markdown spec) */}
+              {!isProductOwner && (
+                <Button 
+                  variant="outline" 
+                  className="border-primary-500 text-primary-600 hover:bg-primary-50"
+                  onClick={handleChatWithShop}
+                  disabled={!canChat}
+                  title={!isAuthenticated ? 'Vui lòng đăng nhập để chat' : 'Chat với shop'}
+                >
+                  <FiMessageCircle className="w-4 h-4 mr-2" />
+                  {!isAuthenticated ? 'Đăng nhập để chat' : 'Chat Ngay'}
+                </Button>
+              )}
+              {/* Optional: Show indicator for own product */}
+              {isProductOwner && (
+                <div className="text-sm text-gray-500 italic">
+                  Đây là sản phẩm của bạn
+                </div>
+              )}
+              {shopInfo.id && (
+                <Link to={`/shops/${shopInfo.id}`}>
+                  <Button variant="primary">
+                    <FiEye className="w-4 h-4 mr-2" />
+                    Xem Shop
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Product Description Section - Full Width */}
+        {product.description && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Mô tả sản phẩm</h2>
+            <div className="prose max-w-none">
+              <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {product.description}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      {/* Reviews Section - Using new ReviewSection component */}
-      <ReviewSection 
-        productId={id}
-        product={product}
-        isAuthenticated={isAuthenticated}
-        user={user}
-        hasRole={hasRole}
-        isProductOwner={isProductOwner}
-      />
+        
+        {/* Reviews Section - Using new ReviewSection component */}
+        <ReviewSection 
+          productId={id}
+          product={product}
+          isAuthenticated={isAuthenticated}
+          user={user}
+          hasRole={hasRole}
+          isProductOwner={isProductOwner}
+        />
       </main>
 
       {/* Footer */}

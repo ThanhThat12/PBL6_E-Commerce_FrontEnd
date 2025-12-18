@@ -535,7 +535,7 @@ Xem chi tiet don hang:
               <Button
                 variant="outline"
                 className="w-full mt-4"
-                onClick={() => toast.info('Tính năng hỗ trợ đang được phát triển')}
+                onClick={() => toast('Tính năng hỗ trợ đang được phát triển')}
               >
                 Liên hệ hỗ trợ
               </Button>

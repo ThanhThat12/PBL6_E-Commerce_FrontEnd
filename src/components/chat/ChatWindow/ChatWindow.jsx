@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './ChatWindow.css';
 import { X, Minus, ChevronLeft } from 'lucide-react';
 import RoomList from '../RoomList';
@@ -18,6 +18,8 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
   const [typingUsers, setTypingUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [view, setView] = useState(propConversationId ? 'chat' : 'list'); // 'list' or 'chat'
+  const messageIdsRef = useRef(new Set()); // Track message IDs to prevent duplicates
+  const pendingMessagesRef = useRef(new Map()); // Track pending optimistic messages
 
   console.log('ChatWindow render - selectedConversationId:', selectedConversationId, 'view:', view, 'autoMessage:', autoMessage);
 
@@ -26,13 +28,41 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
     view === 'chat' ? selectedConversationId : null, // Only connect in chat view
     {
       onMessage: (message) => {
-        setMessages((prev) => {
-          // Avoid duplicates
-          if (prev.find((m) => m.id === message.id)) {
-            return prev;
+        // Check if this is a real message (from server with actual ID)
+        if (message.id && typeof message.id === 'number') {
+          // Check if we already have this message
+          if (messageIdsRef.current.has(message.id)) {
+            console.log('⚠️ Duplicate message ignored:', message.id);
+            return;
           }
-          return [...prev, message];
-        });
+          
+          // Add to tracking set
+          messageIdsRef.current.add(message.id);
+          
+          // Check if this was an optimistic message
+          const tempId = Array.from(pendingMessagesRef.current.keys()).find(
+            key => pendingMessagesRef.current.get(key) === true
+          );
+          
+          setMessages((prev) => {
+            // Remove optimistic message and add real one
+            const filtered = tempId ? prev.filter(m => m.id !== tempId) : prev;
+            return [...filtered, message];
+          });
+          
+          // Clear pending
+          if (tempId) {
+            pendingMessagesRef.current.delete(tempId);
+          }
+        } else {
+          // Fallback for messages without proper ID
+          setMessages((prev) => {
+            if (prev.find((m) => m.id === message.id)) {
+              return prev;
+            }
+            return [...prev, message];
+          });
+        }
 
         // Show notification if message is from someone else and window is not focused
         const currentUserId = getUserIdFromToken();
@@ -106,12 +136,24 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
     try {
       console.log('💬 Loading messages for conversation:', conversationId);
       setIsLoading(true);
+      
+      // Clear tracking for new conversation
+      messageIdsRef.current.clear();
+      pendingMessagesRef.current.clear();
+      
       const response = await chatService.getConversationMessages(conversationId);
       console.log('💬 Messages response:', response);
       
       // Handle both response.data and direct response
       const messagesData = response.data || response || [];
       console.log('💬 Messages data:', messagesData);
+      
+      // Add all loaded message IDs to tracking set
+      messagesData.forEach(msg => {
+        if (msg.id && typeof msg.id === 'number') {
+          messageIdsRef.current.add(msg.id);
+        }
+      });
       
       setMessages(messagesData);
     } catch (error) {
@@ -199,9 +241,12 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
       return;
     }
 
+    // Generate unique temp ID for optimistic message
+    const tempId = `temp_${Date.now()}_${Math.random()}`;
+    
     // Optimistic UI update
     const optimisticMessage = {
-      id: Date.now(),
+      id: tempId,
       conversationId: selectedConversationId,
       senderId: currentUserId,
       senderName: 'You',
@@ -209,8 +254,12 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
       content: messageData.content,
       createdAt: new Date().toISOString(),
       status: 'SENDING',
+      isOptimistic: true,
     };
 
+    // Track this as pending
+    pendingMessagesRef.current.set(tempId, true);
+    
     setMessages((prev) => [...prev, optimisticMessage]);
 
     // Send via WebSocket
@@ -219,6 +268,15 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
       messageType: messageData.messageType,
       content: messageData.content,
     });
+    
+    // Timeout to remove optimistic message if real one doesn't arrive
+    setTimeout(() => {
+      if (pendingMessagesRef.current.has(tempId)) {
+        console.warn('⚠️ Message send timeout, removing optimistic message:', tempId);
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        pendingMessagesRef.current.delete(tempId);
+      }
+    }, 10000); // 10 second timeout
   };
 
   const handleBackToList = () => {
