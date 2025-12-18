@@ -32,7 +32,6 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
     minOrderValue: 0,
     maxDiscountAmount: 0,
     usageLimit: 0,
-    status: 'ACTIVE',
     startDate: '',
     endDate: ''
   });
@@ -85,7 +84,6 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
           minOrderValue: voucherData.minOrderValue || 0,
           maxDiscountAmount: voucherData.maxDiscountAmount || 0,
           usageLimit: voucherData.usageLimit || 0,
-          status: voucherData.status || 'ACTIVE',
           startDate: formatDateTimeForInput(voucherData.startDate),
           endDate: formatDateTimeForInput(voucherData.endDate)
         });
@@ -246,7 +244,6 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
         minOrderValue: voucher.minOrderValue || 0,
         maxDiscountAmount: voucher.maxDiscountAmount || 0,
         usageLimit: voucher.usageLimit || 0,
-        status: voucher.status || 'ACTIVE',
         startDate: formatDateTimeForInput(voucher.startDate),
         endDate: formatDateTimeForInput(voucher.endDate)
       });
@@ -318,6 +315,7 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
       console.log('💾 [VoucherDetailModal] Form data:', formData);
       
       // Prepare update DTO matching AdminVoucherUpdateDTO
+      // Status will be auto-calculated by backend based on dates
       const updateData = {
         code: formData.code.toUpperCase(),
         description: formData.description.trim(),
@@ -327,8 +325,7 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
         minOrderValue: parseFloat(formData.minOrderValue),
         usageLimit: parseInt(formData.usageLimit),
         startDate: formData.startDate,
-        endDate: formData.endDate,
-        status: formData.status
+        endDate: formData.endDate
       };
       
       console.log('📤 [VoucherDetailModal] Sending update data:', updateData);
@@ -341,7 +338,7 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
       if (response.status === 200 && response.data) {
         setVoucher(response.data);
         
-        // Update form data to match response
+        // Update form data to match response (status excluded - auto-calculated)
         setFormData({
           code: response.data.code || '',
           description: response.data.description || '',
@@ -350,7 +347,6 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
           minOrderValue: response.data.minOrderValue || 0,
           maxDiscountAmount: response.data.maxDiscountAmount || 0,
           usageLimit: response.data.usageLimit || 0,
-          status: response.data.status || 'ACTIVE',
           startDate: formatDateTimeForInput(response.data.startDate),
           endDate: formatDateTimeForInput(response.data.endDate)
         });
@@ -492,23 +488,11 @@ const VoucherDetailModal = ({ voucherId, onClose, onUpdate }) => {
           {/* Status Badge */}
           <div className="admin-voucher-detail-section">
             <div className="admin-voucher-detail-row">
-              <span className="admin-voucher-detail-label">Status</span>
-              {isEditing ? (
-                <select
-                  className="admin-voucher-detail-status-select"
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                >
-                  <option value="ACTIVE">Active</option>
-                  <option value="UPCOMING">Upcoming</option>
-                  <option value="EXPIRED">Expired</option>
-                </select>
-              ) : (
-                <span className={`admin-voucher-detail-status-badge ${statusConfig.className}`}>
-                  {statusConfig.icon}
-                  {statusConfig.text}
-                </span>
-              )}
+              <span className="admin-voucher-detail-label">Status (Auto-calculated)</span>
+              <span className={`admin-voucher-detail-status-badge ${statusConfig.className}`}>
+                {statusConfig.icon}
+                {statusConfig.text}
+              </span>
             </div>
           </div>
 

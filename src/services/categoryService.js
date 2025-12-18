@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'https://localhost:8081/api';
-const API_BASE_URL = 'http://localhost:8081/api';
+const API_BASE_URL = 'https://localhost:8081/api';
 
 // Lấy token từ localStorage
 const getAuthToken = () => {

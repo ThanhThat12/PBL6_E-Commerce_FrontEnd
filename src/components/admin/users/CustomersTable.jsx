@@ -145,106 +145,6 @@ const CustomersTable = () => {
     }
   ];
   
-  // Mock data dựa theo ảnh - Kept for reference
-  /* const mockCustomersData = [
-    { 
-      id: '#CUST001', 
-      name: 'John Doe', 
-      email: 'john.doe@example.com',
-      phone: '+1234567890', 
-      address: '123 Main St, New York, NY 10001',
-      orderCount: 25, 
-      totalSpend: 3450.00, 
-      status: 'Active',
-      registerAt: '2024-01-15',
-      lastOrderDate: '2024-10-20'
-    },
-    { 
-      id: '#CUST002', 
-      name: 'Jane Smith', 
-      email: 'jane.smith@example.com',
-      phone: '+1234567891', 
-      address: '456 Oak Ave, Los Angeles, CA 90001',
-      orderCount: 5, 
-      totalSpend: 250.00, 
-      status: 'Inactive',
-      registerAt: '2024-03-10',
-      lastOrderDate: '2024-08-15'
-    },
-
-    { 
-      id: '#CUST004', 
-      name: 'Michael Brown', 
-      email: 'michael.brown@example.com',
-      phone: '+1234567893', 
-      address: '321 Elm St, Houston, TX 77001',
-      orderCount: 15, 
-      totalSpend: 1890.00, 
-      status: 'Active',
-      registerAt: '2024-02-28',
-      lastOrderDate: '2024-10-18'
-    },
-    { 
-      id: '#CUST005', 
-      name: 'Sarah Wilson', 
-      email: 'sarah.wilson@example.com',
-      phone: '+1234567894', 
-      address: '654 Maple Dr, Phoenix, AZ 85001',
-      orderCount: 8, 
-      totalSpend: 675.00, 
-      status: 'Active',
-      registerAt: '2024-04-05',
-      lastOrderDate: '2024-10-10'
-    },
-    { 
-      id: '#CUST006', 
-      name: 'David Lee', 
-      email: 'david.lee@example.com',
-      phone: '+1234567895', 
-      address: '987 Cedar Ln, Philadelphia, PA 19101',
-      orderCount: 3, 
-      totalSpend: 180.00, 
-      status: 'Inactive',
-      registerAt: '2024-05-12',
-      lastOrderDate: '2024-07-25'
-    },
-    { 
-      id: '#CUST008', 
-      name: 'James Taylor', 
-      email: 'james.taylor@example.com',
-      phone: '+1234567897', 
-      address: '258 Spruce Ave, San Diego, CA 92101',
-      orderCount: 12, 
-      totalSpend: 1540.00, 
-      status: 'Active',
-      registerAt: '2024-01-30',
-      lastOrderDate: '2024-10-19'
-    },
-    { 
-      id: '#CUST009', 
-      name: 'Maria Garcia', 
-      email: 'maria.garcia@example.com',
-      phone: '+1234567898', 
-      address: '369 Willow Way, Dallas, TX 75201',
-      orderCount: 18, 
-      totalSpend: 2340.00, 
-      status: 'Active',
-      registerAt: '2023-12-15',
-      lastOrderDate: '2024-10-17'
-    },
-    { 
-      id: '#CUST010', 
-      name: 'Robert Martinez', 
-      email: 'robert.martinez@example.com',
-      phone: '+1234567899', 
-      address: '741 Ash Blvd, San Jose, CA 95101',
-      orderCount: 6, 
-      totalSpend: 420.00, 
-      status: 'Inactive',
-      registerAt: '2024-06-22',
-      lastOrderDate: '2024-09-05'
-    },
-  ]; */
 
   // Status class helpers - kept for future use
   // eslint-disable-next-line no-unused-vars
@@ -392,8 +292,8 @@ const CustomersTable = () => {
         
         {/* Search and Filter */}
         <div className="customers-actions">
-          <div className="search-container">
-            <Search className="search-icon" size={20} />
+          <div className="customer-search-container">
+            <Search className="customer-search-icon" size={20} />
             <input
               type="text"
               placeholder="Search customers..."
