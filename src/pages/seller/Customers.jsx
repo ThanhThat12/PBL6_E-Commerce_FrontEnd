@@ -35,7 +35,7 @@ const Customers = () => {
       let filteredCustomers = response || [];
       if (keyword) {
         filteredCustomers = filteredCustomers.filter(customer => 
-          customer.username?.toLowerCase().includes(keyword.toLowerCase()) ||
+          customer.fullName?.toLowerCase().includes(keyword.toLowerCase()) ||
           customer.email?.toLowerCase().includes(keyword.toLowerCase())
         );
       }
@@ -55,15 +55,28 @@ const Customers = () => {
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'userId',
-      key: 'userId',
-      width: 80,
+      title: 'Avatar',
+      dataIndex: 'avatar',
+      key: 'avatar',
+      width: 60,
+      render: (avatar, record) => (
+        avatar ? (
+          <img 
+            src={avatar} 
+            alt={record.name} 
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+            <UserOutlined className="text-gray-500" />
+          </div>
+        )
+      ),
     },
     {
       title: 'Tên khách hàng',
-      dataIndex: 'username',
-      key: 'username',
+      dataIndex: 'name',
+      key: 'name',
       render: (text, record) => (
         <div>
           <div className="font-medium">{text}</div>
@@ -72,28 +85,48 @@ const Customers = () => {
       ),
     },
     {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
+      title: 'Số điện thoại',
+      dataIndex: 'phone',
+      key: 'phone',
     },
     {
       title: 'Tổng đơn hàng',
-      dataIndex: 'totalCompletedOrders',
-      key: 'totalCompletedOrders',
-      sorter: (a, b) => a.totalCompletedOrders - b.totalCompletedOrders,
+      dataIndex: 'orderCount',
+      key: 'orderCount',
+      sorter: (a, b) => a.orderCount - b.orderCount,
       render: (count) => (
         <Tag color="blue">{count} đơn</Tag>
       ),
     },
     {
       title: 'Tổng chi tiêu',
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
-      sorter: (a, b) => a.totalAmount - b.totalAmount,
+      dataIndex: 'totalSpent',
+      key: 'totalSpent',
+      sorter: (a, b) => a.totalSpent - b.totalSpent,
       render: (amount) => new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND'
-      }).format(amount || 0),
+      }).format(amount),
+    },
+    {
+      title: 'Loại khách',
+      dataIndex: 'customerType',
+      key: 'customerType',
+      render: (type) => {
+        const typeConfig = {
+          VIP: { color: 'gold', text: 'VIP' },
+          REGULAR: { color: 'blue', text: 'Thường xuyên' },
+          NEW: { color: 'green', text: 'Mới' },
+        };
+        const config = typeConfig[type] || typeConfig.NEW;
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
+    },
+    {
+      title: 'Ngày đăng ký',
+      dataIndex: 'registeredAt',
+      key: 'registeredAt',
+      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
     },
   ];
 
@@ -122,7 +155,7 @@ const Customers = () => {
         <Table
           columns={columns}
           dataSource={customers}
-          rowKey="userId"
+          rowKey="id"
           loading={loading}
           pagination={{
             ...pagination,
