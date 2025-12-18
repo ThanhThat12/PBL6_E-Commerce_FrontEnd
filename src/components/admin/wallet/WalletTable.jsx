@@ -1,164 +1,158 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Calendar, DollarSign, Activity, CheckCircle, Clock, XCircle, ChevronRight, Search } from 'lucide-react';
+import { CreditCard, TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Calendar, DollarSign, Activity, CheckCircle, Clock, XCircle, ChevronRight } from 'lucide-react';
 import './WalletTable.css';
-import adminWalletService from '../../../services/adminWalletService';
 
 const WalletTable = () => {
   const [activeTab, setActiveTab] = useState('today');
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15);
-  const [transactions, setTransactions] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [walletData, setWalletData] = useState({
     mainBalance: 673412.66,
-    walletBalance: 0,
+    walletBalance: 824571.93,
     cardHolder: 'Samantha Anderson',
     cardNumber: '**** **** **** 1234',
     validThru: '08/21',
     balanceChange: '+0.8%'
   });
 
-  // Fetch admin wallet balance
-  useEffect(() => {
-    const fetchAdminBalance = async () => {
-      try {
-        const response = await adminWalletService.getAdminBalance();
-        console.log('📊 Full Admin balance response:', response);
-        console.log('📊 Response type:', typeof response);
-        console.log('📊 Response.data:', response?.data);
-        console.log('📊 Response.data.balance:', response?.data?.balance);
-        
-        // Check different possible structures
-        let balance = null;
-        
-        if (response?.data?.balance !== undefined) {
-          balance = response.data.balance;
-        } else if (response?.balance !== undefined) {
-          balance = response.balance;
-        }
-        
-        console.log('💰 Extracted balance:', balance);
-        
-        if (balance !== null) {
-          setWalletData(prevData => ({
-            ...prevData,
-            walletBalance: balance
-          }));
-          console.log('✅ Admin balance updated to:', balance);
-        } else {
-          console.error('⚠️ Could not extract balance from response');
-        }
-      } catch (error) {
-        console.error('❌ Failed to fetch admin balance:', error);
-      }
-    };
-
-    fetchAdminBalance();
-  }, []);
-
-  // Fetch transactions when page changes OR search query changes
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        console.log(`🔄 Fetching transactions - page: ${currentPage}, size: ${itemsPerPage}, search: "${searchQuery}"`);
-        
-        let response;
-        
-        // Use search API if search query exists, otherwise use regular API
-        if (searchQuery && searchQuery.trim() !== '') {
-          response = await adminWalletService.searchAdminTransactions(searchQuery.trim(), {
-            page: currentPage - 1,
-            size: itemsPerPage
-          });
-        } else {
-          response = await adminWalletService.getAdminTransactions({
-            page: currentPage - 1,
-            size: itemsPerPage
-          });
-        }
-        
-        console.log('📦 Full Transactions response:', response);
-        console.log('📦 Response keys:', Object.keys(response));
-        console.log('📦 Response.content:', response?.content);
-        console.log('📦 Response.data:', response?.data);
-        
-        // Try multiple possible structures
-        let content, pageInfo;
-        
-        if (response?.data?.content) {
-          // Structure: { data: { content: [...], page: {...} } }
-          content = response.data.content;
-          pageInfo = response.data.page;
-        } else if (response?.content) {
-          // Structure: { content: [...], page: {...} }
-          content = response.content;
-          pageInfo = response.page;
-        } else {
-          console.warn('⚠️ Could not parse response structure');
-          setTransactions([]);
-          setTotalPages(1);
-          setTotalElements(0);
-          setLoading(false);
-          return;
-        }
-        
-        setTransactions(content || []);
-        setTotalPages(pageInfo?.totalPages || 1);
-        setTotalElements(pageInfo?.totalElements || 0);
-        
-        console.log(`✅ Loaded ${content?.length || 0} transactions`);
-        console.log(`📊 Total pages: ${pageInfo?.totalPages}, Total elements: ${pageInfo?.totalElements}`);
-        
-      } catch (err) {
-        console.error('❌ Failed to fetch transactions:', err);
-        console.error('❌ Error details:', err.response);
-        setError('Failed to load transactions. Please try again.');
-        setTransactions([]);
-        setTotalPages(1);
-        setTotalElements(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, [currentPage, itemsPerPage, searchQuery]); // Added searchQuery to dependencies
-
-  // Fetch recent invoices
-  useEffect(() => {
-    const fetchRecentInvoices = async () => {
-      try {
-        console.log('🔄 Fetching recent invoices...');
-        
-        const response = await adminWalletService.getRecentInvoices(4);
-        
-        console.log('📋 Recent invoices response:', response);
-        
-        if (response?.data) {
-          setRecentInvoices(response.data);
-          console.log(`✅ Loaded ${response.data.length} recent invoices`);
-        } else if (Array.isArray(response)) {
-          setRecentInvoices(response);
-          console.log(`✅ Loaded ${response.length} recent invoices`);
-        } else {
-          console.warn('⚠️ No invoices in response');
-          setRecentInvoices([]);
-        }
-      } catch (err) {
-        console.error('❌ Failed to fetch recent invoices:', err);
-        setRecentInvoices([]);
-      }
-    };
-
-    fetchRecentInvoices();
-  }, []);
+  // Mock transaction data - matching WalletTransaction entity
+  const [transactions, setTransactions] = useState([
+    {
+      id: 1001,
+      walletId: 1,
+      amount: 150000.00,
+      type: 'DEPOSIT',
+      description: 'Top up wallet via VNPay',
+      relatedOrderId: null,
+      createdAt: '2024-12-11T10:30:00'
+    },
+    {
+      id: 1002,
+      walletId: 1,
+      amount: 45000.00,
+      type: 'ORDER_PAYMENT',
+      description: 'Payment for Order #ORD-2024-001',
+      relatedOrderId: 2001,
+      createdAt: '2024-12-11T09:15:00'
+    },
+    {
+      id: 1003,
+      walletId: 1,
+      amount: 200000.00,
+      type: 'DEPOSIT',
+      description: 'Deposit via Bank Transfer',
+      relatedOrderId: null,
+      createdAt: '2024-12-10T14:20:00'
+    },
+    {
+      id: 1004,
+      walletId: 1,
+      amount: 15000.00,
+      type: 'REFUND',
+      description: 'Refund for cancelled order #ORD-2024-002',
+      relatedOrderId: 2002,
+      createdAt: '2024-12-10T11:45:00'
+    },
+    {
+      id: 1005,
+      walletId: 1,
+      amount: 50000.00,
+      type: 'WITHDRAWAL',
+      description: 'Withdraw to bank account',
+      relatedOrderId: null,
+      createdAt: '2024-12-09T16:30:00'
+    },
+    {
+      id: 1006,
+      walletId: 1,
+      amount: 89000.00,
+      type: 'ORDER_PAYMENT',
+      description: 'Payment for Order #ORD-2024-003',
+      relatedOrderId: 2003,
+      createdAt: '2024-12-09T13:20:00'
+    },
+    {
+      id: 1007,
+      walletId: 1,
+      amount: 120000.00,
+      type: 'PAYMENT_TO_SELLER',
+      description: 'Payment to seller for completed order',
+      relatedOrderId: 2004,
+      createdAt: '2024-12-08T15:10:00'
+    },
+    {
+      id: 1008,
+      walletId: 1,
+      amount: 5000.00,
+      type: 'PLATFORM_FEE',
+      description: 'Platform commission fee',
+      relatedOrderId: 2004,
+      createdAt: '2024-12-08T15:10:00'
+    },
+    {
+      id: 1009,
+      walletId: 1,
+      amount: 300000.00,
+      type: 'DEPOSIT',
+      description: 'Top up via Momo wallet',
+      relatedOrderId: null,
+      createdAt: '2024-12-07T10:00:00'
+    },
+    {
+      id: 1010,
+      walletId: 1,
+      amount: 25000.00,
+      type: 'REFUND',
+      description: 'Refund for defective product',
+      relatedOrderId: 2005,
+      createdAt: '2024-12-07T08:30:00'
+    },
+    {
+      id: 1011,
+      walletId: 1,
+      amount: 67000.00,
+      type: 'ORDER_PAYMENT',
+      description: 'Payment for Order #ORD-2024-006',
+      relatedOrderId: 2006,
+      createdAt: '2024-12-06T17:45:00'
+    },
+    {
+      id: 1012,
+      walletId: 1,
+      amount: 100000.00,
+      type: 'WITHDRAWAL',
+      description: 'Cash withdrawal',
+      relatedOrderId: null,
+      createdAt: '2024-12-06T12:20:00'
+    },
+    {
+      id: 1013,
+      walletId: 1,
+      amount: 8000.00,
+      type: 'PLATFORM_FEE',
+      description: 'Transaction processing fee',
+      relatedOrderId: 2007,
+      createdAt: '2024-12-05T14:00:00'
+    },
+    {
+      id: 1014,
+      walletId: 1,
+      amount: 175000.00,
+      type: 'PAYMENT_TO_SELLER',
+      description: 'Payment to seller - Order completed',
+      relatedOrderId: 2008,
+      createdAt: '2024-12-05T11:30:00'
+    },
+    {
+      id: 1015,
+      walletId: 1,
+      amount: 250000.00,
+      type: 'DEPOSIT',
+      description: 'Top up wallet via ZaloPay',
+      relatedOrderId: null,
+      createdAt: '2024-12-04T09:00:00'
+    }
+  ]);
 
   // Mock recent invoices
   const [recentInvoices, setRecentInvoices] = useState([
@@ -194,25 +188,6 @@ const WalletTable = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now - date;
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else if (diffInDays < 7) {
-      return `${diffInDays}d ago`;
-    } else {
-      return formatDate(dateString);
-    }
   };
 
   const formatCurrency = (amount) => {
@@ -275,22 +250,19 @@ const WalletTable = () => {
     // TODO: Open modal or navigate to withdraw page
   };
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    // Reset to first page when searching
-    setCurrentPage(1);
-  };
-
   const filterTransactions = () => {
     // TODO: Filter by active tab (monthly/weekly/today)
     return transactions;
   };
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTransactions = filterTransactions().slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filterTransactions().length / itemsPerPage);
+
   const handlePageChange = (pageNumber) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
+    setCurrentPage(pageNumber);
   };
 
   const renderPageNumbers = () => {
@@ -307,7 +279,7 @@ const WalletTable = () => {
       pageNumbers.push(
         <button
           key={i}
-          className={`wallet-page-number ${currentPage === i ? 'active' : ''}`}
+          className={`page-number ${currentPage === i ? 'active' : ''}`}
           onClick={() => handlePageChange(i)}
         >
           {i}
@@ -328,17 +300,25 @@ const WalletTable = () => {
               <h3 className="section-title">Transaction History</h3>
               <p className="section-subtitle">View all your wallet transactions</p>
             </div>
-            <div className="wallet-search-container">
-              <div className="wallet-search-box">
-                <Search size={20} className="wallet-search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search by ID, description, order ID, date..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  className="wallet-search-input"
-                />
-              </div>
+            <div className="history-tabs">
+              <button 
+                className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`}
+                onClick={() => setActiveTab('monthly')}
+              >
+                Monthly
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'weekly' ? 'active' : ''}`}
+                onClick={() => setActiveTab('weekly')}
+              >
+                Weekly
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'today' ? 'active' : ''}`}
+                onClick={() => setActiveTab('today')}
+              >
+                Today
+              </button>
             </div>
           </div>
 
@@ -356,91 +336,70 @@ const WalletTable = () => {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                      <div style={{ fontSize: '16px', color: '#64748b' }}>Loading transactions...</div>
+                {currentTransactions.map((transaction) => (
+                  <tr key={transaction.id}>
+                    <td className="td-id">#{transaction.id}</td>
+                    <td className="td-type">
+                      <div className="type-cell">
+                        {getTypeIcon(transaction.type)}
+                        <span>{getTransactionTypeLabel(transaction.type)}</span>
+                      </div>
                     </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                      <div style={{ fontSize: '16px', color: '#ef4444' }}>{error}</div>
+                    <td className="td-description">{transaction.description}</td>
+                    <td className="td-amount">
+                      <span className={`amount-value ${getAmountColorClass(transaction.type)}`}>
+                        {formatCurrency(transaction.amount)}
+                      </span>
                     </td>
-                  </tr>
-                ) : transactions.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                      <div style={{ fontSize: '16px', color: '#64748b' }}>No transactions found</div>
+                    <td className="td-order">
+                      {transaction.relatedOrderId ? (
+                        <span className="order-link">#{transaction.relatedOrderId}</span>
+                      ) : (
+                        <span className="no-order">-</span>
+                      )}
                     </td>
+                    <td className="td-date">{formatDate(transaction.createdAt)}</td>
                   </tr>
-                ) : (
-                  transactions.map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td className="td-id">#{transaction.id}</td>
-                      <td className="td-type">
-                        <div className="type-cell">
-                          {getTypeIcon(transaction.type)}
-                          <span>{getTransactionTypeLabel(transaction.type)}</span>
-                        </div>
-                      </td>
-                      <td className="td-description">{transaction.description}</td>
-                      <td className="td-amount">
-                        <span className={`amount-value ${getAmountColorClass(transaction.type)}`}>
-                          {formatCurrency(transaction.amount)}
-                        </span>
-                      </td>
-                      <td className="td-order">
-                        {transaction.orderId ? (
-                          <span className="order-link">#{transaction.orderId}</span>
-                        ) : (
-                          <span className="no-order">-</span>
-                        )}
-                      </td>
-                      <td className="td-date">{formatDate(transaction.createdAt)}</td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="wallet-pagination-container">
-            <button 
-              className="wallet-page-btn wallet-prev" 
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
+          <div className="pagination-container">
             
-            <div className="wallet-page-numbers">
+            <div className="pagination-controls">
+              <button 
+                className="page-btn prev" 
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
               {renderPageNumbers()}
+              <button 
+                className="page-btn next" 
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
             </div>
-            
-            <button 
-              className="wallet-page-btn wallet-next" 
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
           </div>
         </div>
 
-        {/* Right - Wallet Balance & Invoices */} 
+        {/* Right - Wallet Balance & Invoices */}
         <div className="wallet-right-section">
           <div className="wallet-balance-card">
             <div className="wallet-card-icon">
               <div className="card-logo"></div>
             </div>
             <h2 className="wallet-amount">{formatCurrency(walletData.walletBalance)}</h2>
-            <h2 className="wallet-label">Wallet Balance</h2>
-            {/* <p className="wallet-change">
+            <p className="wallet-label">Wallet Balance</p>
+            <p className="wallet-change">
               <TrendingUp size={16} />
               {walletData.balanceChange} than last week
-            </p> */}
+            </p>
             
             {/* Action Buttons */}
             <div className="wallet-actions">
@@ -467,38 +426,20 @@ const WalletTable = () => {
             </div>
 
             <div className="invoices-list">
-              {recentInvoices.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
-                  No recent invoices
-                </div>
-              ) : (
-                recentInvoices.map((invoice) => (
-                  <div key={invoice.id} className="invoice-item">
-                    {invoice.avatar ? (
-                      <img 
-                        src={invoice.avatar} 
-                        alt={invoice.name} 
-                        className="invoice-avatar"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(invoice.name)}&background=10b981&color=fff`;
-                        }}
-                      />
-                    ) : (
-                      <img 
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(invoice.name)}&background=10b981&color=fff`}
-                        alt={invoice.name} 
-                        className="invoice-avatar" 
-                      />
-                    )}
-                    <div className="invoice-info">
-                      <h4 className="invoice-name">{invoice.name}</h4>
-                      <p className="invoice-time">{formatTimeAgo(invoice.createdAt)}</p>
-                    </div>
-                    <div className="invoice-amount">{formatCurrency(invoice.amount)}</div>
+              {recentInvoices.map((invoice) => (
+                <div key={invoice.id} className="invoice-item">
+                  <img 
+                    src={`https://i.pravatar.cc/150?img=${invoice.id + 20}`} 
+                    alt={invoice.name} 
+                    className="invoice-avatar" 
+                  />
+                  <div className="invoice-info">
+                    <h4 className="invoice-name">{invoice.name}</h4>
+                    <p className="invoice-time">{invoice.time}</p>
                   </div>
-                ))
-              )}
+                  <div className="invoice-amount">{formatCurrency(invoice.amount)}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { useOrder } from '../../context/OrderContext';
 import ProfileLayout from '../../components/layout/ProfileLayout';
 import OrderCard from '../../components/order/OrderCard';
@@ -13,18 +12,10 @@ import { toast } from 'react-hot-toast';
  * Display list of user's orders with status filters (with sidebar layout)
  */
 const OrderListPage = () => {
-  const location = useLocation();
   const { orders, loading, fetchOrders, filterOrdersByStatus } = useOrder();
   const [activeTab, setActiveTab] = useState('ALL');
   const [refundRequests, setRefundRequests] = useState([]);
   const [refundLoading, setRefundLoading] = useState(false);
-
-  // Set active tab from navigation state (from notification)
-  useEffect(() => {
-    if (location.state?.activeTab) {
-      setActiveTab(location.state.activeTab);
-    }
-  }, [location.state]);
 
   useEffect(() => {
     fetchOrders();

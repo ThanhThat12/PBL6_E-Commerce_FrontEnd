@@ -19,9 +19,7 @@ import {
   X,
   MessageSquare,
   Wallet,
-  BadgeCheck,
-  ArrowLeft,
-  Globe 
+  ClipboardCheck
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -100,8 +98,7 @@ const Sidebar = ({ onToggle }) => {
       dropdown: [
         { name: "Customers", icon: <User size={16} />, path: "/admin/users/customers" },
         { name: "Sellers", icon: <UserCheck size={16} />, path: "/admin/users/sellers" },
-        { name: "Seller Approval", icon: <BadgeCheck size={20} />, path: "/admin/seller-registrations" },
-
+    { name: "Duyệt Seller", icon: <ClipboardCheck size={20} />, path: "/admin/seller-registrations" },
       ],
     },
     { name: "Products", icon: <ShoppingBag size={20} />, path: "/admin/products" },

@@ -6,6 +6,7 @@ import MessageList from '../MessageList';
 import MessageInput from '../MessageInput';
 import useChatWebSocket from '../../../hooks/useChatWebSocket';
 import chatService from '../../../services/chatService';
+import chatbotService from '../../../services/chatbotService';
 import { requestNotificationPermission, showChatNotification, playNotificationSound } from '../../../utils/notification';
 
 /**
@@ -18,6 +19,8 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
   const [typingUsers, setTypingUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [view, setView] = useState(propConversationId ? 'chat' : 'list'); // 'list' or 'chat'
+  const [inputMode, setInputMode] = useState('chat'); // 'chat' | 'bot'
+  const [botMessages, setBotMessages] = useState([]);
 
   console.log('ChatWindow render - selectedConversationId:', selectedConversationId, 'view:', view, 'autoMessage:', autoMessage);
 
@@ -193,13 +196,59 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
   };
 
   const handleSendMessage = (messageData) => {
+    if (inputMode === 'bot') {
+      // Local-only chatbot flow
+      const currentUserId = getUserIdFromToken();
+      const userMsg = {
+        id: Date.now(),
+        senderId: currentUserId,
+        senderName: 'You',
+        messageType: messageData.messageType,
+        content: messageData.content,
+        createdAt: new Date().toISOString(),
+        status: 'SENT',
+      };
+      setBotMessages((prev) => [...prev, userMsg]);
+
+      // Call chatbot API
+      chatbotService
+        .ask({ question: messageData.content })
+        .then((reply) => {
+          const text = reply?.answer || reply?.data?.answer || reply?.message || 'Bot không có câu trả lời.';
+          const botMsg = {
+            id: Date.now() + 1,
+            senderId: 'BOT',
+            senderName: 'Chatbot',
+            messageType: 'TEXT',
+            content: text,
+            createdAt: new Date().toISOString(),
+            status: 'SENT',
+          };
+          setBotMessages((prev) => [...prev, botMsg]);
+        })
+        .catch((err) => {
+          const botMsg = {
+            id: Date.now() + 2,
+            senderId: 'BOT',
+            senderName: 'Chatbot',
+            messageType: 'TEXT',
+            content: 'Xin lỗi, chatbot đang gặp lỗi. Vui lòng thử lại.',
+            createdAt: new Date().toISOString(),
+            status: 'ERROR',
+          };
+          console.error('Chatbot error:', err);
+          setBotMessages((prev) => [...prev, botMsg]);
+        });
+      return;
+    }
+
+    // Normal chat flow
     const currentUserId = getUserIdFromToken();
     if (!currentUserId) {
       console.error('User not authenticated');
       return;
     }
 
-    // Optimistic UI update
     const optimisticMessage = {
       id: Date.now(),
       conversationId: selectedConversationId,
@@ -213,7 +262,6 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
 
     setMessages((prev) => [...prev, optimisticMessage]);
 
-    // Send via WebSocket
     sendMessage({
       senderId: currentUserId,
       messageType: messageData.messageType,
@@ -240,14 +288,16 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
           </button>
         )}
         <h3 className="chat-window-title">
-          {view === 'chat' && selectedConversation
-            ? selectedConversation.type === 'SHOP' 
-              ? (selectedConversation.shopName || `Shop #${selectedConversation.id}`)
-              : (selectedConversation.otherParticipantName || 'Hỗ trợ khách hàng')
-            : 'Tin nhắn'}
+          {inputMode === 'bot'
+            ? 'Chatbot'
+            : (view === 'chat' && selectedConversation
+                ? (selectedConversation.type === 'SHOP'
+                    ? (selectedConversation.shopName || `Shop #${selectedConversation.id}`)
+                    : (selectedConversation.otherParticipantName || 'Hỗ trợ khách hàng'))
+                : 'Tin nhắn')}
         </h3>
         <div className="chat-window-actions">
-          {isConnected && view === 'chat' && (
+          {isConnected && view === 'chat' && inputMode !== 'bot' && (
             <span className="chat-connection-status">🟢</span>
           )}
           <button className="chat-action-btn" onClick={onMinimize} title="Thu nhỏ">
@@ -269,16 +319,26 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
           />
         ) : (
           <>
-            <MessageList
-              messages={messages}
-              currentUserId={getUserIdFromToken()}
-              typingUsers={typingUsers}
-            />
+            {inputMode === 'bot' ? (
+              <MessageList
+                messages={botMessages}
+                currentUserId={getUserIdFromToken()}
+                typingUsers={[]}
+              />
+            ) : (
+              <MessageList
+                messages={messages}
+                currentUserId={getUserIdFromToken()}
+                typingUsers={typingUsers}
+              />
+            )}
             <MessageInput
               onSendMessage={handleSendMessage}
-              disabled={!isConnected}
-              placeholder={isConnected ? 'Nhập tin nhắn...' : 'Đang kết nối...'}
+              disabled={inputMode === 'bot' ? false : !isConnected}
+              placeholder={inputMode === 'bot' ? 'Nhập tin nhắn cho chatbot...' : (isConnected ? 'Nhập tin nhắn...' : 'Đang kết nối...')}
               autoMessage={autoMessage}
+              mode={inputMode}
+              onChangeMode={setInputMode}
             />
           </>
         )}
