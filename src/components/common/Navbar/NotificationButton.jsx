@@ -17,7 +17,7 @@ export default function NotificationButton({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const navigate = useNavigate();
+
   
   const unreadCount = notifications.filter(n => !n.read).length;
 

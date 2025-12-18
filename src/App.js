@@ -88,22 +88,6 @@ import WalletPage from './pages/admin/Wallet/WalletPage';
 import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 import SellerRegistrationGuard from './components/seller/SellerRegistrationGuard';
 
-// Chat Wrapper - Only show on authenticated pages
-const ConditionalChatContainer = () => {
-  const location = useLocation();
-  
-  // Hide chat on auth pages
-  const hideChat = [
-    ROUTES.LOGIN,
-    ROUTES.REGISTER,
-    '/forgot-password',
-    '/admin/login'
-  ].some(route => location.pathname.startsWith(route));
-  
-  return !hideChat ? <ChatContainer /> : null;
-};
-
-
 function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
