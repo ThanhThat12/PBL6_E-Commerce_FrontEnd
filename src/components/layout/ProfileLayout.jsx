@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FiUser, FiMapPin, FiPackage, FiShoppingCart, FiLock, FiLogOut } from 'react-icons/fi';
+import { FiUser, FiMapPin, FiPackage, FiShoppingCart, FiLock, FiLogOut, FiBell } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import Navbar from '../common/Navbar';
@@ -31,6 +31,11 @@ const ProfileLayout = ({ children }) => {
       label: 'Tài Khoản Của Tôi',
       path: '/profile',
       exact: true
+    },
+    {
+      icon: FiBell,
+      label: 'Thông Báo',
+      path: '/notifications'
     },
     {
       icon: FiMapPin,

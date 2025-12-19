@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotificationContext } from '../../context/NotificationContext';
 import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
+import ProfileLayout from '../../components/layout/ProfileLayout';
 
 /**
  * NotificationsPage - Trang xem tất cả thông báo
@@ -83,25 +84,25 @@ export default function NotificationsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <ProfileLayout>
+        <div className="p-12 text-center">
           <p className="text-gray-600 mb-4">Vui lòng đăng nhập để xem thông báo</p>
           <Link
             to="/login"
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-block"
           >
             Đăng nhập
           </Link>
         </div>
-      </div>
+      </ProfileLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <ProfileLayout>
+      <div className="p-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -137,7 +138,7 @@ export default function NotificationsPage() {
 
         {/* Notifications List */}
         {notifications.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <div className="p-12 text-center">
             <BellIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 text-lg">Không có thông báo nào</p>
             <p className="text-gray-400 text-sm mt-2">
@@ -150,12 +151,11 @@ export default function NotificationsPage() {
               <div
                 key={notification.id}
                 className={`
-                  bg-white
+                  bg-gray-50
                   rounded-lg
-                  shadow-md
-                  p-6
+                  p-4
                   transition-all
-                  hover:shadow-lg
+                  hover:bg-gray-100
                   ${!notification.read ? 'border-l-4 border-blue-500' : ''}
                 `}
               >
@@ -199,7 +199,7 @@ export default function NotificationsPage() {
                       </Link>
                     )}
                     
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                       <p className="text-xs text-gray-500">
                         {formatTime(notification.timestamp)}
                       </p>
@@ -219,6 +219,6 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
-    </div>
+    </ProfileLayout>
   );
 }
