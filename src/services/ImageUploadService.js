@@ -564,6 +564,7 @@ class ImageUploadService {
 
   /**
    * Upload refund request image
+   * Uses CommonImageController's upload endpoint with folder=refund
    * @param {FormData} formData - FormData containing the image file
    * @returns {Promise<Object>} Upload response with image URL
    */
@@ -571,8 +572,10 @@ class ImageUploadService {
     try {
       const token = getAccessToken();
       
+      console.log('📤 Uploading refund image to /images/upload?folder=refund');
+      
       const response = await axios.post(
-        `${API_BASE_URL}refund/upload-image`,
+        `${API_BASE_URL}images/upload?folder=refund`,
         formData,
         {
           headers: {
@@ -582,10 +585,18 @@ class ImageUploadService {
         }
       );
       
-      return response.data;
+      console.log('✅ Refund image uploaded:', response.data);
+      
+      // Extract URL from ResponseDTO structure
+      const data = response.data?.data || response.data;
+      return {
+        url: data.url,
+        publicId: data.publicId,
+        transformations: data.transformations
+      };
     } catch (error) {
-      console.error('Error uploading refund image:', error);
-      throw new Error('Không thể tải ảnh lên');
+      console.error('❌ Error uploading refund image:', error.response?.data || error);
+      throw new Error(error.response?.data?.message || 'Không thể tải ảnh lên');
     }
   }
 }
