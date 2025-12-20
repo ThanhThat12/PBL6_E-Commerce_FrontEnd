@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import Navbar from '../common/Navbar';
 import Footer from './footer/Footer';
+import { getUserAvatar, handleImageError, DEFAULT_AVATAR_IMAGE } from '../../utils/placeholderImage';
 
 /**
  * ProfileLayout
@@ -74,9 +75,12 @@ const ProfileLayout = ({ children }) => {
                 {/* User Info Header */}
                 <div className="p-4 border-b border-gray-200">
                   <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold text-lg">
-                      {user?.username?.charAt(0).toUpperCase() || 'U'}
-                    </div>
+                    <img 
+                      src={getUserAvatar(user)} 
+                      alt={user?.username || 'User'}
+                      className="flex-shrink-0 w-12 h-12 rounded-full object-cover border-2 border-primary-500"
+                      onError={(e) => handleImageError(e, DEFAULT_AVATAR_IMAGE)}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-gray-600">Tài khoản của</p>
                       <p className="font-semibold text-gray-900 truncate">

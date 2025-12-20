@@ -1,9 +1,18 @@
 /**
- * Utility to generate placeholder images
+ * Utility to get product images with Cloudinary fallbacks
+ * Now using real Cloudinary default images instead of SVG placeholders
  */
 
+import { 
+  DEFAULT_PRODUCT_IMAGE, 
+  DEFAULT_AVATAR_IMAGE, 
+  DEFAULT_SHOP_LOGO, 
+  DEFAULT_SHOP_BANNER,
+  handleImageError 
+} from './imageDefaults';
+
 /**
- * Generate inline SVG placeholder image
+ * Generate inline SVG placeholder image (legacy - kept for compatibility)
  * @param {string} text - Text to display in placeholder
  * @param {number} width - Image width
  * @param {number} height - Image height
@@ -29,20 +38,68 @@ export const generatePlaceholder = (text, width, height, bgColor, textColor) => 
 };
 
 /**
- * Default product placeholder
+ * Default product placeholder - now uses Cloudinary
  */
-export const PRODUCT_PLACEHOLDER = generatePlaceholder('No Image', 400, 400);
+export const PRODUCT_PLACEHOLDER = DEFAULT_PRODUCT_IMAGE;
 
 /**
- * Get product image with fallback
- * Priority: mainImage > productMainImage > image > productImage > placeholder
+ * Get product image with fallback to Cloudinary default
+ * Priority: mainImage > productMainImage > image > productImage > Cloudinary default
  * @param {Object} product - Product object (or item with product data)
- * @returns {string} Image URL or placeholder
+ * @returns {string} Image URL or Cloudinary default
  */
 export const getProductImage = (product) => {
   return product?.mainImage 
     || product?.productMainImage 
     || product?.image 
     || product?.productImage 
-    || PRODUCT_PLACEHOLDER;
+    || DEFAULT_PRODUCT_IMAGE;
 };
+
+/**
+ * Get user avatar with fallback to Cloudinary default
+ * @param {Object} user - User object
+ * @returns {string} Avatar URL or Cloudinary default
+ */
+export const getUserAvatar = (user) => {
+  return user?.avatar 
+    || user?.avatarUrl 
+    || user?.userAvatarUrl 
+    || DEFAULT_AVATAR_IMAGE;
+};
+
+/**
+ * Get shop logo with fallback to Cloudinary default
+ * @param {Object} shop - Shop object
+ * @returns {string} Logo URL or Cloudinary default
+ */
+export const getShopLogo = (shop) => {
+  return shop?.logo 
+    || shop?.logoUrl 
+    || shop?.shopLogo 
+    || DEFAULT_SHOP_LOGO;
+};
+
+/**
+ * Get shop banner with fallback to Cloudinary default
+ * @param {Object} shop - Shop object
+ * @returns {string} Banner URL or Cloudinary default
+ */
+export const getShopBanner = (shop) => {
+  return shop?.banner 
+    || shop?.bannerUrl 
+    || shop?.shopBanner 
+    || DEFAULT_SHOP_BANNER;
+};
+
+// Re-export handleImageError for convenience
+export { handleImageError };
+
+// Re-export default images for direct use
+export {
+  DEFAULT_PRODUCT_IMAGE,
+  DEFAULT_AVATAR_IMAGE,
+  DEFAULT_SHOP_LOGO,
+  DEFAULT_SHOP_BANNER
+};
+

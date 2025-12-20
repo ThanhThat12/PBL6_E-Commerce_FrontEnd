@@ -21,8 +21,8 @@ const transformProduct = (product) => {
     image: product.mainImage || '/placeholder-product.jpg',
     price: product.basePrice || 0,
     originalPrice: product.basePrice ? product.basePrice * 1.2 : null, // Fake discount for demo
-    rating: 4.5, // Default rating
-    reviewCount: Math.floor(Math.random() * 200) + 50, // Random review count
+    rating: product.rating || 0, // Use actual rating from backend
+    reviewCount: product.reviewCount || 0, // Use actual review count from backend
     brand: product.shop?.name || 'SportZone',
     inStock: product.variants?.some(v => v.stock > 0) ?? true,
     badge: product.badge || (Math.random() > 0.7 ? 'hot' : null), // Use provided badge or random

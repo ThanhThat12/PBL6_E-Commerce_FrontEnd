@@ -28,6 +28,7 @@ const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [flashDeals, setFlashDeals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Scroll to top button
   useEffect(() => {
@@ -41,6 +42,7 @@ const HomePage = () => {
     const fetchHomeData = async () => {
       try {
         setLoading(true);
+        setError(null);
         
         // Fetch tất cả data song song
         const [categoriesData, featuredData, flashDealsData] = await Promise.all([
@@ -52,8 +54,9 @@ const HomePage = () => {
         setCategories(categoriesData);
         setFeaturedProducts(featuredData);
         setFlashDeals(flashDealsData);
-      } catch {
-        // Silent error
+      } catch (err) {
+        console.error('Failed to load homepage data:', err);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
@@ -67,14 +70,65 @@ const HomePage = () => {
       {/* Navbar */}
       <Navbar isHomePage={true} />
 
-      {/* Loading State */}
+      {/* Loading State - Skeleton */}
       {loading && (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Đang tải dữ liệu...</p>
+        <main className="w-full">
+          <div className="container mx-auto px-4 lg:px-8 py-6 space-y-8">
+            {/* Hero Skeleton */}
+            <div className="h-96 bg-gray-200 rounded-2xl animate-pulse"></div>
+            
+            {/* Flash Deals Skeleton */}
+            <div className="space-y-4">
+              <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg p-4 shadow-soft space-y-3">
+                    <div className="h-48 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Categories Skeleton */}
+            <div className="space-y-4">
+              <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+              <div className="grid grid-cols-4 md:grid-cols-6 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex flex-col items-center space-y-2">
+                    <div className="w-20 h-20 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <main className="w-full">
+          <div className="container mx-auto px-4 lg:px-8 py-24">
+            <div className="max-w-md mx-auto text-center">
+              <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6">
+                <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Không thể tải trang chủ</h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold shadow-colored-primary"
+              >
+                Thử lại
+              </button>
+            </div>
+          </div>
+        </main>
       )}
 
       {/* Main Content */}

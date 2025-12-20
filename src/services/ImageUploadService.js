@@ -354,7 +354,7 @@ class ImageUploadService {
   static async uploadAvatar(file, onProgress) {
     try {
       const formData = new FormData();
-      formData.append('avatar', file);
+      formData.append('file', file);
 
       const requestFn = () =>
         axios.post(

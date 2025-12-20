@@ -50,6 +50,7 @@ const ReviewSection = ({
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [userReview, setUserReview] = useState(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
 
   const PAGE_SIZE = 10;
 
@@ -175,9 +176,15 @@ const ReviewSection = ({
     }
   };
 
+  const handleEdit = (review) => {
+    setEditingReview(review);
+    setShowWriteModal(true);
+  };
+
   const handleWriteSuccess = () => {
     loadReviews(0, filterRating, sortBy);
     setPage(0);
+    setEditingReview(null);
   };
 
   const canWriteReview = () => {
@@ -367,6 +374,7 @@ const ReviewSection = ({
                 isLoggedIn={isAuthenticated}
                 onLike={handleLike}
                 onReport={handleReport}
+                onEdit={handleEdit}
               />
             ))}
           </div>
@@ -426,11 +434,14 @@ const ReviewSection = ({
       {/* Write Review Modal */}
       <WriteReviewModal
         isOpen={showWriteModal}
-        onClose={() => setShowWriteModal(false)}
+        onClose={() => {
+          setShowWriteModal(false);
+          setEditingReview(null);
+        }}
         productId={resolvedProductId}
         product={product}
         onSuccess={handleWriteSuccess}
-        editReview={canEditReview() ? userReview : null}
+        editReview={editingReview}
       />
     </div>
   );

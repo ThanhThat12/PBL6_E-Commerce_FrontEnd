@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiPackage, FiMapPin } from 'react-icons/fi';
+import { getShopLogo, handleImageError, DEFAULT_SHOP_LOGO } from '../../utils/placeholderImage';
 
 /**
  * ShopCard Component - Display shop info in search results
@@ -22,9 +23,6 @@ const ShopCard = ({ shop }) => {
     productCount = 0,
     status
   } = shop;
-
-  // Default placeholder for shop without logo
-  const defaultLogo = 'https://via.placeholder.com/80x80?text=Shop';
 
   return (
     <Link
