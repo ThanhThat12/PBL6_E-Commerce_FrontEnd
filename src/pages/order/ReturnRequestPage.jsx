@@ -9,32 +9,6 @@ import orderService from '../../services/orderService';
 import ImageUploadService from '../../services/ImageUploadService';
 
 /**
- * Upload images for refund request
- * @param {File[]} files - Array of image files
- * @returns {Promise<string[]>} Array of uploaded image URLs
- */
-const uploadRefundImages = async (files) => {
-  const uploadedUrls = [];
-  
-  for (const file of files) {
-    try {
-      // Create FormData
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Upload to backend (which will upload to Cloudinary)
-      const response = await ImageUploadService.uploadRefundImage(formData);
-      uploadedUrls.push(response.url || response.data?.url);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw new Error(`Không thể tải ảnh lên: ${file.name}`);
-    }
-  }
-  
-  return uploadedUrls;
-};
-
-/**
  * ReturnRequestPage
  * Trang tạo yêu cầu trả hàng/hoàn tiền cho sản phẩm cụ thể
  */
@@ -116,8 +90,26 @@ const ReturnRequestPage = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+    
+    // Validation: Max 5 images
     if (images.length + files.length > 5) {
       toast.error('Tối đa 5 ảnh');
+      return;
+    }
+
+    // Validation: File type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
+    if (invalidFiles.length > 0) {
+      toast.error('Chỉ chấp nhận file ảnh (JPG, PNG, WEBP)');
+      return;
+    }
+
+    // Validation: File size (max 5MB per file)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const oversizedFiles = files.filter(file => file.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      toast.error('Mỗi ảnh tối đa 5MB');
       return;
     }
 
@@ -164,27 +156,72 @@ const ReturnRequestPage = () => {
     try {
       setSubmitting(true);
 
-      // Upload images
-      toast.loading('Đang tải ảnh lên...', { id: 'upload' });
-      const uploadedUrls = await uploadRefundImages(images);
+      // Step 1: Upload images
+      console.log('📤 Starting upload process for', images.length, 'images');
+      toast.loading(`Đang tải ảnh lên (0/${images.length})...`, { id: 'upload' });
+      
+      const uploadedUrls = [];
+      for (let i = 0; i < images.length; i++) {
+        toast.loading(`Đang tải ảnh lên (${i + 1}/${images.length})...`, { id: 'upload' });
+        const formData = new FormData();
+        formData.append('file', images[i]);
+        
+        try {
+          const response = await ImageUploadService.uploadRefundImage(formData);
+          uploadedUrls.push(response.url);
+          console.log(`✅ Uploaded image ${i + 1}:`, response.url);
+        } catch (error) {
+          console.error(`❌ Failed to upload image ${i + 1}:`, error);
+          toast.dismiss('upload');
+          throw new Error(`Không thể tải ảnh "${images[i].name}" lên. Vui lòng thử lại.`);
+        }
+      }
+      
       toast.dismiss('upload');
+      toast.success(`Đã tải lên ${uploadedUrls.length} ảnh thành công!`);
 
-      // Create refund request
+      // Step 2: Create refund request
+      console.log('📝 Creating refund request with data:', {
+        orderItemId: parseInt(itemId),
+        reason,
+        description: description.substring(0, 50) + '...',
+        quantity: returnQuantity,
+        imageUrls: uploadedUrls,
+        requestedAmount: selectedItem.price * returnQuantity
+      });
+
+      toast.loading('Đang gửi yêu cầu trả hàng...', { id: 'submit' });
+      
       const requestData = {
         orderItemId: parseInt(itemId),
         reason,
         description,
-        quantity: returnQuantity, // Số lượng muốn trả
+        quantity: returnQuantity,
         imageUrls: uploadedUrls,
-        requestedAmount: selectedItem.price * returnQuantity // Tính theo số lượng trả
+        requestedAmount: selectedItem.price * returnQuantity
       };
 
-      await orderService.createRefundRequest(requestData);
-      toast.success('Đã gửi yêu cầu trả hàng thành công!');
-      navigate('/orders');
+      const response = await orderService.createRefundRequest(requestData);
+      toast.dismiss('submit');
+      
+      console.log('✅ Refund request created successfully:', response);
+      toast.success('Đã gửi yêu cầu trả hàng thành công! Vui lòng chờ shop xét duyệt.');
+      
+      // Wait a bit before navigating
+      setTimeout(() => {
+        navigate('/orders');
+      }, 1500);
+      
     } catch (error) {
-      console.error('Error creating refund request:', error);
-      toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu trả hàng');
+      console.error('❌ Error in refund request process:', error);
+      toast.dismiss('upload');
+      toast.dismiss('submit');
+      
+      const errorMessage = error.response?.data?.message 
+        || error.message 
+        || 'Không thể gửi yêu cầu trả hàng. Vui lòng thử lại.';
+      
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
