@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import usePendingOrderCleanup from "../../hooks/usePendingOrderCleanup";
 import Navbar from "../../components/common/Navbar";
 import HeroSection from "../../components/feature/home/HeroSection";
 import CategorySection from "../../components/feature/home/CategorySection";
-import FlashDeals from "../../components/feature/home/FlashDeals";
-import FeaturedProducts from "../../components/feature/home/FeaturedProducts";
-import BrandShowcase from "../../components/feature/home/BrandShowcase";
-import ServiceFeatures from "../../components/feature/tab/ServiceFeatures";
+import FeaturedProducts, { ProductCard as FeaturedProductCard } from "../../components/feature/home/FeaturedProducts";
 import ButtonUp from "../../components/ui/buttonUp/ButtonUp";
 import Footer from "../../components/layout/footer/Footer";
-import { getCategories, getFeaturedProducts, getBestSellingProducts } from "../../services/homeService";
+import { getCategories, getFeaturedProducts } from "../../services/homeService";
 // Note: useAuth and getNewArrivals available but not currently used
 
 /**
@@ -26,7 +24,7 @@ const HomePage = () => {
   // State cho data từ API
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [flashDeals, setFlashDeals] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -44,16 +42,14 @@ const HomePage = () => {
         setLoading(true);
         setError(null);
         
-        // Fetch tất cả data song song
-        const [categoriesData, featuredData, flashDealsData] = await Promise.all([
+        const [categoriesData, allProductsData] = await Promise.all([
           getCategories(),
-          getFeaturedProducts(8),
-          getBestSellingProducts(8), // Flash deals = best sellers
+          getFeaturedProducts(24),
         ]);
 
         setCategories(categoriesData);
-        setFeaturedProducts(featuredData);
-        setFlashDeals(flashDealsData);
+        setFeaturedProducts(allProductsData.slice(0, 8));
+        setAllProducts(allProductsData);
       } catch (err) {
         console.error('Failed to load homepage data:', err);
         setError('Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -77,21 +73,6 @@ const HomePage = () => {
             {/* Hero Skeleton */}
             <div className="h-96 bg-gray-200 rounded-2xl animate-pulse"></div>
             
-            {/* Flash Deals Skeleton */}
-            <div className="space-y-4">
-              <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg p-4 shadow-soft space-y-3">
-                    <div className="h-48 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-                    <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Categories Skeleton */}
             <div className="space-y-4">
               <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
@@ -104,6 +85,7 @@ const HomePage = () => {
                 ))}
               </div>
             </div>
+
           </div>
         </main>
       )}
@@ -135,54 +117,51 @@ const HomePage = () => {
       {!loading && (
         <main className="w-full">
           <div className="container mx-auto px-4 lg:px-8 py-6">
-            {/* Hero Banner Section */}
             <HeroSection autoPlayInterval={5000} />
-
-            {/* Flash Deals Section */}
-            <FlashDeals 
-              products={flashDeals}
-              title="⚡ Deals Hôm Nay"
-            />
-
-            {/* Category Section */}
             <CategorySection 
               categories={categories}
-              title="Danh Mục Thể Thao"
+              title="Danh Mục Sản Phẩm"
             />
 
-            {/* Featured Products Section */}
             <FeaturedProducts 
               products={featuredProducts}
               title="Sản Phẩm Nổi Bật"
             />
 
-            {/* Service Features */}
-            <ServiceFeatures />
-
-            {/* Brand Showcase Section */}
-            <BrandShowcase title="Thương Hiệu Đối Tác" />
-
-            {/* Newsletter Section */}
-            <section className="py-12">
-              <div className="bg-gradient-primary rounded-2xl p-8 md:p-12 text-center shadow-colored-primary">
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                  Đăng Ký Nhận Tin Khuyến Mãi
-                </h3>
-                <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-                  Nhận ngay voucher 100.000₫ và cập nhật các chương trình ưu đãi độc quyền
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                  <input
-                    type="email"
-                    placeholder="Nhập email của bạn"
-                    className="flex-1 px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:outline-none"
-                  />
-                  <button className="bg-secondary-500 hover:bg-secondary-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap">
-                    Đăng Ký
-                  </button>
+            {allProducts.length > 0 && (
+              <section className="py-8 md:py-12">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl md:text-2xl font-bold text-text-primary">
+                    Tất Cả Sản Phẩm
+                  </h2>
+                  <Link
+                    to="/products"
+                    className="hidden md:inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors no-underline"
+                  >
+                    Xem toàn bộ
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
                 </div>
-              </div>
-            </section>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                  {allProducts.map((product) => (
+                    <FeaturedProductCard key={product.id} product={product} showDiscount />
+                  ))}
+                </div>
+                <div className="mt-6 md:hidden text-center">
+                  <Link
+                    to="/products"
+                    className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors no-underline"
+                  >
+                    Xem toàn bộ sản phẩm
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </section>
+            )}
           </div>
         </main>
       )}

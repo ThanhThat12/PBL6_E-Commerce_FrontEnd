@@ -3,10 +3,7 @@ import {
   XMarkIcon,
   HomeIcon,
   ShoppingBagIcon,
-  HeartIcon,
-  UserCircleIcon,
-  PhoneIcon,
-  Squares2X2Icon
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 
@@ -16,7 +13,6 @@ import { Link } from 'react-router-dom';
  * @param {boolean} isOpen - Trạng thái mở/đóng
  * @param {function} onClose - Callback khi đóng menu
  * @param {object} user - User data từ context
- * @param {array} categories - Danh sách categories
  * @param {array} menuItems - Danh sách menu items
  * @param {number} cartItemCount - Số lượng sản phẩm trong giỏ
  */
@@ -24,7 +20,6 @@ const MobileMenu = ({
   isOpen,
   onClose,
   user = null,
-  categories = [],
   menuItems = [],
   cartItemCount = 0
 }) => {
@@ -185,25 +180,6 @@ const MobileMenu = ({
             </Link>
 
             <Link
-              to="/wishlist"
-              onClick={handleLinkClick}
-              className="
-                flex
-                flex-col
-                items-center
-                justify-center
-                py-3
-                bg-background-secondary
-                rounded-lg
-                hover:bg-primary-50
-                transition-colors
-              "
-            >
-              <HeartIcon className="w-6 h-6 text-accent-red-500 mb-1" />
-              <span className="text-xs font-medium text-text-primary">Yêu thích</span>
-            </Link>
-
-            <Link
               to={user ? "/orders" : "/login"}
               onClick={handleLinkClick}
               className="
@@ -223,48 +199,6 @@ const MobileMenu = ({
             </Link>
           </div>
         </div>
-
-        {/* Categories */}
-        {categories.length > 0 && (
-          <div className="px-4 py-4 border-b border-border">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-text-primary mb-3 uppercase tracking-wide">
-              <Squares2X2Icon className="w-5 h-5 text-primary-600" />
-              Danh mục sản phẩm
-            </h3>
-            <div className="space-y-1">
-              {categories.map((category, index) => (
-                <Link
-                  key={category.id || index}
-                  to={`/category/${category.slug || category.id}`}
-                  onClick={handleLinkClick}
-                  className="
-                    flex
-                    items-center
-                    justify-between
-                    px-3
-                    py-2.5
-                    rounded-lg
-                    hover:bg-primary-50
-                    transition-colors
-                    group
-                  "
-                >
-                  <span className="text-sm text-text-primary group-hover:text-primary-600 transition-colors">
-                    {category.name}
-                  </span>
-                  <svg 
-                    className="w-4 h-4 text-text-tertiary group-hover:text-primary-600 group-hover:translate-x-1 transition-all" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Main Menu */}
         {menuItems.length > 0 && (
@@ -321,14 +255,6 @@ const MobileMenu = ({
           </div>
         )}
 
-        {/* Footer - Contact */}
-        <div className="px-4 py-4">
-          <div className="bg-gradient-primary rounded-lg p-4 text-center">
-            <PhoneIcon className="w-8 h-8 text-white mx-auto mb-2" />
-            <p className="text-white font-bold text-lg mb-1">1900 888 123</p>
-            <p className="text-primary-100 text-xs">Hỗ trợ 24/7</p>
-          </div>
-        </div>
       </div>
     </div>
   );

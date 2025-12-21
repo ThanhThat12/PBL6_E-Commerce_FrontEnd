@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { Card } from '../../common/Card/Card';
@@ -37,7 +37,7 @@ const ProductCard = ({ product, showDiscount = false }) => {
         className="h-full flex flex-col"
       >
         {/* Product Image */}
-        <div className="relative aspect-square overflow-hidden bg-background-secondary">
+        <div className="relative aspect-[4/5] overflow-hidden bg-background-secondary">
           <img
             src={image}
             alt={name}
@@ -103,21 +103,21 @@ const ProductCard = ({ product, showDiscount = false }) => {
         </div>
 
         {/* Product Info */}
-        <div className="p-4 flex flex-col flex-grow">
+        <div className="p-3 md:p-4 flex flex-col flex-grow">
           {/* Brand */}
           {brand && (
-            <p className="text-xs text-text-tertiary uppercase tracking-wide mb-1">
+            <p className="text-[11px] text-text-tertiary uppercase tracking-wide mb-0.5">
               {brand}
             </p>
           )}
 
           {/* Product Name */}
-          <h3 className="text-sm md:text-base font-semibold text-text-primary mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
+          <h3 className="text-sm md:text-base font-semibold text-text-primary mb-1 line-clamp-2 group-hover:text-primary-600 transition-colors">
             {name}
           </h3>
 
           {/* Rating */}
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <svg
@@ -141,8 +141,8 @@ const ProductCard = ({ product, showDiscount = false }) => {
 
           {/* Price */}
           <div className="mt-auto">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg font-bold text-primary-600">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-base md:text-lg font-bold text-primary-600">
                 {price.toLocaleString('vi-VN')}₫
               </span>
               {hasDiscount && (
@@ -307,9 +307,19 @@ const FeaturedProducts = ({ products = [], title = 'Sản Phẩm Nổi Bật' })
   console.log('Products array:', products);
   console.log('Display products:', displayProducts.length, 'items');
 
+  const scrollRef = useRef(null);
+
+  const handleScroll = (direction) => {
+    if (!scrollRef.current) return;
+    const containerWidth = scrollRef.current.clientWidth;
+    scrollRef.current.scrollBy({
+      left: direction * containerWidth * 0.8,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <section className="py-8 md:py-12">
-      {/* Section Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-text-primary mb-2">
@@ -330,14 +340,44 @@ const FeaturedProducts = ({ products = [], title = 'Sản Phẩm Nổi Bật' })
         </Link>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {displayProducts.map((product) => (
-          <ProductCard key={product.id} product={product} showDiscount />
-        ))}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => handleScroll(-1)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white shadow-medium text-gray-700 hover:bg-primary-50 hover:text-primary-600"
+          aria-label="Xem sản phẩm trước"
+        >
+          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <div
+          ref={scrollRef}
+          className="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-2 px-6"
+        >
+          {displayProducts.map((product) => (
+            <div
+              key={product.id}
+              className="flex-shrink-0 w-[70vw] sm:w-[45vw] md:w-[260px]"
+            >
+              <ProductCard product={product} showDiscount />
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => handleScroll(1)}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-white shadow-medium text-gray-700 hover:bg-primary-50 hover:text-primary-600"
+          aria-label="Xem sản phẩm tiếp theo"
+        >
+          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
 
-      {/* Mobile "View All" Link */}
       <div className="mt-6 md:hidden text-center">
         <Link
           to="/products"

@@ -161,28 +161,10 @@ const FlashDeals = ({
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
         {displayProducts.map((product) => (
           <ProductCard key={product.id} product={product} showDiscount />
         ))}
-      </div>
-
-      {/* Progress Bar - Số lượng đã bán */}
-      <div className="mt-6 bg-background-secondary rounded-xl p-6">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-text-primary font-semibold">
-            🔥 Đang bán chạy
-          </span>
-          <span className="text-text-tertiary text-sm">
-            Đã bán: 234/500
-          </span>
-        </div>
-        <div className="relative w-full h-3 bg-neutral-200 rounded-full overflow-hidden">
-          <div 
-            className="absolute left-0 top-0 h-full bg-gradient-secondary rounded-full transition-all duration-500"
-            style={{ width: '46.8%' }}
-          ></div>
-        </div>
       </div>
     </section>
   );
