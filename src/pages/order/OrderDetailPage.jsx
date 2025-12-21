@@ -481,9 +481,6 @@ Xem chi tiet don hang:
                     
                     {/* Action Buttons - Only show for COMPLETED orders */}
                     {currentOrder.status === 'COMPLETED' && (
-<<<<<<< HEAD
-                      <div className="mt-3 flex justify-end gap-2 items-start">
-=======
                       <div className="mt-3 flex justify-end gap-2 items-start flex-wrap">
                         {/* Return/Refund Button */}
                         <Button
@@ -510,7 +507,6 @@ Xem chi tiet don hang:
                           Trả hàng/Hoàn tiền
                         </Button>
                         
->>>>>>> production1
                         {/* Review Button with eligibility check */}
                         {renderReviewButton(item)}
                         

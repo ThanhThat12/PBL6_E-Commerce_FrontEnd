@@ -561,8 +561,6 @@ class ImageUploadService {
       handleUploadError(error, 'Variant images batch upload');
     }
   }
-<<<<<<< HEAD
-=======
 
   /**
    * Upload refund request image
@@ -601,7 +599,6 @@ class ImageUploadService {
       throw new Error(error.response?.data?.message || 'Không thể tải ảnh lên');
     }
   }
->>>>>>> production1
 }
 
 export default ImageUploadService;

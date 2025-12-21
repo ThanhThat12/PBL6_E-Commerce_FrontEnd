@@ -152,8 +152,6 @@ export const registerAsSeller = async (data) => {
     throw error;
   }
 };
-<<<<<<< HEAD
-=======
 
 /**
  * Get seller registration status
@@ -197,4 +195,3 @@ export const updateRejectedApplication = async (registrationData) => {
     throw error;
   }
 };
->>>>>>> production1

@@ -54,8 +54,6 @@ import SellerProtectedRoute from './components/seller/ProtectedRoute';
 import { SellerLayout } from './components/seller/Layout';
 import * as SellerPages from './pages/seller';
 import ReviewsPage from './pages/seller/Review';
-import RejectionStatusPage from './pages/seller/RejectionStatusPage';
-import SellerRegistrationGuard from './components/seller/SellerRegistrationGuard';
 
 // 🧑‍💼 Admin Pages
 import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";

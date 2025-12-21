@@ -54,7 +54,12 @@ const ChatInterface = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [messageSearchQuery, setMessageSearchQuery] = useState('');
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const messageSearchRef = useRef(null);
 
   const getCurrentUserId = () => {
     try {
@@ -207,7 +212,7 @@ const ChatInterface = () => {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (inputText.trim() === '') return;
+    if (inputText.trim() === '' && !selectedImage) return;
 
     if (!selectedUser) return;
 
