@@ -73,17 +73,17 @@ import AdminChatPage from './pages/admin/Chat/ChatPage';
 import AdminWalletPage from './pages/admin/Wallet/WalletPage';
 import AdminSellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
-// Chat Wrapper - Only show on authenticated pages
 const ConditionalChatContainer = () => {
   const location = useLocation();
   
-  // Hide chat on auth pages
-  const hideChat = [
-    ROUTES.LOGIN,
-    ROUTES.REGISTER,
-    '/forgot-password',
-    '/admin/login'
-  ].some(route => location.pathname.startsWith(route));
+  const hideChat =
+    [
+      ROUTES.LOGIN,
+      ROUTES.REGISTER,
+      '/forgot-password',
+      '/admin/login'
+    ].some(route => location.pathname.startsWith(route)) ||
+    location.pathname.startsWith('/admin');
   
   return !hideChat ? <ChatContainer /> : null;
 };

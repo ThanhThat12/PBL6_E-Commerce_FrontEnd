@@ -186,29 +186,33 @@ export default function NotificationButton({
     }
   };
 
-  // Handle notification click
   const handleNotificationClick = (notification) => {
     console.log('🔔 Notification clicked:', notification);
     
-    // Mark as read
     onMarkAsRead?.(notification.id);
     
-    // Close dropdown
     setIsOpen(false);
     
-    // If chat message, open chat
     if (notification.type === 'CHAT_MESSAGE') {
       console.log('💬 Opening chat for notification');
-      if (notification.conversationId) {
-        // Open specific conversation
-        window.dispatchEvent(new CustomEvent('openChat', {
-          detail: { conversationId: notification.conversationId }
-        }));
+      if (variant === 'admin') {
+        if (notification.conversationId) {
+          navigate('/admin/chat', {
+            state: { conversationId: notification.conversationId }
+          });
+        } else {
+          navigate('/admin/chat');
+        }
       } else {
-        // Open chat window to show all conversations
-        window.dispatchEvent(new CustomEvent('openChat', {
-          detail: {}
-        }));
+        if (notification.conversationId) {
+          window.dispatchEvent(new CustomEvent('openChat', {
+            detail: { conversationId: notification.conversationId }
+          }));
+        } else {
+          window.dispatchEvent(new CustomEvent('openChat', {
+            detail: {}
+          }));
+        }
       }
     } else if (variant === 'admin') {
       // Admin notification navigation
