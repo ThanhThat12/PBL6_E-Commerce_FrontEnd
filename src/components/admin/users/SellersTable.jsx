@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Eye, Trash2, Users, CheckCircle, Clock, XCircle } from 'lucide-react';
 import SellerDetailModal from './SellerDetailModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -7,6 +8,7 @@ import { getSellerStats, getSellerDetail, getSellersFromShop, deleteUser } from 
 import './SellersTable.css';
 
 const SellersTable = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedSeller, setSelectedSeller] = useState(null);
@@ -125,7 +127,7 @@ const SellersTable = () => {
           name: seller.shopName || seller.username || 'N/A',
           email: seller.email || 'N/A',
           phone: seller.phoneNumber || 'N/A',
-          avatar: seller.avatar || 'https://via.placeholder.com/40',
+          avatar: seller.logoUrl || 'https://via.placeholder.com/40',
           status: seller.status || 'Pending',
           products: seller.totalProducts || 0,
           sales: seller.revenue 
@@ -369,8 +371,8 @@ const SellersTable = () => {
         
         {/* Actions */}
         <div className="sellers-actions">
-          <div className="search-container">
-            <Search className="search-icon" size={20} />
+          <div className="sellers-search-container">
+            <Search className="sellers-search-icon" size={20} />
             <input
               type="text"
               placeholder="Search sellers..."
@@ -391,11 +393,16 @@ const SellersTable = () => {
               <option value="ACTIVE">Active</option>
               <option value="PENDING">Pending</option>
               <option value="INACTIVE">Inactive</option>
+              <option value="SUSPENDED">Suspended</option>
+              <option value="REJECTED">Rejected</option>
             </select>
           </div>
           
           <div className="action-buttons">
-            <button className="approve-btn">
+            <button 
+              className="approve-btn"
+              onClick={() => navigate('/admin/seller-registrations')}
+            >
               <CheckCircle size={18} />
               Approve Pending
             </button>
@@ -451,10 +458,15 @@ const SellersTable = () => {
 
                 <td className="seller-info">
                   <div className="seller-avatar-container">
-                    {/* <img 
+                    <img 
                       src={seller.avatar} 
+                      alt={seller.name}
                       className="seller-avatar"
-                    /> */}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/40?text=Shop';
+                      }}
+                    />
                     <div className="seller-details">
                       <div className="seller-name">{seller.name}</div>
                     </div>

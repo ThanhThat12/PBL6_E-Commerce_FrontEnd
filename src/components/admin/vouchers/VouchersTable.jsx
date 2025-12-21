@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Ticket, CheckCircle, Calendar, TrendingUp, Tags } from 'lucide-react';
-import { getVouchers, getVoucherStats, deleteVoucher } from '../../../services/adminVoucherService';
+import { getVouchers, getVoucherStats, deleteVoucher, searchVouchers } from '../../../services/adminVoucherService';
 import VoucherActions from './VoucherActions';
 import VoucherDetailModal from './VoucherDetailModal';
 import AddVoucherModal from './AddVoucherModal';
@@ -11,7 +11,7 @@ import './VouchersTable.css';
 
 const VouchersTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  // const [statusFilter, setStatusFilter] = useState('All'); // TODO: Implement status filter
+  const [statusFilter, setStatusFilter] = useState('All');
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -34,77 +34,53 @@ const VouchersTable = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize] = useState(10);
 
-  // Mock data for development - kept for reference
-  /* const mockVouchers = [
-    {
-      id: 1,
-      code: 'SUMMER2024',
-      discountAmount: 50000,
-      discountType: 'FIXED', // FIXED or PERCENTAGE
-      minOrderValue: 200000,
-      quantity: 100,
-      usedCount: 45,
-      status: 'ACTIVE',
-      startDate: '2024-06-01',
-      endDate: '2024-08-31',
-      description: 'Summer sale voucher'
-    },
-    {
-      id: 2,
-      code: 'NEWUSER10',
-      discountAmount: 10,
-      discountType: 'PERCENTAGE',
-      minOrderValue: 100000,
-      quantity: 500,
-      usedCount: 230,
-      status: 'ACTIVE',
-      startDate: '2024-01-01',
-      endDate: '2024-12-31',
-      description: 'New user discount'
-    },
-    {
-      id: 3,
-      code: 'FLASH50',
-      discountAmount: 50000,
-      discountType: 'FIXED',
-      minOrderValue: 300000,
-      quantity: 50,
-      usedCount: 50,
-      status: 'EXPIRED',
-      startDate: '2024-05-01',
-      endDate: '2024-05-15',
-      description: 'Flash sale voucher'
-    },
-    {
-      id: 4,
-      code: 'WELCOME20',
-      discountAmount: 20,
-      discountType: 'PERCENTAGE',
-      minOrderValue: 150000,
-      quantity: 200,
-      usedCount: 0,
-      status: 'INACTIVE',
-      startDate: '2024-09-01',
-      endDate: '2024-12-31',
-      description: 'Welcome bonus'
-    },
-  ]; */
 
   // Fetch vouchers from API
+  // Debounce search term
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      if (currentPage !== 0) {
+        setCurrentPage(0); // Reset to page 0 when search changes
+      } else {
+        fetchVouchersData(); // If already on page 0, just fetch
+      }
+    }, 500);
+
+    return () => clearTimeout(delaySearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+  // Fetch when page or status changes
   useEffect(() => {
     fetchVouchersData();
     fetchStatsData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage]); // Re-fetch when page changes
+  }, [currentPage, statusFilter]);
 
   const fetchVouchersData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log(`📡 [VouchersTable] Fetching vouchers page ${currentPage}, size ${pageSize}...`);
+      const trimmedSearch = searchTerm?.trim() || '';
+      console.log(`📡 [VouchersTable] Fetching vouchers page ${currentPage}, size ${pageSize}, status: ${statusFilter}, search: "${trimmedSearch}"...`);
       
-      const response = await getVouchers(currentPage, pageSize);
+      let response;
+      // Priority: 1. Search, 2. Status filter, 3. All vouchers
+      if (trimmedSearch !== '') {
+        // Use search API
+        console.log('🔍 [VouchersTable] Using search API with keyword:', trimmedSearch);
+        response = await searchVouchers(trimmedSearch, currentPage, pageSize);
+      } else if (statusFilter !== 'All') {
+        // Use status filter API
+        console.log('🏷️ [VouchersTable] Using status filter API with status:', statusFilter);
+        const { getVouchersByStatus } = await import('../../../services/adminVoucherService');
+        response = await getVouchersByStatus(statusFilter, currentPage, pageSize);
+      } else {
+        // Get all vouchers
+        console.log('📋 [VouchersTable] Using get all vouchers API');
+        response = await getVouchers(currentPage, pageSize);
+      }
       
       console.log('🔍 [VouchersTable] Full API response:', response);
       
@@ -139,6 +115,7 @@ const VouchersTable = () => {
       setLoading(false);
     } catch (err) {
       console.error('❌ [VouchersTable] Error fetching vouchers:', err);
+      console.error('❌ [VouchersTable] Error details:', err.response?.data || err.message);
       setError('Failed to load vouchers. Please try again later.');
       setLoading(false);
     }
@@ -289,11 +266,8 @@ const VouchersTable = () => {
     });
   };
 
-  // Filter vouchers by search term only
-  const filteredVouchers = vouchers.filter(voucher => {
-    if (!searchTerm) return true;
-    return voucher.code.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  // No need for client-side filtering - using API search
+  const filteredVouchers = vouchers;
 
   // Handle status filter change - TODO: implement status filter
   // eslint-disable-next-line no-unused-vars
@@ -337,7 +311,19 @@ const VouchersTable = () => {
             />
           </div>
 
-
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(0); // Reset to first page when filter changes
+            }}
+            className="admin-vouchers-status-filter"
+          >
+            <option value="All">All Status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="UPCOMING">Upcoming</option>
+            <option value="EXPIRED">Expired</option>
+          </select>
 
           <button className="admin-vouchers-add-btn" onClick={handleAddVoucher}>
             <Plus size={18} />
