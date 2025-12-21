@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid';
 
@@ -10,6 +10,8 @@ import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid';
 export default function NotificationButton({ notifications = [], onMarkAsRead, onClearAll, variant = 'customer' }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
   
   const unreadCount = notifications.filter(n => !n.read).length;
   const hasUnread = unreadCount > 0;
@@ -81,26 +83,53 @@ export default function NotificationButton({ notifications = [], onMarkAsRead, o
     }
   };
 
-  // Handle notification click
+  // Map notification type to order status tab
+  const getOrderStatusTab = (type) => {
+    switch (type) {
+      case 'NEW_ORDER':
+      case 'ORDER_PLACED':
+        return 'PENDING'; // Tab đơn mới (cho seller)
+      case 'ORDER_CONFIRMED':
+        return 'PROCESSING'; // Tab đang xử lý (cho buyer)
+      case 'ORDER_SHIPPING':
+        return 'SHIPPING'; // Tab đang giao
+      case 'ORDER_COMPLETED':
+      case 'PAYMENT_RECEIVED':
+        return 'COMPLETED'; // Tab hoàn thành
+      case 'ORDER_CANCELLED':
+        return 'CANCELLED'; // Tab đã hủy
+      default:
+        return 'ALL'; // Tab tất cả
+    }
+  };
+
   const handleNotificationClick = (notification) => {
-    // Mark as read
+    console.log('🔔 Notification clicked:', notification);
+    
     onMarkAsRead?.(notification.id);
     
-    // Close dropdown
     setIsOpen(false);
     
-    // If chat message, open chat
     if (notification.type === 'CHAT_MESSAGE') {
-      if (notification.conversationId) {
-        // Open specific conversation
-        window.dispatchEvent(new CustomEvent('openChat', {
-          detail: { conversationId: notification.conversationId }
-        }));
+      console.log('💬 Opening chat for notification');
+      if (variant === 'admin') {
+        if (notification.conversationId) {
+          navigate('/admin/chat', {
+            state: { conversationId: notification.conversationId }
+          });
+        } else {
+          navigate('/admin/chat');
+        }
       } else {
-        // Open chat window to show all conversations
-        window.dispatchEvent(new CustomEvent('openChat', {
-          detail: {}
-        }));
+        if (notification.conversationId) {
+          window.dispatchEvent(new CustomEvent('openChat', {
+            detail: { conversationId: notification.conversationId }
+          }));
+        } else {
+          window.dispatchEvent(new CustomEvent('openChat', {
+            detail: {}
+          }));
+        }
       }
     }
   };

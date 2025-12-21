@@ -581,6 +581,7 @@ const ProductDetailPage = () => {
               </Button>
             </div>
 
+<<<<<<< HEAD
             {/* Product Details */}
             {selectedVariant && (
               <div className="mt-8 pt-8 border-t">
@@ -591,6 +592,30 @@ const ProductDetailPage = () => {
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <dt className="text-gray-600">SKU:</dt>
                     <dd className="font-mono font-semibold text-gray-900">{selectedVariant.sku}</dd>
+=======
+          </div>
+        </div>
+        </div>
+
+        {/* Shop Info Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
+          <div className="flex items-center justify-between flex-wrap gap-6">
+            {/* Shop Info */}
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-primary-100 shadow-lg flex-shrink-0">
+                {shopInfo.logo ? (
+                  <img 
+                    src={shopInfo.logo || DEFAULT_SHOP_LOGO} 
+                    alt={shopInfo.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => handleImageError(e, DEFAULT_SHOP_LOGO)}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-2xl">
+                      {shopInfo.name.charAt(0).toUpperCase()}
+                    </span>
+>>>>>>> production1
                   </div>
                   {product.category && (
                     <div className="flex justify-between py-2 border-b border-gray-100">

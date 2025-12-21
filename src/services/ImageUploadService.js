@@ -354,7 +354,7 @@ class ImageUploadService {
   static async uploadAvatar(file, onProgress) {
     try {
       const formData = new FormData();
-      formData.append('avatar', file);
+      formData.append('file', file);
 
       const requestFn = () =>
         axios.post(
@@ -561,6 +561,47 @@ class ImageUploadService {
       handleUploadError(error, 'Variant images batch upload');
     }
   }
+<<<<<<< HEAD
+=======
+
+  /**
+   * Upload refund request image
+   * Uses CommonImageController's upload endpoint with folder=refund
+   * @param {FormData} formData - FormData containing the image file
+   * @returns {Promise<Object>} Upload response with image URL
+   */
+  static async uploadRefundImage(formData) {
+    try {
+      const token = getAccessToken();
+      
+      console.log('📤 Uploading refund image to /images/upload?folder=refund');
+      
+      const response = await axios.post(
+        `${API_BASE_URL}images/upload?folder=refund`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': token ? `Bearer ${token}` : undefined,
+          }
+        }
+      );
+      
+      console.log('✅ Refund image uploaded:', response.data);
+      
+      // Extract URL from ResponseDTO structure
+      const data = response.data?.data || response.data;
+      return {
+        url: data.url,
+        publicId: data.publicId,
+        transformations: data.transformations
+      };
+    } catch (error) {
+      console.error('❌ Error uploading refund image:', error.response?.data || error);
+      throw new Error(error.response?.data?.message || 'Không thể tải ảnh lên');
+    }
+  }
+>>>>>>> production1
 }
 
 export default ImageUploadService;
