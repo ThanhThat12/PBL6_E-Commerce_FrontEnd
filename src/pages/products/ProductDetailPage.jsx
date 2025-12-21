@@ -61,11 +61,14 @@ const ProductDetailPage = () => {
   }, [isProductOwner, isAuthenticated]);
 
   const canAddToCart = useMemo(() => {
+    // Only BUYER can add to cart - SELLER/ADMIN cannot buy
+    if (!isAuthenticated) return false;
+    if (hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) return false;
     if (isProductOwner) return false;
     if (!product) return false;
     if (!selectedVariant) return false;
     return selectedVariant.stock > 0 && product.isActive;
-  }, [isProductOwner, product, selectedVariant]);
+  }, [isAuthenticated, hasRole, isProductOwner, product, selectedVariant]);
 
   // Handle chat with shop
   const handleChatWithShop = async (e) => {
@@ -459,7 +462,9 @@ const ProductDetailPage = () => {
   };
 
   const discount = getDiscountPercentage();
-  const rating = product.averageRating || 0;
+  // Backend returns 'rating' not 'averageRating'
+  const rating = product.rating || product.averageRating || 0;
+  const reviewCount = product.reviewCount || 0;
   const soldCount = product.soldCount || 0;
 
   return (
@@ -575,24 +580,44 @@ const ProductDetailPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
               
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                {rating > 0 && (
+              <div className="flex items-center gap-4 text-sm">
+                {/* Rating với stars - luôn hiển thị */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, index) => (
+                      <FiStar
+                        key={index}
+                        className={`w-4 h-4 ${
+                          index < Math.floor(rating)
+                            ? 'text-yellow-400 fill-current'
+                            : index < rating
+                            ? 'text-yellow-400 fill-current opacity-50'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="font-semibold text-gray-900">{rating > 0 ? rating.toFixed(1) : '0.0'}</span>
+                  {reviewCount > 0 && (
+                    <span className="text-gray-500">({reviewCount.toLocaleString()} đánh giá)</span>
+                  )}
+                </div>
+                <span className="text-gray-300">|</span>
+                
+                {/* Sold count */}
+                {soldCount > 0 ? (
                   <>
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500">★</span>
-                      <span className="font-medium text-gray-900">{rating.toFixed(1)}</span>
+                    <div className="flex items-center gap-1 text-gray-700">
+                      <FiPackage className="w-4 h-4 text-green-600" />
+                      <span className="font-medium">Đã bán {soldCount.toLocaleString()}</span>
                     </div>
-                    <span>•</span>
+                    <span className="text-gray-300">|</span>
                   </>
-                )}
-                {soldCount > 0 && (
-                  <>
-                    <span>Đã bán {soldCount.toLocaleString()}</span>
-                    <span>•</span>
-                  </>
-                )}
+                ) : null}
+                
+                {/* View indicator */}
                 <div className="flex items-center gap-1 text-green-600">
-                  <FiEye className="w-3 h-3" />
+                  <FiEye className="w-4 h-4" />
                   <span>Đang xem</span>
                 </div>
               </div>
@@ -690,12 +715,13 @@ const ProductDetailPage = () => {
                   disabled={!canAddToCart || adding}
                   variant="outline"
                   className={`flex-1 ${
-                    isProductOwner 
+                    !canAddToCart
                       ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
                       : 'border-primary-500 text-primary-600 hover:bg-primary-50'
                   }`}
                   title={
                     !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
+                    (hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Seller/Admin không thể mua hàng. Vui lòng sử dụng tài khoản buyer.' :
                     isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
                     !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
                     selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
@@ -703,7 +729,8 @@ const ProductDetailPage = () => {
                   }
                 >
                   <FiShoppingCart className="w-5 h-5 mr-2" />
-                  {isProductOwner ? 'Sản phẩm của bạn' : adding ? 'Đang thêm...' : 'Thêm Vào Giỏ Hàng'}
+                  {(hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Không thể thêm' :
+                   isProductOwner ? 'Sản phẩm của bạn' : adding ? 'Đang thêm...' : 'Thêm Vào Giỏ Hàng'}
                 </Button>
                 
                 <Button
@@ -715,13 +742,15 @@ const ProductDetailPage = () => {
                   }`}
                   title={
                     !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
+                    (hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Seller/Admin không thể mua hàng. Vui lòng sử dụng tài khoản buyer.' :
                     isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
                     !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
                     selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
                     !product.isActive ? 'Sản phẩm không khả dụng' : ''
                   }
                 >
-                  {isProductOwner ? 'Không thể mua' : 'Mua Ngay'}
+                  {(hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Không thể mua' : 
+                   isProductOwner ? 'Không thể mua' : 'Mua Ngay'}
                 </Button>
               </div>
             </div>
