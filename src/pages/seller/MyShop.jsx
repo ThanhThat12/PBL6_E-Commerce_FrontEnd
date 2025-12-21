@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select } from 'antd';
+import { Form, Input, Button, Upload, Card, Row, Col, message, Spin, Tag, Divider, Select, Tabs } from 'antd';
 import { 
   UploadOutlined, CameraOutlined, CheckCircleOutlined, ClockCircleOutlined, 
   CloseCircleOutlined, ShopOutlined, UserOutlined,
@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { getShopDetail, updateShopProfile } from '../../services/seller/shopService';
 import { useAddressMaster } from '../../hooks/useAddressMaster';
+import ShopAddressTab from '../../components/seller/ShopAddressTab';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -355,24 +356,7 @@ const MyShop = () => {
         </Card>
       )}
 
-      {shopData?.status === 'ACTIVE' && (
-        <Card className="shadow-sm border-l-4 border-l-green-400 bg-green-50" bodyStyle={{ padding: 16 }}>
-          <div className="flex items-start gap-3">
-            <CheckCircleOutlined className="text-green-600 text-xl flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-green-800">Cửa hàng đã được xác thực ✓</h3>
-              <p className="text-sm text-green-700 mt-1">
-                Cửa hàng của bạn đang hoạt động bình thường và có thể bán hàng.
-              </p>
-              {shopData?.reviewedAt && (
-                <p className="text-xs text-green-600 mt-2">
-                  Phê duyệt lúc: {formatDate(shopData.reviewedAt)}
-                </p>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* No status alert for ACTIVE - shop is operating normally */}
 
       {/* Shop Header with Banner & Logo */}
       <div className="relative rounded-xl overflow-hidden shadow-lg">
@@ -500,6 +484,12 @@ const MyShop = () => {
                           <p className="font-semibold">{shopData.ownerPhone}</p>
                         </div>
                       )}
+                      {shopData?.idCardName && (
+                        <div>
+                          <span className="text-gray-500">Tên liên hệ (CMND/CCCD):</span>
+                          <p className="font-semibold">{shopData.idCardName}</p>
+                        </div>
+                      )}
                       {shopData?.ownerCreatedAt && (
                         <div>
                           <span className="text-gray-500">Tham gia từ:</span>
@@ -510,13 +500,22 @@ const MyShop = () => {
                   </Card>
                 </Col>
 
-                {/* Right Column - Edit Form */}
+                {/* Right Column - Edit Form with Tabs */}
                 <Col xs={24} lg={16}>
-                  <Card 
-                    className="shadow-sm" 
-                    title={<span><EditOutlined className="mr-2" />Chỉnh sửa thông tin</span>}
-                  >
-                    <Form form={form} layout="vertical" onFinish={onFinish}>
+                  <Card className="shadow-sm">
+                    <Tabs
+                      defaultActiveKey="info"
+                      items={[
+                        {
+                          key: 'info',
+                          label: (
+                            <span>
+                              <EditOutlined className="mr-2" />
+                              Thông tin cửa hàng
+                            </span>
+                          ),
+                          children: (
+                            <Form form={form} layout="vertical" onFinish={onFinish}>
                       {/* Images Upload */}
                       <Row gutter={16} className="mb-6">
                         <Col xs={24} md={8}>
@@ -652,73 +651,6 @@ const MyShop = () => {
                         </Col>
                       </Row>
 
-                      {/* Address Selection */}
-                      <Divider>Khu vực lấy hàng</Divider>
-                      <Row gutter={16}>
-                        <Col xs={24} md={8}>
-                          <Form.Item label="Tỉnh/Thành phố" name="provinceId">
-                            <Select
-                              placeholder="Chọn Tỉnh/TP"
-                              loading={loadingProvinces}
-                              onChange={handleProvinceChange}
-                              disabled={shopData?.status !== 'ACTIVE'}
-                              showSearch
-                              optionFilterProp="children"
-                              filterOption={(input, option) =>
-                                (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
-                              }
-                            >
-                              {provinces.map(p => (
-                                <Select.Option key={p.id} value={p.id}>
-                                  {p.name}
-                                </Select.Option>
-                              ))}
-                            </Select>
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} md={8}>
-                          <Form.Item label="Quận/Huyện" name="districtId">
-                            <Select
-                              placeholder="Chọn Quận/Huyện"
-                              loading={loadingDistricts}
-                              onChange={handleDistrictChange}
-                              disabled={!selectedProvinceId || shopData?.status !== 'ACTIVE'}
-                              showSearch
-                              optionFilterProp="children"
-                              filterOption={(input, option) =>
-                                (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
-                              }
-                            >
-                              {districts.map(d => (
-                                <Select.Option key={d.id} value={d.id}>
-                                  {d.name}
-                                </Select.Option>
-                              ))}
-                            </Select>
-                          </Form.Item>
-                        </Col>
-                        <Col xs={24} md={8}>
-                          <Form.Item label="Phường/Xã" name="wardCode">
-                            <Select
-                              placeholder="Chọn Phường/Xã"
-                              loading={loadingWards}
-                              disabled={!selectedDistrictId || shopData?.status !== 'ACTIVE'}
-                              showSearch
-                              optionFilterProp="children"
-                              filterOption={(input, option) =>
-                                (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
-                              }
-                            >
-                              {wards.map(w => (
-                                <Select.Option key={w.id} value={w.id}>
-                                  {w.name}
-                                </Select.Option>
-                              ))}
-                            </Select>
-                          </Form.Item>
-                        </Col>
-                      </Row>
-
                       {/* GHN Settings */}
                       <Divider>Cấu hình GHN (Giao Hàng Nhanh)</Divider>
                       <Row gutter={16}>
@@ -728,9 +660,9 @@ const MyShop = () => {
                             name="ghnShopId"
                             tooltip="ID Shop trên hệ thống GHN. Lấy từ trang quản lý GHN."
                           >
-                            <Input 
+                            <Input.Password 
                               prefix={<ApiOutlined className="text-gray-400" />} 
-                              placeholder="Nhập GHN Shop ID" 
+                              placeholder="••••••••" 
                               disabled={shopData?.status !== 'ACTIVE'}
                             />
                           </Form.Item>
@@ -743,7 +675,7 @@ const MyShop = () => {
                           >
                             <Input.Password 
                               prefix={<KeyOutlined className="text-gray-400" />} 
-                              placeholder="Nhập GHN Token" 
+                              placeholder="••••••••" 
                               disabled={shopData?.status !== 'ACTIVE'}
                             />
                           </Form.Item>
@@ -769,6 +701,20 @@ const MyShop = () => {
                         </p>
                       )}
                     </Form>
+                          )
+                        },
+                        {
+                          key: 'address',
+                          label: (
+                            <span>
+                              <EnvironmentOutlined />
+                              {' Địa chỉ giao hàng'}
+                            </span>
+                          ),
+                          children: <ShopAddressTab shopData={shopData} />
+                        }
+                      ]}
+                    />
                   </Card>
                 </Col>
               </Row>

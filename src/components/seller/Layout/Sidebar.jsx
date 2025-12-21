@@ -8,6 +8,7 @@ import {
   BarChartOutlined,
   UserOutlined,
   GiftOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import { Menu } from 'antd';
 
@@ -66,6 +67,11 @@ const menuItems = [
     key: '/seller/refunds',
     icon: <ShoppingCartOutlined />,
     label: <Link to="/seller/refunds">Hoàn tiền</Link>,
+  },
+  {
+    key: '/seller/notifications',
+    icon: <BellOutlined />,
+    label: <Link to="/seller/notifications">Thông báo</Link>,
   },
 ];
 

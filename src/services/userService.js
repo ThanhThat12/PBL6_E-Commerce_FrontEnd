@@ -73,7 +73,7 @@ export const setAsPrimary = async (addressId) => {
  * Get full user profile with all fields including metadata
  */
 export const getProfile = async () => {
-  const response = await api.get('/user/profile');
+  const response = await api.get('/profile');
   return response;
 };
 
@@ -81,7 +81,7 @@ export const getProfile = async () => {
  * Update user profile information
  */
 export const updateProfile = async (profileData) => {
-  const response = await api.put('/user/profile', profileData);
+  const response = await api.put('/profile', profileData);
   return response;
 };
 

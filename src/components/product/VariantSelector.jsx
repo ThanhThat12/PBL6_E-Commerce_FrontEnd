@@ -98,7 +98,7 @@ const VariantSelector = ({ variants = [], selectedVariant, onVariantChange }) =>
             )}
           </h4>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {values.map((value) => {
               const isSelected = selectedAttributes[attrName] === value;
               const isAvailable = isAttributeValueAvailable(attrName, value);
@@ -109,24 +109,31 @@ const VariantSelector = ({ variants = [], selectedVariant, onVariantChange }) =>
                   onClick={() => handleAttributeChange(attrName, value)}
                   disabled={!isAvailable}
                   className={`
-                    px-4 py-2 rounded-lg border-2 transition-all duration-200
+                    relative px-5 py-3 rounded-lg border-2 transition-all duration-200 font-medium
                     ${isSelected
-                      ? 'border-primary-500 bg-primary-50 text-primary-700'
+                      ? 'border-primary-500 bg-primary-500 text-white shadow-md transform scale-105'
                       : isAvailable
-                        ? 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'
-                        : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        ? 'border-gray-300 bg-white hover:border-primary-400 hover:shadow-sm text-gray-700'
+                        : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed line-through'
                     }
                     ${!isAvailable && 'opacity-50'}
                   `}
                 >
                   {/* Color preview if attribute is Color */}
-                  {attrName.toLowerCase() === 'color' && (
+                  {attrName.toLowerCase().includes('color') && (
                     <span
-                      className="inline-block w-4 h-4 rounded-full mr-2 border border-gray-300"
+                      className="inline-block w-5 h-5 rounded-full mr-2 border-2 border-white shadow-sm"
                       style={{ backgroundColor: value.toLowerCase() }}
                     />
                   )}
-                  <span className="font-medium">{value}</span>
+                  <span>{value}</span>
+                  
+                  {/* Checkmark for selected */}
+                  {isSelected && (
+                    <span className="absolute -top-1 -right-1 bg-primary-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      ✓
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -136,21 +143,27 @@ const VariantSelector = ({ variants = [], selectedVariant, onVariantChange }) =>
 
       {/* Selected Variant Info */}
       {selectedVariant && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-6 p-4 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg border border-primary-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">SKU</p>
-              <p className="font-mono text-sm font-semibold">{selectedVariant.sku}</p>
+              <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Mã sản phẩm</p>
+              <p className="font-mono text-sm font-bold text-gray-900">{selectedVariant.sku}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-600">Stock</p>
-              <p className={`font-semibold ${
+              <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Tồn kho</p>
+              <p className={`font-bold text-lg ${
                 selectedVariant.stock > 0 ? 'text-green-600' : 'text-red-600'
               }`}>
                 {selectedVariant.stock > 0 
-                  ? `${selectedVariant.stock} available` 
-                  : 'Out of stock'
+                  ? `${selectedVariant.stock} sản phẩm` 
+                  : 'Hết hàng'
                 }
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Giá</p>
+              <p className="font-bold text-lg text-primary-600">
+                {new Intl.NumberFormat('vi-VN').format(selectedVariant.price)}₫
               </p>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiChevronDown, FiChevronUp, FiX, FiCheck, FiThumbsUp, FiFlag } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiX, FiCheck, FiThumbsUp, FiFlag, FiEdit3 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 /**
@@ -21,7 +21,8 @@ const ReviewCard = ({
   isCurrentUser = false,
   isLoggedIn = false,
   onLike,
-  onReport
+  onReport,
+  onEdit
 }) => {
   const [showImages, setShowImages] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
@@ -134,10 +135,10 @@ const ReviewCard = ({
   const displayedImages = showImages ? images : images.slice(0, 3);
 
   return (
-    <div className={`bg-white rounded-lg border ${isCurrentUser ? 'border-primary-200 bg-primary-50/30' : 'border-gray-200'} p-4 transition-all`}>
+    <div className={`bg-white rounded-lg border ${isCurrentUser ? 'border-primary-200 bg-primary-50/30' : 'border-gray-200'} p-4 transition-all hover:shadow-md`}>
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
           {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
             {review.userAvatarUrl ? (
@@ -154,60 +155,74 @@ const ReviewCard = ({
           </div>
           
           {/* User Info */}
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-gray-900">
                 {review.userFullName || review.userName || 'Người dùng'}
               </span>
+              
+              {/* Verified Purchase Badge */}
               {review.verifiedPurchase && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                   <FiCheck className="w-3 h-3" />
                   Đã mua hàng
                 </span>
               )}
+              
+              {/* Current User Badge */}
               {isCurrentUser && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 border border-primary-200">
                   Của bạn
                 </span>
               )}
+              
+              {/* Edit Button */}
+              {isCurrentUser && review.canEdit && onEdit && (() => {
+                const createdDate = new Date(review.createdAt);
+                const now = new Date();
+                const daysPassed = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+                const daysLeft = Math.max(0, 7 - daysPassed);
+                const canStillEdit = daysLeft > 0;
+                
+                return canStillEdit ? (
+                  <button
+                    onClick={() => onEdit(review)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 transition-colors"
+                    title={`Còn ${daysLeft} ngày để chỉnh sửa`}
+                  >
+                    <FiEdit3 className="w-3 h-3" />
+                    Sửa ({daysLeft} ngày)
+                  </button>
+                ) : null;
+              })()}
             </div>
-            <div className="flex items-center gap-2 mt-0.5">
+            
+            {/* Rating and Date */}
+            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
               {renderStars(review.rating)}
-              <span className="text-xs text-gray-500">
+              <span>•</span>
+              <span>
                 {new Date(review.createdAt).toLocaleDateString('vi-VN', {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric'
                 })}
               </span>
+              {/* Purchase Date if available */}
+              {review.purchaseDate && (
+                <>
+                  <span>•</span>
+                  <span className="text-green-600">
+                    Mua {new Date(review.purchaseDate).toLocaleDateString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })}
+                  </span>
+                </>
+              )}
             </div>
           </div>
-        </div>
-        
-        {/* Like & Report buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleLikeClick}
-            disabled={liking}
-            className={`flex items-center gap-1 px-2 py-1 rounded-md text-sm transition-colors ${
-              review.isLikedByCurrentUser
-                ? 'bg-primary-100 text-primary-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            } ${liking ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <FiThumbsUp className={`w-4 h-4 ${review.isLikedByCurrentUser ? 'fill-current' : ''}`} />
-            <span>{review.likesCount || 0}</span>
-          </button>
-          
-          {!isCurrentUser && (
-            <button
-              onClick={handleReportClick}
-              className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-              title="Báo cáo đánh giá này"
-            >
-              <FiFlag className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
 
@@ -279,7 +294,7 @@ const ReviewCard = ({
           {!showReplyForm ? (
             <button
               onClick={() => setShowReplyForm(true)}
-              className="text-sm text-primary-600 hover:text-primary-700"
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               Phản hồi đánh giá này
             </button>
@@ -314,6 +329,34 @@ const ReviewCard = ({
           )}
         </div>
       )}
+
+      {/* Action Buttons (Like & Report) */}
+      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+        <button
+          onClick={handleLikeClick}
+          disabled={liking}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            review.isLikedByCurrentUser
+              ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-primary-600'
+          } ${liking ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <FiThumbsUp className={`w-4 h-4 transition-transform ${review.isLikedByCurrentUser ? 'fill-current scale-110' : 'hover:scale-110'}`} />
+          <span>{review.likesCount || 0}</span>
+          <span className="hidden sm:inline">{review.isLikedByCurrentUser ? 'Đã thích' : 'Hữu ích'}</span>
+        </button>
+
+        {!isCurrentUser && (
+          <button
+            onClick={handleReportClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all"
+            title="Báo cáo đánh giá không phù hợp"
+          >
+            <FiFlag className="w-4 h-4" />
+            <span className="hidden sm:inline">Báo cáo</span>
+          </button>
+        )}
+      </div>
 
       {/* Image Lightbox */}
       {lightboxIndex >= 0 && (

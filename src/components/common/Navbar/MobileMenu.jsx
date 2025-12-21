@@ -3,7 +3,6 @@ import {
   XMarkIcon,
   HomeIcon,
   ShoppingBagIcon,
-  HeartIcon,
   UserCircleIcon,
   PhoneIcon,
   Squares2X2Icon
@@ -19,6 +18,7 @@ import { Link } from 'react-router-dom';
  * @param {array} categories - Danh sách categories
  * @param {array} menuItems - Danh sách menu items
  * @param {number} cartItemCount - Số lượng sản phẩm trong giỏ
+ * @param {object} registrationStatus - Registration status for seller channel
  */
 const MobileMenu = ({ 
   isOpen,
@@ -26,7 +26,8 @@ const MobileMenu = ({
   user = null,
   categories = [],
   menuItems = [],
-  cartItemCount = 0
+  cartItemCount = 0,
+  registrationStatus = null
 }) => {
   if (!isOpen) return null;
 
@@ -185,25 +186,6 @@ const MobileMenu = ({
             </Link>
 
             <Link
-              to="/wishlist"
-              onClick={handleLinkClick}
-              className="
-                flex
-                flex-col
-                items-center
-                justify-center
-                py-3
-                bg-background-secondary
-                rounded-lg
-                hover:bg-primary-50
-                transition-colors
-              "
-            >
-              <HeartIcon className="w-6 h-6 text-accent-red-500 mb-1" />
-              <span className="text-xs font-medium text-text-primary">Yêu thích</span>
-            </Link>
-
-            <Link
               to={user ? "/orders" : "/login"}
               onClick={handleLinkClick}
               className="
@@ -301,19 +283,18 @@ const MobileMenu = ({
                   )}
                 </Link>
               ))}
-                {/* Become Vendor / Seller Channel Button for Mobile Sidebar */}
+                {/* Seller Channel Button - Clean version */}
                 {user && (
                   <Link
-                    to={user?.roleId === 1 || user?.role === 'SELLER' ? "/seller/dashboard" : "/seller/register"}
+                    to={user?.roleId === 1 || user?.role === 'SELLER' || user?.role === 'ADMIN' ? '/seller/dashboard' : '/seller/register'}
                     onClick={handleLinkClick}
                     className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-secondary-500 hover:bg-secondary-600 transition-colors group mt-2"
                   >
                     <span className="flex items-center gap-2 text-sm font-bold text-white">
-                      {/* Vendor Icon */}
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 7l2 12h14l2-12M5 7V5a2 2 0 012-2h10a2 2 0 012 2v2" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1.5 9h-11L5 11z" />
                       </svg>
-                      {user?.roleId === 1 || user?.role === 'SELLER' ? "Kênh người bán" : "Bán hàng cùng SportZone"}
+                      {user?.roleId === 1 || user?.role === 'SELLER' || user?.role === 'ADMIN' ? 'Kênh người bán' : 'Bán hàng cùng SportZone'}
                     </span>
                   </Link>
                 )}

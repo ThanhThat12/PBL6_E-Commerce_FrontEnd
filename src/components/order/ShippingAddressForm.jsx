@@ -286,8 +286,10 @@ const ShippingAddressForm = ({ onAddressChange, initialAddress = null }) => {
       try {
         const response = await userService.getAddresses();
         if (response.status === 200) {
-          setAddresses(response.data || []);
-          const primaryAddress = response.data.find(addr => addr.primaryAddress);
+          // Filter to only show HOME addresses for checkout
+          const homeAddresses = (response.data || []).filter(addr => addr.typeAddress === 'HOME');
+          setAddresses(homeAddresses);
+          const primaryAddress = homeAddresses.find(addr => addr.primaryAddress);
           const saved = getItem(STORAGE_KEYS.CHECKOUT_SHIPPING_ADDRESS);
           if (!saved && primaryAddress && !selectedAddressId) {
             handleSelectAddress(primaryAddress);

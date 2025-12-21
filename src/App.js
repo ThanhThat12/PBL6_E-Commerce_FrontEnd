@@ -39,6 +39,7 @@ import AddressManagementPage from './pages/user/AddressManagementPage';
 import ChangePasswordPage from './pages/user/ChangePasswordPage';
 import SellerRegistrationPage from './pages/user/SellerRegistrationPage';
 import RegistrationStatusPage from './pages/user/RegistrationStatusPage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -46,6 +47,31 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 // Chat Component
 import { ChatContainer } from './components/chat';
 
+
+
+// 🏪 Seller Pages & Components
+import SellerProtectedRoute from './components/seller/ProtectedRoute';
+import { SellerLayout } from './components/seller/Layout';
+import * as SellerPages from './pages/seller';
+import ReviewsPage from './pages/seller/Review';
+import RejectionStatusPage from './pages/seller/RejectionStatusPage';
+import SellerRegistrationGuard from './components/seller/SellerRegistrationGuard';
+
+// 🧑‍💼 Admin Pages
+import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
+import AdminDashboard from "./pages/admin/Dashboard/Dashboard"; 
+import AdminProductsPage from "./pages/admin/Products/ProductsPage"; 
+import AdminOrdersPage from "./pages/admin/Orders/OrdersPage";
+import AdminCategoriesPage from "./pages/admin/Categories/CategoriesPage";
+import AdminCustomers from "./pages/admin/Users/Customers";
+import AdminSellers from "./pages/admin/Users/Sellers";
+import AdminAdmins from "./pages/admin/Users/Admins";
+import AdminSettingsPage from "./pages/admin/Settings/SettingsPage";
+import AdminMyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
+import AdminVouchersPage from "./pages/admin/Vouchers/VouchersPage";
+import AdminChatPage from './pages/admin/Chat/ChatPage';
+import AdminWalletPage from './pages/admin/Wallet/WalletPage';
+import AdminSellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
 // Chat Wrapper - Only show on authenticated pages
 const ConditionalChatContainer = () => {
@@ -62,27 +88,7 @@ const ConditionalChatContainer = () => {
   return !hideChat ? <ChatContainer /> : null;
 };
 
-// 🏪 Seller Pages & Components
-import SellerProtectedRoute from './components/seller/ProtectedRoute';
-import { SellerLayout } from './components/seller/Layout';
-import * as SellerPages from './pages/seller';
-import ReviewsPage from './pages/seller/Review';
 
-// 🧑‍💼 Admin Pages
-import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
-import Dashboard from "./pages/admin/Dashboard/Dashboard"; 
-import ProductsPage from "./pages/admin/Products/ProductsPage"; 
-import OrdersPage from "./pages/admin/Orders/OrdersPage";
-import CategoriesPage from "./pages/admin/Categories/CategoriesPage";
-import Customers from "./pages/admin/Users/Customers";
-import Sellers from "./pages/admin/Users/Sellers";
-import Admins from "./pages/admin/Users/Admins";
-import SettingsPage from "./pages/admin/Settings/SettingsPage";
-import MyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
-import VouchersPage from "./pages/admin/Vouchers/VouchersPage";
-import ChatPage from './pages/admin/Chat/ChatPage';
-import WalletPage from './pages/admin/Wallet/WalletPage';
-import SellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
 function App() {
   return (
@@ -151,7 +157,7 @@ function App() {
                 } 
               />
               <Route 
-                path="/return-order-item" 
+                path="/orders/return" 
                 element={
                   <ProtectedRoute>
                     <ItemReturnPage />
@@ -163,6 +169,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <OrderDetailPage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Notifications Route */}
+              <Route 
+                path="/notifications" 
+                element={
+                  <ProtectedRoute>
+                    <NotificationsPage />
                   </ProtectedRoute>
                 } 
               />
@@ -198,31 +214,35 @@ function App() {
             
             
             {/* ================= ADMIN ROUTES ================= */}
-            <Route path="/admin" element={<ProtectedRouteAdmin><Dashboard /></ProtectedRouteAdmin>} />
-            <Route path="/admin/dashboard" element={<ProtectedRouteAdmin><Dashboard /></ProtectedRouteAdmin >} />
-            <Route path="/admin/products" element={<ProtectedRouteAdmin><ProductsPage /></ProtectedRouteAdmin>} />
-            <Route path="/admin/orders" element={<ProtectedRouteAdmin><OrdersPage /></ProtectedRouteAdmin>} />
-            <Route path="/admin/categories" element={<ProtectedRouteAdmin><CategoriesPage /></ProtectedRouteAdmin>} />
-            <Route path="/admin/vouchers" element={<ProtectedRouteAdmin><VouchersPage /></ProtectedRouteAdmin>} />
-            <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><Customers /></ProtectedRouteAdmin>} />
-            <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><Sellers /></ProtectedRouteAdmin>} />
-            <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><Admins /></ProtectedRouteAdmin>} />
-            <Route path="/admin/seller-registrations" element={<ProtectedRouteAdmin><SellerRegistrationsPage /></ProtectedRouteAdmin>} />
-            <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><MyprofilePage /></ProtectedRouteAdmin>} />
-            <Route path="/admin/chat" element={<ProtectedRouteAdmin><ChatPage/></ProtectedRouteAdmin>} />            
-            <Route path="/admin/wallet" element={<ProtectedRouteAdmin><WalletPage /></ProtectedRouteAdmin>} />
-            <Route path="/admin/settings" element={<ProtectedRouteAdmin><SettingsPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin" element={<ProtectedRouteAdmin><AdminDashboard /></ProtectedRouteAdmin>} />
+            <Route path="/admin/dashboard" element={<ProtectedRouteAdmin><AdminDashboard /></ProtectedRouteAdmin >} />
+            <Route path="/admin/products" element={<ProtectedRouteAdmin><AdminProductsPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/orders" element={<ProtectedRouteAdmin><AdminOrdersPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/categories" element={<ProtectedRouteAdmin><AdminCategoriesPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/vouchers" element={<ProtectedRouteAdmin><AdminVouchersPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/customers" element={<ProtectedRouteAdmin><AdminCustomers /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/sellers" element={<ProtectedRouteAdmin><AdminSellers /></ProtectedRouteAdmin>} />
+            <Route path="/admin/users/admins" element={<ProtectedRouteAdmin><AdminAdmins /></ProtectedRouteAdmin>} />
+            <Route path="/admin/seller-registrations" element={<ProtectedRouteAdmin><AdminSellerRegistrationsPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><AdminMyprofilePage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/chat" element={<ProtectedRouteAdmin><AdminChatPage/></ProtectedRouteAdmin>} />            
+            <Route path="/admin/wallet" element={<ProtectedRouteAdmin><AdminWalletPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/settings" element={<ProtectedRouteAdmin><AdminSettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
 
                         {/* ================= SELLER REGISTRATION ROUTES ================= */}
+            {/* Entry point uses Guard - other pages handle their own routing */}
             <Route 
               path="/seller/register" 
               element={
                 <ProtectedRoute>
-                  <SellerRegistrationPage />
+                  <SellerRegistrationGuard>
+                    <SellerRegistrationPage />
+                  </SellerRegistrationGuard>
                 </ProtectedRoute>
               } 
             />
+            {/* Status pages don't use Guard to avoid redirect loops */}
             <Route 
               path="/seller/registration-status" 
               element={
@@ -231,9 +251,18 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/seller/rejected" 
+              element={
+                <ProtectedRoute>
+                  <RejectionStatusPage />
+                </ProtectedRoute>
+              } 
+            />
             {/* ============================================================= */}
 
             {/* ================= SELLER ROUTES ================= */}
+
             <Route 
               path="/seller" 
               element={

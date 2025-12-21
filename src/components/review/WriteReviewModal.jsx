@@ -42,6 +42,19 @@ const WriteReviewModal = ({
   const MAX_COMMENT_LENGTH = 1000;
   const DRAFT_KEY = `review_draft_product_${resolvedProductId}`;
 
+  // Calculate days remaining for review deadline
+  const [daysRemaining, setDaysRemaining] = useState(null);
+  
+  useEffect(() => {
+    if (isOpen && product?.completedDate) {
+      const completed = new Date(product.completedDate);
+      const now = new Date();
+      const daysPassed = Math.floor((now - completed) / (1000 * 60 * 60 * 24));
+      const remaining = Math.max(0, 30 - daysPassed);
+      setDaysRemaining(remaining);
+    }
+  }, [isOpen, product]);
+
   // Load draft on mount
   useEffect(() => {
     if (isOpen && !editReview) {
@@ -249,12 +262,42 @@ const WriteReviewModal = ({
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
-            <h2 className="text-lg font-bold text-gray-900">
-              {editReview ? 'Sửa đánh giá' : 'Đánh giá sản phẩm'}
-            </h2>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-gray-900">
+                {editReview ? 'Sửa đánh giá' : 'Đánh giá sản phẩm'}
+              </h2>
+              
+              {/* Deadline Countdown */}
+              {daysRemaining !== null && !editReview && (
+                <div className="mt-2 bg-orange-50 border border-orange-200 rounded-lg p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-orange-700 font-medium">
+                      ⏰ Thời hạn đánh giá
+                    </span>
+                    <span className={`text-xs font-bold ${
+                      daysRemaining <= 7 ? 'text-red-600' : 'text-orange-800'
+                    }`}>
+                      Còn {daysRemaining} ngày
+                    </span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="w-full bg-orange-200 rounded-full h-1.5">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all ${
+                        daysRemaining <= 7 ? 'bg-red-500' : 'bg-orange-500'
+                      }`}
+                      style={{ width: `${(daysRemaining / 30) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-orange-600 mt-1">
+                    Sau {daysRemaining} ngày, bạn sẽ không thể đánh giá nữa
+                  </p>
+                </div>
+              )}
+            </div>
             <button
               onClick={handleClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors ml-2"
             >
               <FiX className="w-5 h-5" />
             </button>
@@ -305,40 +348,61 @@ const WriteReviewModal = ({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nhận xét của bạn <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={comment}
-                onChange={(e) => {
-                  if (e.target.value.length <= MAX_COMMENT_LENGTH) {
-                    setComment(e.target.value);
-                    setHasUnsavedChanges(true);
-                  }
-                }}
-                placeholder={`Hãy chia sẻ cảm nhận của bạn về sản phẩm (tối thiểu ${MIN_COMMENT_LENGTH} ký tự)`}
-                className={`w-full px-4 py-3 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                  errors.comment ? 'border-red-500' : 'border-gray-300'
-                }`}
-                rows={4}
-              />
-              <div className="flex items-center justify-between mt-1">
+              <div className="relative">
+                <textarea
+                  value={comment}
+                  onChange={(e) => {
+                    if (e.target.value.length <= MAX_COMMENT_LENGTH) {
+                      setComment(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }
+                  }}
+                  placeholder={`Hãy chia sẻ cảm nhận của bạn về sản phẩm (tối thiểu ${MIN_COMMENT_LENGTH} ký tự)`}
+                  className={`w-full px-4 py-3 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
+                    errors.comment ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  rows={5}
+                />
+                {/* Character count badge */}
+                <div className={`absolute bottom-2 right-2 px-2 py-1 rounded-md text-xs font-medium ${
+                  commentLength < MIN_COMMENT_LENGTH 
+                    ? 'bg-red-100 text-red-700'
+                    : isCommentError
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'bg-green-100 text-green-700'
+                }`}>
+                  {commentLength}/{MAX_COMMENT_LENGTH}
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between mt-2">
                 {errors.comment ? (
-                  <p className="text-sm text-red-600 flex items-center gap-1 animate-shake">
-                    <FiAlertCircle className="w-4 h-4" />
+                  <p className="text-xs text-red-600 flex items-center gap-1 animate-shake">
+                    <FiAlertCircle className="w-3 h-3" />
                     {errors.comment}
                   </p>
+                ) : commentLength < MIN_COMMENT_LENGTH ? (
+                  <p className="text-xs text-gray-500">
+                    Còn thiếu {MIN_COMMENT_LENGTH - commentLength} ký tự nữa
+                  </p>
                 ) : (
-                  <span />
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    <FiCheck className="w-3 h-3" />
+                    Đủ độ dài yêu cầu
+                  </p>
                 )}
-                <span
-                  className={`text-sm ${
-                    isCommentError
-                      ? 'text-red-600'
-                      : isCommentWarning
-                      ? 'text-yellow-600'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  {commentLength}/{MAX_COMMENT_LENGTH}
-                </span>
+                
+                {/* Progress bar for minimum length */}
+                {commentLength < MIN_COMMENT_LENGTH && !errors.comment && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 bg-gray-200 rounded-full h-1.5">
+                      <div 
+                        className="bg-primary-500 h-1.5 rounded-full transition-all"
+                        style={{ width: `${Math.min((commentLength / MIN_COMMENT_LENGTH) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

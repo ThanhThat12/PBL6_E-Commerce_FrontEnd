@@ -77,7 +77,7 @@ const VoucherSelector = ({ onVoucherApply, subtotal, shopId, cartItems }) => {
 
   // Kiểm tra voucher có hợp lệ không
   const validateVoucher = (voucher) => {
-if (!voucher) return { valid: false, message: 'Mã voucher không tồn tại' };
+    if (!voucher) return { valid: false, message: 'Mã voucher không tồn tại' };
     // Check voucher status enum (backend provides Status: UPCOMING, ACTIVE, EXPIRED)
     if (voucher.status) {
       if (voucher.status === 'UPCOMING') {

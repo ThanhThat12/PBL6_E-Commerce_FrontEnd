@@ -92,16 +92,17 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSuccess }) => {
 
       const response = await updateProfile(updateData);
       
-      if (response.statusCode === 200) {
-        toast.success('Profile updated successfully');
+      // Backend ResponseDTO uses 'status' not 'statusCode'
+      if (response && response.data) {
+        toast.success(response.message || 'C\u1eadp nh\u1eadt th\u00e0nh c\u00f4ng');
         onSuccess(response.data);
         onClose();
       } else {
-        toast.error(response.message || 'Failed to update profile');
+        toast.error(response?.message || 'Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt profile');
       }
     } catch (error) {
       console.error('Update profile error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile';
+      const errorMessage = error.response?.data?.message || error.message || 'Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt profile';
       toast.error(errorMessage);
     } finally {
       setLoading(false);

@@ -4,10 +4,10 @@ import { useAuth } from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
 import { useNotificationContext } from "../../context/NotificationContext";
 import { getCategories } from "../../services/homeService";
+import { getRegistrationStatus } from "../../services/seller/shopService";
+import useShopRegistrationNotifications from "../../hooks/useShopRegistrationNotifications";
 import { 
   Bars3Icon,
-  HeartIcon,
-  ArrowsRightLeftIcon,
   PhoneIcon
 } from '@heroicons/react/24/outline';
 
@@ -39,6 +39,8 @@ export default function NavbarNew({ isHomePage = false }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState(null);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
   
   const { user, logout } = useAuth(); // Sử dụng AuthContext
   const { cartCount } = useCart(); // Sử dụng CartContext
@@ -49,6 +51,9 @@ export default function NavbarNew({ isHomePage = false }) {
     unreadCount,
     chatUnreadCount
   } = useNotificationContext(); // Sử dụng NotificationContext
+
+  // Handle shop registration notifications (approve/reject)
+  useShopRegistrationNotifications();
 
   console.log('Navbar - Notifications:', notifications.length, 'Total unread:', unreadCount, 'Chat unread:', chatUnreadCount);
 
@@ -81,6 +86,61 @@ export default function NavbarNew({ isHomePage = false }) {
     fetchCategories();
   }, []);
 
+  // Check registration status for BUYER users
+  useEffect(() => {
+    const checkRegistration = async () => {
+      if (!user) {
+        setRegistrationStatus(null);
+        return;
+      }
+
+      // Skip check for SELLER and ADMIN (they already have access)
+      if (user?.roleId === 1 || user?.role === 'SELLER' || user?.role === 'ADMIN') {
+        setRegistrationStatus({ status: 'ACTIVE' });
+        return;
+      }
+
+      // Check registration status for BUYER
+      setCheckingRegistration(true);
+      try {
+        const status = await getRegistrationStatus();
+        setRegistrationStatus(status);
+      } catch (error) {
+        // No registration found (404) or other error
+        setRegistrationStatus(null);
+      } finally {
+        setCheckingRegistration(false);
+      }
+    };
+
+    checkRegistration();
+  }, [user]);
+
+  // Refresh registration status when shop approval/rejection notifications arrive
+  useEffect(() => {
+    const hasShopNotification = notifications.some(n => 
+      n.type === 'SHOP_APPROVED' || n.type === 'SHOP_REJECTED'
+    );
+
+    if (hasShopNotification && user && !checkingRegistration) {
+      console.log('🔄 Shop registration notification detected, refreshing status...');
+      
+      // Re-check registration status
+      const refreshStatus = async () => {
+        try {
+          const status = await getRegistrationStatus();
+          setRegistrationStatus(status);
+          console.log('✅ Registration status refreshed:', status);
+        } catch (error) {
+          console.error('❌ Failed to refresh registration status:', error);
+        }
+      };
+
+      // Delay refresh to allow backend to process
+      setTimeout(refreshStatus, 1000);
+    }
+  }, [notifications, user, checkingRegistration]);
+
   // Handlers
   const handleSearch = (searchTerm) => {
     // TODO: Implement search logic hoặc navigate to search page
@@ -96,6 +156,30 @@ export default function NavbarNew({ isHomePage = false }) {
       console.error('Logout error:', error);
       window.location.href = '/login';
     }
+  };
+
+  // Determine seller channel navigation - SIMPLE version
+  const getSellerChannelLink = () => {
+    if (!user) return '/login';
+    
+    // SELLER or ADMIN → go to dashboard
+    if (user?.roleId === 1 || user?.role === 'SELLER' || user?.role === 'ADMIN') {
+      return '/seller/dashboard';
+    }
+
+    // BUYER → always go to register page
+    // SellerLayout will handle routing based on status
+    return '/seller/register';
+  };
+
+  const getSellerChannelLabel = () => {
+    if (!user) return 'Đăng nhập';
+    
+    if (user?.roleId === 1 || user?.role === 'SELLER' || user?.role === 'ADMIN') {
+      return 'Kênh người bán';
+    }
+
+    return 'Bán hàng cùng SportZone';
   };
 
   return (
@@ -130,54 +214,6 @@ export default function NavbarNew({ isHomePage = false }) {
             
             {/* Right Actions */}
             <div className="flex items-center gap-2 lg:gap-3">
-              {/* Wishlist - Hidden on small mobile */}
-              <Link
-                to="/wishlist"
-                className="
-                  hidden
-                  sm:flex
-                  items-center
-                  gap-2
-                  px-3
-                  py-2
-                  rounded-lg
-                  hover:bg-primary-600
-                  transition-colors
-                  group
-                  no-underline
-                "
-                aria-label="Danh sách yêu thích"
-              >
-                <HeartIcon className="w-6 h-6 text-white group-hover:text-primary-100 transition-colors" />
-                <span className="hidden lg:inline text-sm font-medium text-white group-hover:text-primary-100 transition-colors">
-                  Yêu thích
-                </span>
-              </Link>
-
-              {/* Compare - Hidden on mobile */}
-              <Link
-                to="/compare"
-                className="
-                  hidden
-                  md:flex
-                  items-center
-                  gap-2
-                  px-3
-                  py-2
-                  rounded-lg
-                  hover:bg-primary-600
-                  transition-colors
-                  group
-                  no-underline
-                "
-                aria-label="So sánh sản phẩm"
-              >
-                <ArrowsRightLeftIcon className="w-6 h-6 text-white group-hover:text-primary-100 transition-colors" />
-                <span className="hidden lg:inline text-sm font-medium text-white group-hover:text-primary-100 transition-colors">
-                  So sánh
-                </span>
-              </Link>
-              
               {/* Cart Button */}
               <CartButton itemCount={cartCount} />
               
@@ -187,17 +223,18 @@ export default function NavbarNew({ isHomePage = false }) {
                   notifications={notifications}
                   onMarkAsRead={markAsRead}
                   onClearAll={clearAll}
+                  registrationStatus={registrationStatus}
+                  checkingRegistration={checkingRegistration}
                 />
               )}
               
               {/* User Menu */}
               <UserMenu user={user} onLogout={handleLogout} />
                             
-              {/* Seller Channel - Show for logged-in users */}
-              {/* SELLER goes to dashboard, BUYER goes to registration */}
+              {/* Seller Channel - Clean button, notifications shown in NotificationButton */}
               {user && (
                 <Link
-                  to={user?.roleId === 1 || user?.role === 'SELLER' ? "/seller/dashboard" : "/seller/register"}
+                  to={getSellerChannelLink()}
                   className="
                     hidden
                     md:flex
@@ -215,13 +252,13 @@ export default function NavbarNew({ isHomePage = false }) {
                     group
                     no-underline
                   "
-                  aria-label={user?.roleId === 1 || user?.role === 'SELLER' ? "Kênh người bán" : "Đăng ký bán hàng"}
+                  aria-label={getSellerChannelLabel()}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1.5 9h-11L5 11z" />
                   </svg>
                   <span className="hidden lg:inline">
-                    {user?.roleId === 1 || user?.role === 'SELLER' ? "Kênh người bán" : "Bán hàng cùng SportZone"}
+                    {getSellerChannelLabel()}
                   </span>
                 </Link>
               )}
@@ -327,6 +364,7 @@ export default function NavbarNew({ isHomePage = false }) {
         categories={categories}
         menuItems={menuItems}
         cartItemCount={cartCount}
+        registrationStatus={registrationStatus}
       />
     </header>
   );

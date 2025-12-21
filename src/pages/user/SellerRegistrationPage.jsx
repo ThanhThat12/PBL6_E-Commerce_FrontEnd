@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { 
   FiShoppingBag as FiStore, FiPhone, FiMail, FiMapPin, FiCreditCard, 
   FiUser, FiCamera, FiCheck, FiLoader,
-  FiUpload, FiX, FiInfo
+  FiUpload, FiX, FiInfo, FiAlertCircle
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
 import { useAddressMaster } from '../../hooks/useAddressMaster';
-import { submitSellerRegistration, getRegistrationStatus, canSubmitRegistration } from '../../services/sellerRegistrationService';
+import { submitSellerRegistration, canSubmitRegistration } from '../../services/sellerRegistrationService';
+import { getRegistrationStatus, updateRejectedApplication } from '../../services/seller/shopService';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
 
@@ -16,9 +17,18 @@ import Footer from '../../components/layout/footer/Footer';
  * SellerRegistrationPage
  * Form đăng ký trở thành người bán cho BUYER
  */
+
 const SellerRegistrationPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, hasRole } = useAuth();
+  const searchParams = new URLSearchParams(location.search);
+  
+  // Edit mode state (for updating rejected applications)
+  const isEditingFromQuery = searchParams.get('mode') === 'edit';
+  const isEditing = location.state?.isEditing || isEditingFromQuery;
+  const [editRejectionReason, setEditRejectionReason] = useState(location.state?.rejectionReason || '');
+  const hasLoadedEditData = useRef(false);
   
   // Check eligibility state
   const [canSubmit, setCanSubmit] = useState(true);
@@ -84,9 +94,88 @@ const SellerRegistrationPage = () => {
     selectDistrict,
   } = useAddressMaster();
 
+  // Fetch rejected shop data when editing
+  useEffect(() => {
+    const fetchRejectedShopData = async () => {
+      if (isEditing && !hasLoadedEditData.current) {
+        try {
+          const shopData = await getRegistrationStatus();
+          
+          if (shopData && shopData.status === 'REJECTED') {
+            console.log('Fetched rejected shop data:', shopData);
+            
+            // Pre-fill form with existing data
+            setFormData(prev => ({
+              ...prev,
+              // Shop basic info
+              shopName: shopData.shopName || '',
+              description: shopData.description || '',
+              shopPhone: shopData.shopPhone || '',
+              shopEmail: shopData.shopEmail || '',
+              
+              // Address info - NOW INCLUDES IDs from backend
+              fullAddress: shopData.fullAddress || '',
+              provinceId: shopData.provinceId ? String(shopData.provinceId) : '',
+              districtId: shopData.districtId ? String(shopData.districtId) : '',
+              wardCode: shopData.wardCode || '',
+              provinceName: shopData.provinceName || '',
+              districtName: shopData.districtName || '',
+              wardName: shopData.wardName || '',
+              
+              // KYC info (ID card number is masked, name is visible)
+              idCardNumber: '', // Backend returns masked, need full number for update
+              idCardName: shopData.idCardName || '',
+              
+              // Logo (can be kept)
+              logoUrl: shopData.logoUrl || '',
+              
+              // KYC Images: NOT returned by backend for security
+              // User MUST re-upload these images
+              // idCardFrontUrl, idCardBackUrl, selfieWithIdUrl will be empty
+            }));
+            
+            // Populate address dropdowns by calling hook functions
+            if (shopData.provinceId) {
+              selectProvince(shopData.provinceId);
+              
+              // Wait a bit for districts to load, then select district
+              if (shopData.districtId) {
+                setTimeout(() => {
+                  selectDistrict(shopData.districtId);
+                }, 300);
+              }
+            }
+            
+            setEditRejectionReason(shopData.rejectionReason || '');
+
+            hasLoadedEditData.current = true;
+
+            // Show info message about KYC re-upload requirement
+            toast('📝 Đơn đăng ký đã được tải. Vui lòng nhập lại số CMND/CCCD và upload lại ảnh xác minh', {
+              duration: 6000,
+              position: 'top-center'
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching rejected shop data:', error);
+          toast.error('Không thể tải thông tin đơn đăng ký');
+        }
+      }
+    };
+
+    fetchRejectedShopData();
+  }, [isEditing, selectProvince, selectDistrict]);
+
   // Check if user can submit registration
   useEffect(() => {
     const checkEligibility = async () => {
+      // Skip check if editing rejected application
+      if (isEditing) {
+        setCheckingEligibility(false);
+        setCanSubmit(true);
+        return;
+      }
+
       if (!user || hasRole('SELLER') || hasRole('ADMIN')) {
         setCheckingEligibility(false);
         return;
@@ -99,8 +188,8 @@ const SellerRegistrationPage = () => {
           setCanSubmit(false);
           // Get existing status
           try {
-            const statusRes = await getRegistrationStatus();
-            setExistingStatus(statusRes?.data);
+            const statusData = await getRegistrationStatus();
+            setExistingStatus(statusData);
           } catch (err) {
             console.log('No existing registration');
           }
@@ -113,7 +202,7 @@ const SellerRegistrationPage = () => {
     };
 
     checkEligibility();
-  }, [user, hasRole]);
+  }, [user, hasRole, isEditing]);
 
   // Handle input change
   const handleChange = (e) => {
@@ -358,17 +447,23 @@ const SellerRegistrationPage = () => {
 
     setSubmitting(true);
     try {
-      const response = await submitSellerRegistration(formData);
-      
-      if (response?.statusCode === 201 || response?.data?.success) {
-        toast.success('Đăng ký thành công! Đơn của bạn đang chờ xét duyệt.');
-        navigate('/seller/registration-status');
+      if (isEditing) {
+        // Update rejected application
+        await updateRejectedApplication(formData);
+        toast.success('Đã cập nhật đơn đăng ký! Đang chờ admin xét duyệt lại.');
       } else {
-        toast.error(response?.message || 'Đăng ký thất bại');
+        // New registration
+        await submitSellerRegistration(formData);
+        toast.success('Đăng ký thành công! Đơn của bạn đang chờ xét duyệt.');
       }
+      
+      // Navigate to status page
+      navigate('/seller/registration-status');
+      
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error(error?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      const errorMsg = error?.response?.data?.error || error?.message || (isEditing ? 'Cập nhật thất bại' : 'Đăng ký thất bại');
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -501,11 +596,51 @@ const SellerRegistrationPage = () => {
             <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiStore className="w-8 h-8 text-primary-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng ký bán hàng</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {isEditing ? 'Cập nhật đơn đăng ký' : 'Đăng ký bán hàng'}
+            </h1>
             <p className="text-gray-600">
-              Trở thành người bán trên SportZone và bắt đầu kinh doanh ngay hôm nay!
+              {isEditing 
+                ? 'Chỉnh sửa thông tin theo yêu cầu và gửi lại đơn đăng ký' 
+                : 'Trở thành người bán trên SportZone và bắt đầu kinh doanh ngay hôm nay!'}
             </p>
           </div>
+
+          {/* Rejection Reason Alert (MOVED TO TOP - before steps) */}
+          {isEditing && editRejectionReason && (
+            <div className="space-y-4 mb-8">
+              <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-5 shadow-md">
+                <div className="flex items-start gap-3">
+                  <FiAlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-red-900 font-bold mb-2 text-lg">⚠️ Đơn đăng ký bị từ chối</h3>
+                    <div className="bg-white rounded p-3 mb-2">
+                      <p className="text-sm text-gray-600 mb-1 font-semibold">Lý do từ Admin:</p>
+                      <p className="text-red-700 text-sm leading-relaxed font-medium">{editRejectionReason}</p>
+                    </div>
+                    <p className="text-red-700 text-sm">
+                      📝 Vui lòng chỉnh sửa thông tin theo yêu cầu trên và gửi lại đơn đăng ký.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <FiInfo className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-blue-900 font-semibold mb-1">📋 Yêu cầu cập nhật:</h3>
+                    <ul className="text-blue-800 text-sm space-y-1 ml-4 list-disc">
+                      <li>Nhập lại <strong>đầy đủ số CMND/CCCD</strong> (9 hoặc 12 số)</li>
+                      <li>Upload lại <strong>ảnh CMND/CCCD mặt trước và mặt sau</strong></li>
+                      <li>Upload lại <strong>ảnh selfie cầm CMND/CCCD</strong></li>
+                      <li>Các thông tin khác đã được điền sẵn từ đơn trước</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Progress Steps */}
           <div className="flex items-center justify-center mb-8">
@@ -1045,12 +1180,12 @@ const SellerRegistrationPage = () => {
                   {submitting ? (
                     <>
                       <FiLoader className="w-5 h-5 animate-spin" />
-                      Đang gửi...
+                      {isEditing ? 'Đang cập nhật...' : 'Đang gửi...'}
                     </>
                   ) : (
                     <>
                       <FiCheck className="w-5 h-5" />
-                      Gửi đăng ký
+                      {isEditing ? 'Cập nhật đơn đăng ký' : 'Gửi đăng ký'}
                     </>
                   )}
                 </button>

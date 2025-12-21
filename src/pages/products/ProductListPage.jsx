@@ -306,7 +306,7 @@ const ProductListPage = () => {
   };
 
   const handleWishlist = (_product) => {
-    toast.info('Tính năng yêu thích đang phát triển!');
+    toast('Tính năng yêu thích đang phát triển!');
   };
 
   return (

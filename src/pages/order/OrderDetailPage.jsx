@@ -12,6 +12,7 @@ import { ArrowLeftIcon, ChatBubbleLeftRightIcon, StarIcon, ClockIcon } from '@he
 import { WriteReviewModal } from '../../components/review';
 import reviewService from '../../services/reviewService';
 import chatService from '../../services/chatService';
+import { DEFAULT_PRODUCT_IMAGE, handleImageError } from '../../utils/imageDefaults';
 
 /**
  * OrderDetailPage Component
@@ -120,13 +121,24 @@ const OrderDetailPage = () => {
     }
   };
 
+  // Calculate review deadline (30 days from order completion)
+  const calculateReviewDeadline = (completedDate) => {
+    if (!completedDate) return null;
+    const completed = new Date(completedDate);
+    const now = new Date();
+    const daysPassed = Math.floor((now - completed) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, 30 - daysPassed);
+    return { daysRemaining, expired: daysRemaining === 0 };
+  };
+
   // Review handlers
   const openReviewModal = (item) => {
     setSelectedProduct({
       id: item.productId,
       name: item.productName,
       mainImage: item.image,
-      variant: item.variantAttributes
+      variant: item.variantAttributes,
+      completedDate: currentOrder?.updatedAt // Pass completion date for modal
     });
     setShowReviewModal(true);
   };
@@ -243,6 +255,10 @@ Xem chi tiet don hang:
     }
     
     if (eligibility?.canReview) {
+      const deadline = calculateReviewDeadline(currentOrder?.updatedAt);
+      const daysLeft = deadline?.daysRemaining || eligibility.daysRemainingToReview || 30;
+      const isUrgent = daysLeft <= 7;
+      
       return (
         <div className="flex flex-col items-end gap-1">
           <Button
@@ -252,16 +268,33 @@ Xem chi tiet don hang:
             }}
             variant="primary"
             size="sm"
-            className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600"
+            className={`flex items-center gap-1 ${
+              isUrgent 
+                ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                : 'bg-orange-500 hover:bg-orange-600'
+            }`}
           >
             <StarIcon className="h-4 w-4" />
             Đánh giá sản phẩm
           </Button>
-          {eligibility.daysRemainingToReview && (
-            <span className="text-xs text-gray-500 flex items-center gap-1">
-              <ClockIcon className="h-3 w-3" />
-              Còn {eligibility.daysRemainingToReview} ngày
-            </span>
+          {daysLeft !== null && (
+            <div className="flex flex-col items-end gap-1">
+              <span className={`text-xs flex items-center gap-1 font-medium ${
+                isUrgent ? 'text-red-600' : 'text-orange-600'
+              }`}>
+                <ClockIcon className="h-3 w-3" />
+                ⏰ Còn {daysLeft} ngày
+              </span>
+              {/* Progress bar */}
+              <div className="w-24 bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className={`h-1.5 rounded-full transition-all ${
+                    isUrgent ? 'bg-red-500' : 'bg-orange-500'
+                  }`}
+                  style={{ width: `${(daysLeft / 30) * 100}%` }}
+                />
+              </div>
+            </div>
           )}
         </div>
       );
@@ -423,12 +456,10 @@ Xem chi tiet don hang:
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
                       <img
-                        src={item.mainImage || item.productMainImage || item.image || item.productImage || '/placeholder.png'}
+                        src={item.mainImage || item.productMainImage || item.image || item.productImage || DEFAULT_PRODUCT_IMAGE}
                         alt={item.productName}
                         className="w-20 h-20 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.src = '/placeholder.png';
-                        }}
+                        onError={(e) => handleImageError(e, DEFAULT_PRODUCT_IMAGE)}
                       />
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">
@@ -457,7 +488,16 @@ Xem chi tiet don hang:
                           size="sm"
                           onClick={(e) => {
                             e.preventDefault();
-                            navigate(`/orders/return?orderId=${currentOrder.id}&itemId=${item.id}`);
+                            navigate('/orders/return', {
+                              state: {
+                                orderItemId: item.id,
+                                productName: item.productName,
+                                variantName: item.variantAttributes || '',
+                                price: item.price,
+                                maxQuantity: item.quantity,
+                                productImage: item.mainImage || item.productMainImage || item.image || item.productImage
+                              }
+                            });
                           }}
                           className="flex items-center gap-1 text-orange-600 border-orange-300 hover:bg-orange-50"
                         >
@@ -535,7 +575,7 @@ Xem chi tiet don hang:
               <Button
                 variant="outline"
                 className="w-full mt-4"
-                onClick={() => toast.info('Tính năng hỗ trợ đang được phát triển')}
+                onClick={() => toast('Tính năng hỗ trợ đang được phát triển')}
               >
                 Liên hệ hỗ trợ
               </Button>

@@ -66,9 +66,13 @@ export default function useChatNotifications(userId) {
     
     // Fetch initial count
     fetchUnreadCount();
+    
+    // Append token as query parameter to WebSocket URL
+    const socketUrlWithToken = `${SOCKET_URL}?token=${token}`;
+    console.log('🔑 Chat WebSocket: Connecting with token in query parameter');
 
     // Create WebSocket connection
-    const socket = new SockJS(SOCKET_URL);
+    const socket = new SockJS(socketUrlWithToken);
     const stompClient = Stomp.over(socket);
 
     // Disable debug logs in production
@@ -76,8 +80,9 @@ export default function useChatNotifications(userId) {
       stompClient.debug = () => {};
     }
 
+    // Connect without Authorization header (token already in handshake URL)
     stompClient.connect(
-      { Authorization: `Bearer ${token}` },
+      {}, // Empty headers - token is in query parameter
       () => {
         console.log('✅ Chat notifications WebSocket connected');
         setConnected(true);
