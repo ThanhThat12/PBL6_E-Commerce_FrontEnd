@@ -757,7 +757,12 @@ const ProductDetailPage = () => {
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-primary-100 shadow-lg flex-shrink-0">
                 {shopInfo.logo ? (
-                  <img src={shopInfo.logo} alt={shopInfo.name} className="w-full h-full object-cover" />
+                  <img 
+                    src={shopInfo.logo || DEFAULT_SHOP_LOGO} 
+                    alt={shopInfo.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => handleImageError(e, DEFAULT_SHOP_LOGO)}
+                  />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
                     <span className="text-white font-bold text-2xl">

@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { useOrder } from '../../context/OrderContext';
 import Navbar from '../../components/common/Navbar';
 import Footer from '../../components/layout/footer/Footer';
+import { DEFAULT_PRODUCT_IMAGE, handleImageError } from '../../utils/imageDefaults';
 import Button from '../../components/common/Button';
 import { ArrowLeftIcon, PhotoIcon } from '@heroicons/react/24/outline';
 
@@ -144,9 +145,10 @@ const ItemReturnPage = () => {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin sản phẩm</h2>
               <div className="flex gap-4">
                 <img
-                  src={productImage || '/placeholder.png'}
+                  src={productImage || DEFAULT_PRODUCT_IMAGE}
                   alt={productName}
                   className="w-20 h-20 object-cover rounded-lg"
+                  onError={(e) => handleImageError(e, DEFAULT_PRODUCT_IMAGE)}
                 />
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900">{productName}</h3>

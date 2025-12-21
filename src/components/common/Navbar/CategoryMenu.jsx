@@ -117,13 +117,28 @@ const CategoryMenu = ({
           overflow-y-auto
         ">
           {loading ? (
-            <div className="py-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <p className="text-sm text-text-tertiary mt-2">Đang tải...</p>
+            /* Skeleton Loading */
+            <div className="py-2">
+              {[...Array(5)].map((_, index) => (
+                <div 
+                  key={index}
+                  className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
+                >
+                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : categories.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-sm text-text-tertiary">Không có danh mục</p>
+            /* Empty State */
+            <div className="py-8 px-4 text-center">
+              <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                <Squares2X2Icon className="w-6 h-6 text-gray-400" />
+              </div>
+              <p className="text-sm font-medium text-gray-900 mb-1">Chưa có danh mục</p>
+              <p className="text-xs text-gray-500">Các danh mục sẽ được cập nhật sớm</p>
             </div>
           ) : (
             <div className="py-2">

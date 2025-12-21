@@ -5,8 +5,10 @@ import Button from '../common/Button';
 import Loading from '../common/Loading';
 import ProfileEditModal from './ProfileEditModal';
 import ChangePasswordModal from './ChangePasswordModal';
+import AvatarUpload from './AvatarUpload';
 import { useAuth } from '../../hooks/useAuth';
 import { getProfile } from '../../services/userService';
+import { getUserAvatar, handleImageError, DEFAULT_AVATAR_IMAGE } from '../../utils/placeholderImage';
 
 /**
  * ProfileInfo
@@ -25,7 +27,8 @@ const ProfileInfo = () => {
       setLoading(true);
       try {
         const response = await getProfile();
-        if (response.statusCode === 200) {
+        // Backend returns { status: 200, message: '...', data: {...} }
+        if (response && response.data) {
           setUser(response.data);
         }
       } catch (error) {
@@ -49,6 +52,16 @@ const ProfileInfo = () => {
     // Update AuthContext if available
     if (updateUser) {
       updateUser(updatedProfile);
+    }
+  };
+
+  const handleAvatarUpdate = (avatarUrl) => {
+    // Update local user state with new avatar
+    const updatedUser = { ...displayUser, avatarUrl };
+    setUser(updatedUser);
+    // Update AuthContext
+    if (updateUser) {
+      updateUser(updatedUser);
     }
   };
 
@@ -102,6 +115,14 @@ const ProfileInfo = () => {
         <p className="text-sm text-gray-600 mt-1">Quản lý thông tin hồ sơ để bảo mật tài khoản</p>
       </div>
 
+      {/* Avatar Section */}
+      <div className="mb-8 pb-6 border-b">
+        <AvatarUpload
+          currentAvatar={displayUser?.avatarUrl}
+          onAvatarUpdate={handleAvatarUpdate}
+        />
+      </div>
+
       {/* Profile Information */}
       <div className="space-y-6">
         {/* Username */}
@@ -132,35 +153,31 @@ const ProfileInfo = () => {
           </div>
         )}
 
-        {/* Phone */}
-        {displayUser?.phoneNumber && (
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-              <FiPhone className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 mb-1">Số điện thoại</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {displayUser.phoneNumber}
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Full Name */}
-        {displayUser?.fullName && (
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-              <FiUser className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 mb-1">Họ và tên</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {displayUser.fullName}
-              </p>
-            </div>
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+            <FiUser className="w-6 h-6 text-yellow-600" />
           </div>
-        )}
+          <div className="flex-1">
+            <p className="text-sm text-gray-600 mb-1">Họ và tên</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {displayUser?.fullName || displayUser?.full_name || 'Chưa cập nhật'}
+            </p>
+          </div>
+        </div>
+
+        {/* Phone */}
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+            <FiPhone className="w-6 h-6 text-green-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-gray-600 mb-1">Số điện thoại</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {displayUser?.phoneNumber || displayUser?.phone_number || 'Chưa cập nhật'}
+            </p>
+          </div>
+        </div>
 
         {/* Role */}
         <div className="flex items-start gap-4">
@@ -171,23 +188,6 @@ const ProfileInfo = () => {
             <p className="text-sm text-gray-600 mb-1">Vai trò</p>
             <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getRoleBadgeColor(displayUser?.role)}`}>
               {getRoleLabel(displayUser?.role)}
-            </span>
-          </div>
-        </div>
-
-        {/* Account Status */}
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-            <FiShield className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-gray-600 mb-1">Trạng thái tài khoản</p>
-            <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-              displayUser?.activated 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {displayUser?.activated ? 'Đã kích hoạt' : 'Chưa kích hoạt'}
             </span>
           </div>
         </div>

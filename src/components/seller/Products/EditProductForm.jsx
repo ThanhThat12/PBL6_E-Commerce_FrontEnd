@@ -88,7 +88,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
   const [uploadLoading, setUploadLoading] = useState(false);
 
   // Parse existing variants from product data (simplified to avoid infinite loops)
-  const parseExistingVariants = useCallback((variants) => {
+  const parseExistingVariants = useCallback((variants, attributeMap) => {
     if (!variants || variants.length === 0) return;
 
     const class1Values = new Set();
@@ -97,6 +97,13 @@ const EditProductForm = ({ productId, onSuccess }) => {
     let detectedType1 = 'color';
     let detectedType2 = 'size';
     let hasType2 = false;
+
+    // Build reverse map from the passed attributeMap
+    const reverseMap = {};
+    Object.keys(attributeMap).forEach(name => {
+      const id = attributeMap[name];
+      reverseMap[id] = name;
+    });
 
     // Determine classification types and values from existing variants
     variants.forEach((variant, index) => {
@@ -107,7 +114,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
         if (variant1) {
           class1Values.add(variant1.value);
           // Determine classification type from attribute ID
-          const type1 = reverseAttributeMap[variant1.productAttributeId] || reverseAttributeMap[variant1.productAttribute?.id];
+          const type1 = reverseMap[variant1.productAttributeId] || reverseMap[variant1.productAttribute?.id];
           if (type1) detectedType1 = type1;
         }
 
@@ -115,7 +122,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
           class2Values.add(variant2.value);
           hasType2 = true;
           // Determine classification type from attribute ID  
-          const type2 = reverseAttributeMap[variant2.productAttributeId] || reverseAttributeMap[variant2.productAttribute?.id];
+          const type2 = reverseMap[variant2.productAttributeId] || reverseMap[variant2.productAttribute?.id];
           if (type2) detectedType2 = type2;
         }
 
@@ -141,7 +148,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
     setClassification2Values(Array.from(class2Values));
     setVariantTable(parsedVariants);
     setEnableClassification2(hasType2);
-  }, [reverseAttributeMap]);
+  }, []); // Empty dependency array - function uses passed parameters only
 
   const loadProduct = useCallback(async () => {
     if (!productId) return;
@@ -164,9 +171,9 @@ const EditProductForm = ({ productId, onSuccess }) => {
         heightCm: product.heightCm,
       });
 
-      // Parse existing variants and determine classifications
+      // Parse existing variants and determine classifications (pass attributeMap directly)
       if (product.variants && product.variants.length > 0) {
-        parseExistingVariants(product.variants);
+        parseExistingVariants(product.variants, attributeMap);
       }
 
       // Try to load primary attribute to determine main classification
@@ -175,7 +182,14 @@ const EditProductForm = ({ productId, onSuccess }) => {
         
         const primaryAttribute = primaryAttributeResponse?.data;
         if (primaryAttribute?.id) {
-          const primaryType = reverseAttributeMap[primaryAttribute.id];
+          // Build reverse map locally instead of using state
+          const reverseMap = {};
+          Object.keys(attributeMap).forEach(name => {
+            const id = attributeMap[name];
+            reverseMap[id] = name;
+          });
+          
+          const primaryType = reverseMap[primaryAttribute.id];
           
           if (primaryType) {
             setClassificationType1(primaryType);
@@ -189,7 +203,13 @@ const EditProductForm = ({ productId, onSuccess }) => {
             const firstVariant = product.variants[0];
             if (firstVariant.variantValues && firstVariant.variantValues.length > 0) {
               const firstAttribute = firstVariant.variantValues[0];
-              const detectedType = reverseAttributeMap[firstAttribute.productAttributeId];
+              // Build reverse map locally
+              const reverseMap = {};
+              Object.keys(attributeMap).forEach(name => {
+                const id = attributeMap[name];
+                reverseMap[id] = name;
+              });
+              const detectedType = reverseMap[firstAttribute.productAttributeId];
               if (detectedType) {
                 setClassificationType1(detectedType);
               }
@@ -204,7 +224,13 @@ const EditProductForm = ({ productId, onSuccess }) => {
             const firstVariant = product.variants[0];
             if (firstVariant.variantValues && firstVariant.variantValues.length > 0) {
               const firstAttribute = firstVariant.variantValues[0];
-              const detectedType = reverseAttributeMap[firstAttribute.productAttributeId];
+              // Build reverse map locally
+              const reverseMap = {};
+              Object.keys(attributeMap).forEach(name => {
+                const id = attributeMap[name];
+                reverseMap[id] = name;
+              });
+              const detectedType = reverseMap[firstAttribute.productAttributeId];
               if (detectedType) {
                 setClassificationType1(detectedType);
               }
@@ -219,7 +245,7 @@ const EditProductForm = ({ productId, onSuccess }) => {
     } catch {
       message.error('Không thể tải thông tin sản phẩm');
     }
-  }, [productId, form, reverseAttributeMap, parseExistingVariants]);
+  }, [productId, form, attributeMap, parseExistingVariants]);
 
   // Variant management functions (with manual table generation)
   const addClassification1Value = (value) => {

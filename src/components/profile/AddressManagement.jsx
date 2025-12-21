@@ -30,7 +30,10 @@ const AddressManagement = () => {
       console.log('loadAddresses response:', response);
       // Backend returns ResponseDTO { status, message, data }
       if (response.status === 200 && Array.isArray(response.data)) {
-        setAddresses(response.data);
+        // Filter to only show HOME addresses for buyers (ignore roles)
+        const homeAddresses = response.data.filter(addr => addr.typeAddress === 'HOME');
+        console.log('Filtered HOME addresses:', homeAddresses);
+        setAddresses(homeAddresses);
       } else {
         console.warn('Unexpected response structure:', response);
         setAddresses([]);
@@ -82,15 +85,21 @@ const AddressManagement = () => {
         response = await createAddress(addressData);
       }
 
+      console.log('Save address response:', response);
       // Backend returns status 200 for update, 201 for create
       if (response.status === 200 || response.status === 201) {
         toast.success(editingAddress ? 'Cập nhật địa chỉ thành công' : 'Thêm địa chỉ thành công');
         setModalOpen(false);
         loadAddresses();
+      } else {
+        // If response exists but status is not 200/201
+        const errorMsg = response?.message || response?.data?.message || 'Lưu địa chỉ thất bại';
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error('Failed to save address:', error);
-      toast.error(error.response?.data?.message || 'Lưu địa chỉ thất bại');
+      const errorMsg = error.response?.data?.message || error.message || 'Lưu địa chỉ thất bại';
+      toast.error(errorMsg);
       throw error;
     }
   };
@@ -103,20 +112,25 @@ const AddressManagement = () => {
     setActionLoading(addressId);
     try {
       const response = await deleteAddress(addressId);
-      // Luôn reload danh sách sau khi xóa
-      await loadAddresses();
+      console.log('Delete address response:', response);
+      
       if (response && response.status === 200) {
         toast.success('Xóa địa chỉ thành công');
+        await loadAddresses();
       } else {
-        toast.error((response && response.message) || 'Xóa địa chỉ thất bại');
+        const errorMsg = response?.message || response?.data?.message || 'Xóa địa chỉ thất bại';
+        toast.error(errorMsg);
+        await loadAddresses();
       }
     } catch (error) {
       console.error('Failed to delete address:', error);
       await loadAddresses();
-      if (error && error.response && error.response.status === 404) {
+      
+      if (error?.response?.status === 404) {
         toast.error('Địa chỉ không tồn tại hoặc đã bị xóa. Danh sách đã được cập nhật.');
       } else {
-        toast.error('Xóa địa chỉ thất bại');
+        const errorMsg = error.response?.data?.message || error.message || 'Xóa địa chỉ thất bại';
+        toast.error(errorMsg);
       }
     } finally {
       setActionLoading(null);
@@ -125,34 +139,30 @@ const AddressManagement = () => {
 
   const handleSetPrimary = async (addressId) => {
     setActionLoading(addressId);
+    
     try {
       const response = await setAsPrimary(addressId);
-      // Fix: check response.status (API returns status 200)
-      if (response.status === 200) {
-        toast.success('Đặt làm địa chỉ mặc định thành công');
-        // Reload addresses, then move primary to top and auto-select
-        await loadAddresses();
-        // Find new primary address
-        const updated = await getAddresses();
-        if (updated.status === 200 && Array.isArray(updated.data)) {
-          const primary = updated.data.find(a => a.primaryAddress);
-          if (primary) {
-            // Move primary to top
-            setAddresses(prev => {
-              const others = updated.data.filter(a => a.id !== primary.id);
-              return [primary, ...others];
-            });
-            // Auto-select (open modal for edit)
-            handleEditAddress(primary);
-          }
-        }
-      } else {
-        toast.error('Đặt địa chỉ mặc định thất bại');
-      }
+      console.log('=== SET PRIMARY SUCCESS ===');
+      console.log('Response data:', response);
+      console.log('========================');
+      
+      // If API call succeeds (no error thrown), it's a success
+      // Response is the address data object, not a ResponseDTO
+      toast.success('Đặt làm địa chỉ mặc định thành công');
+      
     } catch (error) {
-      console.error('Failed to set primary address:', error);
-      toast.error('Đặt địa chỉ mặc định thất bại');
+      console.error('=== SET PRIMARY ERROR ===');
+      console.error('Error:', error);
+      console.error('========================');
+      const errorMsg = error.response?.data?.message || error.message || 'Đặt địa chỉ mặc định thất bại';
+      toast.error(errorMsg);
     } finally {
+      // Reload addresses
+      try {
+        await loadAddresses();
+      } catch (reloadError) {
+        console.error('Failed to reload addresses:', reloadError);
+      }
       setActionLoading(null);
     }
   };

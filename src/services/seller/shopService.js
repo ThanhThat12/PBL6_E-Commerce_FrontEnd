@@ -188,7 +188,7 @@ export const cancelRejectedApplication = async () => {
  */
 export const updateRejectedApplication = async (registrationData) => {
   try {
-    const response = await api.put('/seller/registration', registrationData);
+    const response = await api.put('/seller/register', registrationData);
     return response.data;
   } catch (error) {
     console.error('Error updating rejected application:', error);
