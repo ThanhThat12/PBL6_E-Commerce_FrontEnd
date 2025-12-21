@@ -76,7 +76,6 @@
   cursor: pointer;
   transition: background-color 0.2s;
   gap: 12px;
-  position: relative;
 }
 
 .admin-chat-item:hover {
@@ -150,25 +149,6 @@
 .admin-chat-preview.unread {
   font-weight: 600;
   color: #050505;
-}
-
-/* Unread Badge */
-.admin-chat-unread-badge {
-  position: absolute;
-  top: 50%;
-  right: 16px;
-  transform: translateY(-50%);
-  background-color: #ff4757;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6px;
 }
 
 /* Right Side - Chat Window */

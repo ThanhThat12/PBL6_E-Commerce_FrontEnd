@@ -15,6 +15,7 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
     usageLimit: '',
     startDate: '',
     endDate: '',
+    status: 'ACTIVE',
     applicableType: 'ALL'
   });
 
@@ -130,7 +131,6 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
       console.log('➕ [AddVoucherModal] Creating voucher with data:', formData);
       
       // Prepare create DTO matching AdminVoucherCreateDTO
-      // Status will be auto-calculated by backend based on dates
       const voucherData = {
         code: formData.code.toUpperCase(),
         description: formData.description.trim(),
@@ -141,6 +141,7 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
         usageLimit: parseInt(formData.usageLimit),
         startDate: formData.startDate,
         endDate: formData.endDate,
+        status: formData.status,
         applicableType: formData.applicableType
       };
       
@@ -234,7 +235,7 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
               {errors.description && <span className="admin-voucher-error-text">{errors.description}</span>}
             </div>
 
-            {/* Row 3: Discount Type & Applicable Type */}
+            {/* Row 3: Discount Type & Status */}
             <div className="admin-voucher-form-row">
               <div className="admin-voucher-form-group">
                 <label className="admin-voucher-form-label">
@@ -255,19 +256,17 @@ const AddVoucherModal = ({ onClose, onSubmit }) => {
               <div className="admin-voucher-form-group">
                 <label className="admin-voucher-form-label">
                   <Tag size={16} />
-                  Applicable Type 
+                  Status 
                 </label>
-                <div className="admin-voucher-form-input" style={{ 
-                  backgroundColor: '#ffffffff', 
-                  color: '  #027d00ff',
-                  cursor: 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontSize: '14px',
-                   fontWeight: 'bold'
-                }}>
-                  All Customers
-                </div>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="admin-voucher-form-select"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="UPCOMING">Upcoming</option>
+                </select>
               </div>
             </div>
 

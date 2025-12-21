@@ -99,30 +99,6 @@
   align-items: center;
 }
 
-/* Status Filter Dropdown */
-.admin-vouchers-status-filter {
-  padding: 10px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #475569;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 150px;
-}
-
-.admin-vouchers-status-filter:hover {
-  border-color: #cbd5e1;
-}
-
-.admin-vouchers-status-filter:focus {
-  outline: none;
-  border-color: #10b981;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-}
-
 .admin-vouchers-search-container {
   position: relative;
   display: flex;
