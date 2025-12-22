@@ -10,10 +10,14 @@ import Loading from '../../components/common/Loading';
 import VariantSelector from '../../components/product/VariantSelector';
 import { ReviewSection } from '../../components/review';
 import { getProductById, getProductImages } from '../../services/productService';
+import api from '../../services/api';
 import useCart from '../../hooks/useCart';
 import useAuth from '../../hooks/useAuth';
+import useShopOwnership from '../../hooks/useShopOwnership';
+import useChatWithShop from '../../hooks/useChatWithShop';
 import { getProductImage } from '../../utils/placeholderImage';
-import chatService from '../../services/chatService';
+import ShopInfo from '../../components/product/ShopInfo';
+import ProductActions from '../../components/product/ProductActions';
 
 /**
  * ProductDetailPage - Shopee Style
@@ -32,110 +36,40 @@ const ProductDetailPage = () => {
   const [productImages, setProductImages] = useState(null);
   const [imageGallery, setImageGallery] = useState([]);
   const [adding, setAdding] = useState(false);
+  const [shop, setShop] = useState(null);
   const [activeTab, setActiveTab] = useState('details'); // details, reviews, shipping
   const [currentImagePage, setCurrentImagePage] = useState(0);
   const { user, isAuthenticated, hasRole } = useAuth();
 
-  // Check if current user is product owner - cached with useMemo
-  const isProductOwner = useMemo(() => {
-    // Early return if data not ready
-    if (!user || !product) return false;
-    
-    // Check SELLER role
-    if (!hasRole || !hasRole('SELLER')) return false;
+  // Use modular ownership logic with shop loaded from API
+  const isShopOwner = useShopOwnership(user, shop);
+  
+  // Use chat hook
+  const { handleChatWithShop } = useChatWithShop(isAuthenticated, isShopOwner, navigate);
 
-    // Get shop IDs
-    const userShopId = user.shopId || user.shop?.id;
-    const productShopId = product.shopId || product.shop?.id;
-    
-    // Both must exist to compare
-    if (!userShopId || !productShopId) return false;
-
-    // Compare shop IDs
-    return String(userShopId) === String(productShopId);
-  }, [user, product, hasRole]);
-
-  // Computed permission flags based on markdown spec
+  // Computed permission flags
   const canChat = useMemo(() => {
-    return !isProductOwner && isAuthenticated;
-  }, [isProductOwner, isAuthenticated]);
+    return isAuthenticated && !isShopOwner;
+  }, [isAuthenticated, isShopOwner]);
 
   const canAddToCart = useMemo(() => {
-    // Only BUYER can add to cart - SELLER/ADMIN cannot buy
-    if (!isAuthenticated) return false;
-    if (hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) return false;
-    if (isProductOwner) return false;
+    // Block admin from buying
+    if (hasRole && hasRole('ADMIN')) return false;
+    // Block shop owner from buying own products
+    if (isShopOwner) return false;
     if (!product) return false;
     if (!selectedVariant) return false;
     return selectedVariant.stock > 0 && product.isActive;
-  }, [isAuthenticated, hasRole, isProductOwner, product, selectedVariant]);
+  }, [hasRole, isShopOwner, product, selectedVariant]);
 
-  // Handle chat with shop
-  const handleChatWithShop = async (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    
-    // Verify authentication
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để chat với shop');
-      navigate('/login');
-      return;
-    }
-
-    // Check ownership - only block if user is owner of THIS shop
-    if (isProductOwner) {
-      toast.error('Bạn không thể chat với shop của chính mình');
-      return;
-    }
-
-    const shopId = product.shop?.id || product.shopId;
-    
-    if (!shopId) {
-      toast.error('Không tìm thấy thông tin shop');
-      return;
-    }
-
-    try {
-      // Show loading toast
-      const loadingToast = toast.loading('Đang mở chat với shop...');
-      
-      // Create or get conversation with shop
-      const apiResponse = await chatService.createConversation({
-        type: 'SHOP',
-        shopId: shopId,
-      });
-
-      toast.dismiss(loadingToast);
-
-      // apiResponse is ResponseDTO: { status, message, data: conversationObject }
-      const conversationData = apiResponse.data;
-      
-      if (conversationData && conversationData.id) {
-        console.log('[ProductDetailPage] ✅ Conversation created:', conversationData);
-        
-        // Dispatch event to open chat window
-        const event = new CustomEvent('openChat', { 
-          detail: { conversationId: conversationData.id } 
-        });
-        console.log('[ProductDetailPage] 📤 Dispatching openChat event');
-        window.dispatchEvent(event);
-        
-        toast.success('Chat đã mở!');
-      } else {
-        console.error('Invalid conversation response:', apiResponse);
-        toast.error('Không thể tạo cuộc trò chuyện');
-      }
-    } catch (error) {
-      console.error('Error opening chat:', error);
-      // Check for specific backend error about self-chat
-      const errorMessage = error.response?.data?.message || '';
-      if (error.response?.status === 403 || errorMessage.includes('shop của chính mình') || errorMessage.includes('own shop')) {
-        toast.error('Bạn không thể chat với shop của chính mình');
-      } else {
-        toast.error(errorMessage || 'Không thể mở chat với shop');
-      }
-    }
-  };
+  // Wrapper for chat functionality
+const onChatWithShop = (e) => {
+  e?.preventDefault();
+  e?.stopPropagation();
+  const shopId = shop?.id || product.shop?.id || product.shopId; // ✅ Lấy shopId từ shop hoặc product
+  console.log('[ProductDetailPage] Initiating chat with shop ID:', shopId);
+  handleChatWithShop(shopId); // ✅ Truyền shopId vào hàm từ hook
+};
 
   // Load product
   useEffect(() => {
@@ -196,6 +130,29 @@ const ProductDetailPage = () => {
 
     loadProduct();
   }, [id, navigate]);
+
+  // Load shop details separately to get full owner information
+  useEffect(() => {
+    const loadShop = async () => {
+      if (!product) return;
+      
+      const shopId = product.shop?.id || product.shopId;
+      if (!shopId) return;
+
+      try {
+        const response = await api.get(`shops/${shopId}`);
+        if (response && response.data) {
+          setShop(response.data);
+          console.log('[ProductDetailPage] Shop loaded:', response.data);
+        }
+      } catch (error) {
+        console.error('[ProductDetailPage] Failed to load shop:', error);
+        // Non-critical error - product can still be displayed
+      }
+    };
+
+    loadShop();
+  }, [product]);
 
   // Update image and gallery when variant changes
   useEffect(() => {
@@ -274,7 +231,7 @@ const ProductDetailPage = () => {
       return;
     }
 
-    if (isProductOwner) {
+    if (isShopOwner) {
       toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
       return;
     }
@@ -329,8 +286,8 @@ const ProductDetailPage = () => {
     }
 
     // Block own product purchase
-    if (isProductOwner) {
-      toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
+    if (isShopOwner) {
+      toast.error('Bạn không thể mua sản phẩm của chính shop bâng');
       return;
     }
 
@@ -375,6 +332,7 @@ const ProductDetailPage = () => {
     }
   };
 
+  
 
   if (loading) {
     return (
@@ -449,8 +407,17 @@ const ProductDetailPage = () => {
     return <div className="flex items-center gap-0.5">{stars}</div>;
   };
 
-  // Shop info from product data
-  const shopInfo = {
+  // Shop info - use shop from API if available, fallback to product data
+  const shopInfo = shop ? {
+    id: shop.id,
+    name: shop.name || 'Shop',
+    logo: shop.logoUrl || '',
+    rating: shop.rating || 0,
+    productCount: shop.productCount || 0,
+    location: shop.location || '',
+    isVerified: shop.isVerified ?? false,
+    isOnline: shop.isOnline ?? false,
+  } : {
     id: product.shop?.id || product.shopId,
     name: product.shop?.name || product.shopName || 'Shop',
     logo: product.shop?.logoUrl || product.shopLogo || '',
@@ -709,50 +676,17 @@ const ProductDetailPage = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={!canAddToCart || adding}
-                  variant="outline"
-                  className={`flex-1 ${
-                    !canAddToCart
-                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
-                      : 'border-primary-500 text-primary-600 hover:bg-primary-50'
-                  }`}
-                  title={
-                    !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
-                    (hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Seller/Admin không thể mua hàng. Vui lòng sử dụng tài khoản buyer.' :
-                    isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
-                    !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
-                    selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
-                    !product.isActive ? 'Sản phẩm không khả dụng' : ''
-                  }
-                >
-                  <FiShoppingCart className="w-5 h-5 mr-2" />
-                  {(hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Không thể thêm' :
-                   isProductOwner ? 'Sản phẩm của bạn' : adding ? 'Đang thêm...' : 'Thêm Vào Giỏ Hàng'}
-                </Button>
-                
-                <Button
-                  onClick={handleBuyNow}
-                  disabled={!canAddToCart || adding}
-                  variant="primary"
-                  className={`flex-1 ${
-                    isProductOwner ? 'bg-gray-400 cursor-not-allowed' : ''
-                  }`}
-                  title={
-                    !isAuthenticated ? 'Vui lòng đăng nhập để mua hàng' :
-                    (hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Seller/Admin không thể mua hàng. Vui lòng sử dụng tài khoản buyer.' :
-                    isProductOwner ? 'Bạn không thể mua sản phẩm của chính mình' :
-                    !selectedVariant ? 'Vui lòng chọn phiên bản sản phẩm' :
-                    selectedVariant?.stock === 0 ? 'Sản phẩm đã hết hàng' :
-                    !product.isActive ? 'Sản phẩm không khả dụng' : ''
-                  }
-                >
-                  {(hasRole && (hasRole('SELLER') || hasRole('ADMIN'))) ? 'Không thể mua' : 
-                   isProductOwner ? 'Không thể mua' : 'Mua Ngay'}
-                </Button>
-              </div>
+              <ProductActions
+                canAddToCart={canAddToCart}
+                isShopOwner={isShopOwner}
+                isAuthenticated={isAuthenticated}
+                hasRole={hasRole}
+                selectedVariant={selectedVariant}
+                product={product}
+                adding={adding}
+                onAddToCart={handleAddToCart}
+                onBuyNow={handleBuyNow}
+              />
             </div>
 
             {/* Trust Badges */}
@@ -778,107 +712,15 @@ const ProductDetailPage = () => {
           </div>
         </div>
         </div>
-
+        
         {/* Shop Info Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-          <div className="flex items-center justify-between flex-wrap gap-6">
-            {/* Shop Info */}
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-primary-100 shadow-lg flex-shrink-0">
-                {shopInfo.logo ? (
-                  <img 
-                    src={shopInfo.logo || DEFAULT_SHOP_LOGO} 
-                    alt={shopInfo.name} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => handleImageError(e, DEFAULT_SHOP_LOGO)}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-2xl">
-                      {shopInfo.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900">{shopInfo.name}</h2>
-                  {shopInfo.isVerified && (
-                    <div className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded-full">
-                      <FiShield className="w-3 h-3" />
-                      <span className="text-xs font-medium">Official</span>
-                    </div>
-                  )}
-                  {shopInfo.isOnline && (
-                    <div className="flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded-full">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                      <span className="text-xs font-medium">Online</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  {shopInfo.rating > 0 && (
-                    <>
-                      <div className="flex items-center gap-1">
-                        <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="font-medium text-gray-900">{shopInfo.rating.toFixed(1)}</span>
-                      </div>
-                      <span className="text-gray-300">|</span>
-                    </>
-                  )}
-                  {shopInfo.productCount > 0 && (
-                    <>
-                      <div className="flex items-center gap-1">
-                        <FiPackage className="w-4 h-4" />
-                        <span>{shopInfo.productCount} Sản phẩm</span>
-                      </div>
-                      <span className="text-gray-300">|</span>
-                    </>
-                  )}
-                  {shopInfo.location && (
-                    <div className="flex items-center gap-1">
-                      <FiMapPin className="w-4 h-4" />
-                      <span>{shopInfo.location}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Shop Actions */}
-            <div className="flex items-center gap-3">
-              {/* Conditional render: Hide Chat button completely for shop owner (per markdown spec) */}
-              {!isProductOwner && (
-                <Button 
-                  variant="outline" 
-                  className="border-primary-500 text-primary-600 hover:bg-primary-50"
-                  onClick={handleChatWithShop}
-                  disabled={!canChat}
-                  title={!isAuthenticated ? 'Vui lòng đăng nhập để chat' : 'Chat với shop'}
-                >
-                  <FiMessageCircle className="w-4 h-4 mr-2" />
-                  {!isAuthenticated ? 'Đăng nhập để chat' : 'Chat Ngay'}
-                </Button>
-              )}
-              {/* Optional: Show indicator for own product */}
-              {isProductOwner && (
-                <div className="text-sm text-gray-500 italic">
-                  Đây là sản phẩm của bạn
-                </div>
-              )}
-              {shopInfo.id && (
-                <Link to={`/shops/${shopInfo.id}`}>
-                  <Button variant="primary">
-                    <FiEye className="w-4 h-4 mr-2" />
-                    Xem Shop
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
+        <ShopInfo
+          shopInfo={shopInfo}
+          isShopOwner={isShopOwner}
+          isAuthenticated={isAuthenticated}
+          canChat={canChat}
+          onChatWithShop={onChatWithShop}
+        />
 
         {/* Product Description Section - Full Width */}
         {product.description && (
@@ -900,7 +742,7 @@ const ProductDetailPage = () => {
           isAuthenticated={isAuthenticated}
           user={user}
           hasRole={hasRole}
-          isProductOwner={isProductOwner}
+          isProductOwner={isShopOwner}
         />
       </main>
 

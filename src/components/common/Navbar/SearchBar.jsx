@@ -1,19 +1,32 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { 
   saveRecentSearch,
   trackSearch,
+  getSuggestions,
+  getTrendingSearches,
+  getRecentSearches,
+  removeRecentSearch,
+  clearRecentSearches,
+  getSearchHistory,
+  deleteFromHistory,
+  clearSearchHistory,
+  trackSearchClick,
 } from '../../../services/searchService';
+import { useAuth } from '../../../hooks/useAuth';
+import SearchSuggestions from './SearchSuggestions';
 
 /**
- * SearchBar Component - Thanh tìm kiếm sản phẩm
+ * SearchBar Component - Thanh tìm kiếm sản phẩm với real-time suggestions
  * 
  * Features:
+ * - Real-time search suggestions với debouncing
+ * - Hiển thị products (name, image, price, shop name)
+ * - Hiển thị shops (name, logoUrl, productCount)
+ * - Hiển thị categories
+ * - Recent searches và trending searches
  * - Tìm kiếm khi nhấn Enter hoặc click nút tìm kiếm
- * - Tìm kiếm theo tên sản phẩm VÀ tên shop
- * - Voice search (Phase 3)
- * - Không hiển thị dropdown suggestions tự động
  * 
  * @param {function} onSearch - Callback khi submit search (nhận search term)
  * @param {string} placeholder - Placeholder text
@@ -28,9 +41,173 @@ const SearchBar = ({
 }) => {
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+  const { isAuthenticated } = useAuth();
   
-  // State
   const [searchTerm, setSearchTerm] = useState(initialValue);
+  const [suggestions, setSuggestions] = useState({});
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [serverHistory, setServerHistory] = useState([]);
+  const [trending, setTrending] = useState([]);
+
+  // Load initial data (recent searches, trending)
+  useEffect(() => {
+    loadInitialData();
+  }, [isAuthenticated]);
+
+  // Load recent searches and trending
+  const loadInitialData = async () => {
+    // Load local recent searches
+    const localRecent = getRecentSearches();
+    setRecentSearches(localRecent);
+
+    // Load trending searches
+    const trendingData = await getTrendingSearches(10);
+    setTrending(trendingData.trending || []);
+
+    // Load server history if authenticated
+    if (isAuthenticated) {
+      const history = await getSearchHistory(10);
+      setServerHistory(history);
+    }
+  };
+
+  // Fetch suggestions from API with debounce
+  const fetchSuggestions = useCallback(async (query) => {
+    if (!query || query.trim().length === 0) {
+      setSuggestions({});
+      setIsLoadingSuggestions(false);
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    
+    try {
+      const data = await getSuggestions(query, 5);
+      setSuggestions(data);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setSuggestions({});
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, []);
+
+  // Handle input change with debouncing
+  const handleInputChange = useCallback((e) => {
+    const query = e.target.value;
+    setSearchTerm(query);
+    setShowSuggestions(true);
+
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer for debounced search (250ms)
+    debounceTimerRef.current = setTimeout(() => {
+      if (query.trim().length > 0) {
+        fetchSuggestions(query);
+      } else {
+        // Show recent/trending when query is empty
+        setSuggestions({});
+        setIsLoadingSuggestions(false);
+      }
+    }, 250);
+  }, [fetchSuggestions]);
+
+  // Handle input focus - show suggestions dropdown
+  const handleFocus = useCallback(() => {
+    setShowSuggestions(true);
+  }, []);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        !inputRef.current?.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle selecting a query suggestion
+  const handleSelectQuery = useCallback((query) => {
+    setSearchTerm(query);
+    setShowSuggestions(false);
+    
+    // Save to recent searches
+    saveRecentSearch(query);
+    setRecentSearches(getRecentSearches());
+    
+    // Track search
+    trackSearch(query, 0);
+    
+    // Navigate or callback
+    if (onSearch) {
+      onSearch(query);
+    } else {
+      navigate(`/products?keyword=${encodeURIComponent(query)}`);
+    }
+  }, [onSearch, navigate]);
+
+  // Handle selecting a product suggestion
+  const handleSelectProduct = useCallback((product) => {
+    setShowSuggestions(false);
+    
+    // Track click
+    if (searchTerm) {
+      trackSearchClick(searchTerm, product.id);
+    }
+    
+    // Navigate is handled by SearchSuggestions component
+  }, [searchTerm]);
+
+  // Handle selecting a category suggestion
+  const handleSelectCategory = useCallback((category) => {
+    setShowSuggestions(false);
+    // Navigate is handled by SearchSuggestions component
+  }, []);
+
+  // Handle removing a recent search
+  const handleRemoveRecent = useCallback((query) => {
+    removeRecentSearch(query);
+    setRecentSearches(getRecentSearches());
+  }, []);
+
+  // Handle clearing all recent searches
+  const handleClearRecent = useCallback(() => {
+    clearRecentSearches();
+    setRecentSearches([]);
+  }, []);
+
+  // Handle removing from server history
+  const handleRemoveServerHistory = useCallback(async (query) => {
+    const success = await deleteFromHistory(query);
+    if (success) {
+      const history = await getSearchHistory(10);
+      setServerHistory(history);
+    }
+  }, []);
+
+  // Handle clearing all server history
+  const handleClearServerHistory = useCallback(async () => {
+    const success = await clearSearchHistory();
+    if (success) {
+      setServerHistory([]);
+    }
+  }, []);
 
   // Handle form submit (Enter or click button)
   const handleSubmit = useCallback((e) => {
@@ -40,9 +217,13 @@ const SearchBar = ({
     if (term) {
       // Save to recent searches (localStorage)
       saveRecentSearch(term);
+      setRecentSearches(getRecentSearches());
       
       // Track search for analytics (fire and forget)
       trackSearch(term, 0);
+      
+      // Close suggestions
+      setShowSuggestions(false);
       
       // Callback or navigate to search results
       if (onSearch) {
@@ -56,8 +237,22 @@ const SearchBar = ({
   // Handle clear input
   const handleClear = useCallback(() => {
     setSearchTerm('');
+    setSuggestions({});
+    setShowSuggestions(true);
     inputRef.current?.focus();
   }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Determine if we should show recent/trending (when query is empty)
+  const showRecent = searchTerm.trim().length === 0;
 
   return (
     <div className={`relative flex-1 ${className}`}>
@@ -73,7 +268,8 @@ const SearchBar = ({
             ref={inputRef}
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleInputChange}
+            onFocus={handleFocus}
             placeholder={placeholder}
             autoComplete="off"
             className="
@@ -131,6 +327,30 @@ const SearchBar = ({
           </button>
         </div>
       </form>
+
+      {/* Suggestions Dropdown */}
+      {showSuggestions && (
+        <div ref={dropdownRef}>
+          <SearchSuggestions
+            suggestions={{
+              ...suggestions,
+              trending: trending
+            }}
+            recentSearches={recentSearches}
+            serverHistory={serverHistory}
+            isAuthenticated={isAuthenticated}
+            showRecent={showRecent}
+            onSelectQuery={handleSelectQuery}
+            onSelectProduct={handleSelectProduct}
+            onSelectCategory={handleSelectCategory}
+            onRemoveRecent={handleRemoveRecent}
+            onClearRecent={handleClearRecent}
+            onRemoveServerHistory={handleRemoveServerHistory}
+            onClearServerHistory={handleClearServerHistory}
+            isLoading={isLoadingSuggestions}
+          />
+        </div>
+      )}
     </div>
   );
 };

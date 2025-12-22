@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FiPackage, FiStar, FiMapPin, FiArrowLeft, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -9,6 +9,9 @@ import ProductCard from '../../components/product/ProductCard';
 import Loading from '../../components/common/Loading';
 import api from '../../services/api';
 import useCart from '../../hooks/useCart';
+import useAuth from '../../hooks/useAuth';
+import useShopOwnership from '../../hooks/useShopOwnership';
+import useChatWithShop from '../../hooks/useChatWithShop';
 
 // Default images from environment
 const DEFAULT_LOGO = process.env.REACT_APP_DEFAULT_LOGO || 'https://res.cloudinary.com/dejjhkhl1/image/upload/v1764911991/xwz5cpybxo1g1_sppbqi.png';
@@ -20,7 +23,9 @@ const DEFAULT_BANNER = process.env.REACT_APP_DEFAULT_BANNER || 'https://res.clou
  */
 const ShopDetailPage = () => {
   const { shopId } = useParams();
+  const navigate = useNavigate();
   const { addToCart: addItemToCart } = useCart();
+  const { user, isAuthenticated, hasRole } = useAuth();
   
   const [shop, setShop] = useState(null);
   const [products, setProducts] = useState([]);
@@ -54,7 +59,13 @@ const ShopDetailPage = () => {
     }
   }, [shopId]);
 
-  // Load shop products
+  // Check if current user is the shop owner using unified hook
+  const isShopOwner = useShopOwnership(user, shop);
+  
+  // Use chat functionality hook
+  const { handleChatWithShop } = useChatWithShop(isAuthenticated, isShopOwner, navigate);
+
+  // Load products
   useEffect(() => {
     const loadProducts = async () => {
       setProductsLoading(true);
@@ -120,7 +131,7 @@ const ShopDetailPage = () => {
   };
 
   const handleWishlist = (_product) => {
-    toast.info('Tính năng yêu thích đang phát triển!');
+    toast.success('Tính năng yêu thích đang phát triển!');
   };
 
   // Build full address string from shop data
@@ -256,16 +267,20 @@ const ShopDetailPage = () => {
               </div>
             </div>
 
-            {/* Chat Button */}
-            <div className="flex-shrink-0">
-              <button 
-                onClick={() => toast.info('Tính năng chat đang phát triển!')}
-                className="flex items-center gap-2 px-5 py-2.5 border border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
-              >
-                <FiMessageCircle className="w-5 h-5" />
-                Chat ngay
-              </button>
-            </div>
+            {/* Chat Button - Hidden if user is shop owner */}
+            {!isShopOwner && (
+              <div className="flex-shrink-0">
+                <button 
+                  onClick={() => handleChatWithShop(shop?.id)}
+                  disabled={!isAuthenticated}
+                  className="flex items-center gap-2 px-5 py-2.5 border border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!isAuthenticated ? 'Vui lòng đăng nhập' : 'Chat với shop'}
+                >
+                  <FiMessageCircle className="w-5 h-5" />
+                  Chat ngay
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

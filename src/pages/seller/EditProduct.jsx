@@ -2,11 +2,12 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import EditProductForm from '../../components/seller/Products/EditProductForm';
+import EditProductFormRestricted from '../../components/seller/Products/EditProductFormRestricted';
 
 /**
  * EditProduct Page
- * Page wrapper for editing existing products - simplified to avoid double loading
+ * Restricted edit mode - Only allows updating SKU, Stock, and Images
+ * Other product fields are immutable after creation
  */
 const EditProduct = () => {
   const { id } = useParams();
@@ -37,9 +38,12 @@ const EditProduct = () => {
           Quay lại danh sách
         </Button>
         <h1 className="text-2xl font-bold">Chỉnh sửa sản phẩm</h1>
+        <p className="text-gray-600 mt-2">
+          ⚠️ Bạn chỉ có thể cập nhật SKU, Kho hàng và Hình ảnh. Các thông tin khác không thể chỉnh sửa.
+        </p>
       </div>
 
-      <EditProductForm productId={id} onSuccess={handleBack} />
+      <EditProductFormRestricted productId={id} onSuccess={handleBack} />
     </div>
   );
 };

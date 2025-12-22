@@ -53,30 +53,49 @@ const transformProduct = (product) => {
 const transformCategory = (category) => {
   if (!category) return null;
 
-  const iconMap = {
-    'Bóng Đá': '⚽',
-    'Bóng Rổ': '🏀',
-    'Tennis': '🎾',
-    'Chạy Bộ': '🏃',
-    'Gym & Fitness': '💪',
-    'Bơi Lội': '🏊',
-    'Yoga': '🧘',
-    'Cầu Lông': '🏸',
-    'Bóng Chuyền': '🏐',
-    'Phụ Kiện': '🎒'
+  const categoryMap = {
+    'Accessories': {
+      icon: '🎾',
+      image: 'https://store.garagecabinets.com/cdn/shop/products/sports_equipment_kit_800x.jpeg?v=1595014160'
+    },
+    'Clothing': {
+      icon: '👕',
+      image: 'https://cdn.merchize.com/wp-content/uploads/2022/07/sportwear-apparel.jpg'
+    },
+    'Shoes': {
+      icon: '👟',
+      image: 'https://hips.hearstapps.com/hmg-prod/images/running-shoes-005-68419d3f4376f.jpg?crop=0.8888888888888888xw:1xh;center,top&resize=1200:*'
+    },
+    'Bags': {
+      icon: '🎒',
+      image: 'https://cdn.thewirecutter.com/wp-content/media/2023/12/gym-bag-2048px-0004.jpg?auto=webp&quality=75&width=1024'
+    },
+    'Fitness Equipment': {
+      icon: '🏋️‍♂️',
+      image: 'https://www.usnews.com/object/image/0000018b-72bc-d15f-a3db-fffea06d0000/gettyimages-1342504672.jpg?update-time=1698437080300&size=responsive640'
+    },
+    'Sports Equipment': {
+      icon: '⚽',
+      image: 'https://images.ctfassets.net/mjtsjk88qv6a/149a0sCGMonK2HUsfabVDS/9d9f71a74cb87ce3f6f5e0c7dd18c96a/how-to-clean-and-disinfect-sports-equipment.jpg?fm=webp&w=3840&q=75'
+    }
+  };
+
+  // Get category-specific icon and image, with defaults
+  const catData = categoryMap[category.name] || { 
+    icon: '🏅', 
+    image: `https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop`
   };
 
   return {
     id: category.id,
     name: category.name,
     slug: category.name?.toLowerCase().replace(/\s+/g, '-').replace(/&/g, ''),
-    image: category.imageUrl || `https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop`,
+    image: catData.image, // Updated: Use category-specific image
     productCount: category.productCount || Math.floor(Math.random() * 150) + 20,
-    icon: iconMap[category.name] || '🏅',
+    icon: catData.icon, // Updated: Use category-specific icon
     ...category
   };
 };
-
 /**
  * Get paginated products list (public)
  * @param {number} page - Page number (0-indexed)

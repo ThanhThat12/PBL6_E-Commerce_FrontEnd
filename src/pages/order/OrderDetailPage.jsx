@@ -136,7 +136,7 @@ const OrderDetailPage = () => {
     setSelectedProduct({
       id: item.productId,
       name: item.productName,
-      mainImage: item.image,
+      mainImage: item.productImage,
       variant: item.variantAttributes,
       completedDate: currentOrder?.updatedAt // Pass completion date for modal
     });
