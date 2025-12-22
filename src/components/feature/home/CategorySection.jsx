@@ -78,10 +78,10 @@ const CategorySection = ({ categories = [], title = 'Danh Mục Sản Phẩm' })
 
   const displayCategories = categories.length > 0 ? categories : defaultCategories;
 
-  console.log('🏷️  CategorySection component:');
-  console.log('Categories prop received:', categories.length, 'items');
-  console.log('Categories array:', categories);
-  console.log('Display categories:', displayCategories.length, 'items');
+  // console.log('🏷️  CategorySection component:');
+  // console.log('Categories prop received:', categories.length, 'items');
+  // console.log('Categories array:', categories);
+  // console.log('Display categories:', displayCategories.length, 'items');
 
   return (
     <section className="py-4 md:py-6">
