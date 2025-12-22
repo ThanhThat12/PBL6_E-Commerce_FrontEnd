@@ -10,7 +10,8 @@ import Loading from '../../components/common/Loading';
 import api from '../../services/api';
 import useCart from '../../hooks/useCart';
 import useAuth from '../../hooks/useAuth';
-import chatService from '../../services/chatService';
+import useShopOwnership from '../../hooks/useShopOwnership';
+import useChatWithShop from '../../hooks/useChatWithShop';
 
 // Default images from environment
 const DEFAULT_LOGO = process.env.REACT_APP_DEFAULT_LOGO || 'https://res.cloudinary.com/dejjhkhl1/image/upload/v1764911991/xwz5cpybxo1g1_sppbqi.png';
@@ -58,74 +59,11 @@ const ShopDetailPage = () => {
     }
   }, [shopId]);
 
-  // Check if current user is the shop owner
-  const isShopOwner = () => {
-    if (!user || !shop) return false;
-    
-    // Check if user ID matches shop owner ID
-    const userId = user.id || user.userId;
-    const ownerId = shop.ownerId || shop.owner?.id;
-    
-    // Check if user's shop ID matches current shop
-    const userShopId = user.shopId || user.shop?.id;
-    
-    return userId === ownerId || userShopId === parseInt(shopId);
-  };
-
-  // Handle chat with shop
-  const handleChatWithShop = async () => {
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để chat với shop');
-      navigate('/login');
-      return;
-    }
-
-    if (isShopOwner()) {
-      toast.error('Bạn không thể chat với shop của chính mình');
-      return;
-    }
-
-    try {
-      // Show loading toast
-      const loadingToast = toast.loading('Đang mở chat với shop...');
-      
-      // chatService.createConversation returns ResponseDTO
-      // Structure: { status, message, data: conversationObject }
-      const apiResponse = await chatService.createConversation({
-        type: 'SHOP',
-        shopId: parseInt(shopId),
-      });
-
-      toast.dismiss(loadingToast);
-
-      // Extract conversation from apiResponse.data
-      const conversationData = apiResponse.data;
-      
-      if (conversationData && conversationData.id) {
-        console.log('[ShopDetailPage] ✅ Conversation created:', conversationData);
-        
-        // Dispatch event to open chat window
-        const event = new CustomEvent('openChat', { 
-          detail: { conversationId: conversationData.id } 
-        });
-        console.log('[ShopDetailPage] 📤 Dispatching openChat event');
-        window.dispatchEvent(event);
-        
-        toast.success('Chat đã mở!');
-      } else {
-        console.error('Invalid conversation response:', apiResponse);
-        toast.error('Không thể tạo cuộc trò chuyện');
-      }
-    } catch (error) {
-      console.error('Error opening chat:', error);
-      const errorMessage = error.response?.data?.message || '';
-      if (errorMessage.includes('shop của chính mình') || errorMessage.includes('own shop')) {
-        toast.error('Bạn không thể chat với shop của chính mình');
-      } else {
-        toast.error(errorMessage || 'Không thể mở chat với shop');
-      }
-    }
-  };
+  // Check if current user is the shop owner using unified hook
+  const isShopOwner = useShopOwnership(user, shop);
+  
+  // Use chat functionality hook
+  const { handleChatWithShop } = useChatWithShop(isAuthenticated, isShopOwner, navigate);
 
   // Load products
   useEffect(() => {
@@ -330,7 +268,7 @@ const ShopDetailPage = () => {
             </div>
 
             {/* Chat Button - Hidden if user is shop owner */}
-            {!isShopOwner() && (
+            {!isShopOwner && (
               <div className="flex-shrink-0">
                 <button 
                   onClick={handleChatWithShop}
