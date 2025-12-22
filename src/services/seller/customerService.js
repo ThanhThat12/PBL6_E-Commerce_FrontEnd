@@ -14,7 +14,7 @@ import api from '../api';
  */
 export const getTopBuyers = async () => {
   try {
-    const response = await api.get('/seller/all-buyers');
+    const response = await api.get('/seller/top-buyers');
     return response.data;
   } catch (error) {
     console.error('Error fetching top buyers:', error);
