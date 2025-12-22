@@ -87,27 +87,97 @@ const VoucherManagement = () => {
       loadVouchers();
     } catch (error) {
       console.error('Error creating voucher:', error);
-      // Prefer structured message from backend, fallback to other fields
-      let errMsg = 'Không thể tạo voucher';
+      
+      // Handle validation errors with detailed messages
       if (error?.response?.data) {
         const data = error.response.data;
-        if (data.message) errMsg = data.message;
-        else if (data.errors) {
-          try {
-            if (Array.isArray(data.errors)) errMsg = data.errors.join('; ');
-            else if (typeof data.errors === 'object') errMsg = Object.values(data.errors).flat().join('; ');
-            else errMsg = String(data.errors);
-          } catch (e) {
-            errMsg = JSON.stringify(data.errors);
-          }
-        } else {
-          errMsg = JSON.stringify(data);
-        }
-      } else if (error?.message) {
-        errMsg = error.message;
-      }
+        
+        // Case 1: Backend returns structured validation errors
+        if (data.errors && typeof data.errors === 'object' && !Array.isArray(data.errors)) {
+          const errorMessages = [];
+          
+          // Map field names to Vietnamese labels
+          const fieldLabels = {
+            'code': 'Mã voucher',
+            'description': 'Mô tả',
+            'discountType': 'Loại giảm giá',
+            'discountValue': 'Giá trị giảm',
+            'minOrderValue': 'Giá trị đơn tối thiểu',
+            'maxDiscountAmount': 'Giảm tối đa',
+            'startDate': 'Ngày bắt đầu',
+            'endDate': 'Ngày kết thúc',
+            'usageLimit': 'Giới hạn sử dụng',
+            'applicableType': 'Loại áp dụng',
+            'productIds': 'Sản phẩm',
+            'userIds': 'Người dùng',
+            'topBuyersCount': 'Số lượng top khách hàng'
+          };
 
-      message.error(errMsg);
+          Object.entries(data.errors).forEach(([field, messages]) => {
+            const label = fieldLabels[field] || field;
+            const msgs = Array.isArray(messages) ? messages : [messages];
+            msgs.forEach(msg => {
+              errorMessages.push(`${label}: ${msg}`);
+            });
+          });
+
+          if (errorMessages.length > 0) {
+            // Show first error as main message
+            message.error(errorMessages[0]);
+            
+            // Show additional errors if any
+            if (errorMessages.length > 1) {
+              setTimeout(() => {
+                errorMessages.slice(1, 3).forEach((msg, index) => {
+                  setTimeout(() => message.warning(msg), index * 500);
+                });
+              }, 500);
+            }
+            return;
+          }
+        }
+        
+        // Case 2: Backend returns array of error messages
+        if (Array.isArray(data.errors)) {
+          const errorMessages = data.errors.filter(msg => msg);
+          if (errorMessages.length > 0) {
+            message.error(errorMessages[0]);
+            if (errorMessages.length > 1) {
+              setTimeout(() => {
+                errorMessages.slice(1, 3).forEach((msg, index) => {
+                  setTimeout(() => message.warning(msg), index * 500);
+                });
+              }, 500);
+            }
+            return;
+          }
+        }
+        
+        // Case 3: Backend returns simple message
+        if (data.message) {
+          message.error(data.message);
+          return;
+        }
+        
+        // Case 4: Other error formats
+        if (data.error) {
+          message.error(data.error);
+          return;
+        }
+      }
+      
+      // Case 5: Network or other errors
+      if (error?.response?.status === 400) {
+        message.error('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các thông tin đã nhập.');
+      } else if (error?.response?.status === 409) {
+        message.error('Mã voucher đã tồn tại. Vui lòng sử dụng mã khác.');
+      } else if (error?.response?.status === 401 || error?.response?.status === 403) {
+        message.error('Bạn không có quyền thực hiện thao tác này.');
+      } else if (error?.message) {
+        message.error(`Lỗi: ${error.message}`);
+      } else {
+        message.error('Không thể tạo voucher. Vui lòng thử lại sau.');
+      }
     }
   };
 
