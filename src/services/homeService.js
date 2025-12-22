@@ -103,6 +103,58 @@ export const getFeaturedProducts = async (limit = 8) => {
 };
 
 /**
+ * Get all active products with pagination (for homepage "Tất Cả Sản Phẩm" section)
+ * @param {number} page - 0-indexed page
+ * @param {number} size - page size
+ * @returns {Promise<{items: Array, page: number, totalPages: number, totalElements: number, pageSize: number}>}
+ */
+export const getAllProductsPage = async (page = 0, size = 12) => {
+  try {
+    const response = await api.get('products', {
+      params: {
+        page,
+        size,
+        sortBy: 'createdAt',
+        sortDirection: 'DESC'
+      }
+    });
+
+    // ResponseDTO structure (theo backend):
+    // {
+    //   status,
+    //   error,
+    //   message,
+    //   data: {
+    //     content: [...],
+    //     page: { size, number, totalElements, totalPages }
+    //   }
+    // }
+    const data = response?.data;
+    const products = data?.content || [];
+    const pageInfo = data?.page || {};
+
+    const transformed = products.map(transformProduct).filter(p => p !== null);
+
+    return {
+      items: transformed,
+      page: pageInfo.number ?? page,
+      totalPages: pageInfo.totalPages ?? 0,
+      totalElements: pageInfo.totalElements ?? transformed.length,
+      pageSize: pageInfo.size ?? size,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated products for homepage:', error);
+    return {
+      items: [],
+      page,
+      totalPages: 0,
+      totalElements: 0,
+      pageSize: size,
+    };
+  }
+};
+
+/**
  * Get all categories with product count
  * @returns {Promise<Array>}
  */

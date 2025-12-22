@@ -7,7 +7,7 @@ import CategorySection from "../../components/feature/home/CategorySection";
 import FeaturedProducts, { ProductCard as FeaturedProductCard } from "../../components/feature/home/FeaturedProducts";
 import ButtonUp from "../../components/ui/buttonUp/ButtonUp";
 import Footer from "../../components/layout/footer/Footer";
-import { getCategories, getFeaturedProducts } from "../../services/homeService";
+import { getCategories, getFeaturedProducts, getAllProductsPage } from "../../services/homeService";
 // Note: useAuth and getNewArrivals available but not currently used
 
 /**
@@ -28,6 +28,10 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Pagination state for "Tất Cả Sản Phẩm"
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // Scroll to top button
   useEffect(() => {
     const handleScroll = () => setShowButton(window.scrollY > 200);
@@ -35,31 +39,51 @@ const HomePage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch data từ backend API
+  // Fetch static homepage data: categories + featured products
   useEffect(() => {
-    const fetchHomeData = async () => {
+    const fetchStaticHomeData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        const [categoriesData, allProductsData] = await Promise.all([
+
+        const [categoriesData, featuredData] = await Promise.all([
           getCategories(),
-          getFeaturedProducts(24),
+          getFeaturedProducts(8),
         ]);
 
         setCategories(categoriesData);
-        setFeaturedProducts(allProductsData.slice(0, 8));
-        setAllProducts(allProductsData);
+        setFeaturedProducts(featuredData);
       } catch (err) {
-        console.error('Failed to load homepage data:', err);
+        console.error('Failed to load homepage static data:', err);
         setError('Không thể tải dữ liệu. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchHomeData();
+    fetchStaticHomeData();
   }, []);
+
+  // Fetch paginated products for "Tất Cả Sản Phẩm"
+  useEffect(() => {
+    const fetchPagedProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const result = await getAllProductsPage(currentPage, 12);
+        setAllProducts(result.items);
+        setTotalPages(result.totalPages);
+      } catch (err) {
+        console.error('Failed to load paginated products:', err);
+        setError('Không thể tải danh sách sản phẩm. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPagedProducts();
+  }, [currentPage]);
 
   return (
     <div className="min-h-screen bg-background-primary">
@@ -149,6 +173,33 @@ const HomePage = () => {
                     <FeaturedProductCard key={product.id} product={product} showDiscount />
                   ))}
                 </div>
+
+                {/* Pagination controls */}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+                      disabled={currentPage === 0}
+                      className="px-3 py-1 text-sm rounded border border-gray-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Trước
+                    </button>
+
+                    <span className="text-sm text-gray-600">
+                      Trang {currentPage + 1} / {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))}
+                      disabled={currentPage >= totalPages - 1}
+                      className="px-3 py-1 text-sm rounded border border-gray-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                )}
+
+                {/* Mobile: link xem toàn bộ trang /products */}
                 <div className="mt-6 md:hidden text-center">
                   <Link
                     to="/products"
