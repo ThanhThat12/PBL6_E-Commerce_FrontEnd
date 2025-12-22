@@ -1,8 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import { Send, MessageSquare, Search as SearchIcon, Image as ImageIcon } from 'lucide-react';
+import chatService from '../../../services/chatService';
+import { getAccessToken } from '../../../utils/storage';
+import { jwtDecode } from 'jwt-decode';
 import './ChatInterface.css';
 
 const ChatInterface = () => {
+  const location = useLocation();
+  const initialConversationId = location.state?.conversationId || null;
+
   // Hide parent scroll when component mounts
   useEffect(() => {
     // Save original overflow values
@@ -38,146 +47,11 @@ const ChatInterface = () => {
     };
   }, []);
 
-  // Mock data for users
-  const mockUsers = [
-    {
-      id: 1,
-      name: 'Roberto',
-      avatar: 'https://i.pravatar.cc/150?img=12',
-      lastMessage: 'Last week, do you remember?',
-      time: '02:46 AM',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 2,
-      name: 'Lisa Blekcurent',
-      avatar: 'https://i.pravatar.cc/150?img=45',
-      lastMessage: 'My boss give me that task last...',
-      time: '2 min ago',
-      isOnline: true,
-      unread: true
-    },
-    {
-      id: 3,
-      name: 'Olivia Braun',
-      avatar: 'https://i.pravatar.cc/150?img=47',
-      lastMessage: 'Hei, you forget to upload submi...',
-      time: 'Yesterday',
-      isOnline: false,
-      unread: false
-    },
-    {
-      id: 4,
-      name: 'James Sudayat',
-      avatar: 'https://i.pravatar.cc/150?img=33',
-      lastMessage: 'Hi David, can you send your...',
-      time: 'Yesterday',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 5,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 6,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 7,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 8,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 9,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 10,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 11,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    },
-    {
-      id: 12,
-      name: 'Eren Yeager',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-      lastMessage: 'Uhm, can I reschedule meeting?',
-      time: '3 days ago',
-      isOnline: true,
-      unread: false
-    }
-  ];
-
-  // Mock messages for different users
-  const mockMessagesData = {
-    1: [
-      { id: 1, sender: 'other', text: "Hi everyone! Let's start our discussion now about kick off meeting next week.", time: '10:25 AM' },
-      { id: 2, sender: 'other', text: 'Is everyone ok about that schedule?', time: '10:26 AM' },
-      { id: 3, sender: 'me', text: 'Uhm, can I reschedule meeting?', time: '10:28 AM' },
-      { id: 4, sender: 'me', text: 'I still have 2 task left at that day. I worried can\'t attend that meeting', time: '10:28 AM' }
-    ],
-    2: [
-      { id: 1, sender: 'other', text: 'My boss give me that task last week', time: '9:15 AM' },
-      { id: 2, sender: 'me', text: 'What task are you working on?', time: '9:20 AM' }
-    ],
-    3: [
-      { id: 1, sender: 'other', text: 'Hei, you forget to upload submission', time: 'Yesterday' },
-      { id: 2, sender: 'me', text: 'Oh sorry, I will upload it soon', time: 'Yesterday' }
-    ],
-    4: [
-      { id: 1, sender: 'other', text: 'Hi David, can you send your report?', time: 'Yesterday' },
-      { id: 2, sender: 'me', text: 'Sure, let me check it first', time: 'Yesterday' }
-    ],
-    5: [
-      { id: 1, sender: 'other', text: 'Uhm, can I reschedule meeting?', time: '3 days ago' }
-    ]
-  };
+  const [conversations, setConversations] = useState([]);
 
   // State
-  const [selectedUser, setSelectedUser] = useState(mockUsers[0]);
-  const [messages, setMessages] = useState(mockMessagesData[1]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
@@ -186,6 +60,103 @@ const ChatInterface = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const messageSearchRef = useRef(null);
+
+  const getCurrentUserId = () => {
+    try {
+      const token = getAccessToken() || localStorage.getItem('adminToken');
+      if (!token) return null;
+      const decoded = jwtDecode(token);
+      return decoded.userId || decoded.sub || null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const currentUserId = getCurrentUserId();
+
+  const getTimeLabel = (timestamp) => {
+    if (!timestamp) return '';
+    try {
+      return format(new Date(timestamp), 'HH:mm dd/MM', { locale: vi });
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const mapConversationToUser = (conversation) => {
+    const name =
+      conversation.type === 'SHOP'
+        ? conversation.shopName || 'Shop'
+        : conversation.otherParticipantName || 'Hỗ trợ khách hàng';
+
+    const lastMessageText = conversation.lastMessage ? conversation.lastMessage.content : 'Chưa có tin nhắn';
+    const time = getTimeLabel(conversation.lastActivityAt || conversation.createdAt);
+
+    return {
+      id: conversation.id,
+      name,
+      avatar: conversation.otherParticipantAvatar || 'https://i.pravatar.cc/150?img=12',
+      lastMessage: lastMessageText.length > 60 ? lastMessageText.substring(0, 60) + '...' : lastMessageText,
+      time,
+      isOnline: false,
+      unread: conversation.unreadCount > 0
+    };
+  };
+
+  const mapMessages = (rawMessages) =>
+    rawMessages.map((m) => {
+      const isImage = m.messageType === 'IMAGE';
+      return {
+        id: m.id,
+        sender: currentUserId && m.senderId === currentUserId ? 'me' : 'other',
+        text: isImage ? '' : m.content,
+        image: isImage ? m.content : null,
+        time: getTimeLabel(m.createdAt),
+        avatar: m.senderAvatar || 'https://i.pravatar.cc/150?img=12',
+        status: m.status,
+        messageType: m.messageType
+      };
+    });
+
+  const loadConversations = async () => {
+    try {
+      const response = await chatService.getMyConversations();
+      const data = response.data || response || [];
+      setConversations(data);
+
+      let initialConversation = null;
+      if (initialConversationId) {
+        initialConversation = data.find((c) => c.id === initialConversationId) || null;
+      }
+      if (!initialConversation && data.length > 0) {
+        initialConversation = data[0];
+      }
+
+      if (initialConversation) {
+        const user = mapConversationToUser(initialConversation);
+        setSelectedUser(user);
+        const messagesResponse = await chatService.getConversationMessages(initialConversation.id);
+        const messagesData = messagesResponse.data || messagesResponse || [];
+        setMessages(mapMessages(messagesData));
+      }
+    } catch (e) {
+      setConversations([]);
+    }
+  };
+
+  const loadMessages = async (conversationId) => {
+    try {
+      const messagesResponse = await chatService.getConversationMessages(conversationId);
+      const messagesData = messagesResponse.data || messagesResponse || [];
+      setMessages(mapMessages(messagesData));
+    } catch (e) {
+      setMessages([]);
+    }
+  };
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
 
   // Scroll to bottom function
   const scrollToBottom = () => {
@@ -224,28 +195,74 @@ const ChatInterface = () => {
     };
   }, [showMessageSearch]);
 
-  // Handle user selection
-  const handleSelectUser = (user) => {
+  const handleSelectUser = async (user) => {
     setSelectedUser(user);
-    setMessages(mockMessagesData[user.id] || []);
+    if (user && user.id) {
+      loadMessages(user.id);
+      try {
+        await chatService.markConversationAsRead(user.id);
+        setConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.id === user.id ? { ...conversation, unreadCount: 0 } : conversation
+          )
+        );
+      } catch (e) {}
+    }
   };
 
-  // Handle send message
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (inputText.trim() === '' && !selectedImage) return;
 
-    const newMessage = {
-      id: messages.length + 1,
-      sender: 'me',
-      text: inputText,
-      image: selectedImage,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    if (!selectedUser) return;
+
+    const content = inputText.trim();
+    const imageToSend = selectedImage;
+
+    const send = async () => {
+      try {
+        const payload = {
+          conversationId: selectedUser.id,
+          messageType: imageToSend ? 'IMAGE' : 'TEXT',
+          content: imageToSend || content
+        };
+        const response = await chatService.sendMessage(payload);
+        const messageData = response.data || response;
+        if (messageData) {
+          const isImage = messageData.messageType === 'IMAGE';
+          const mapped = {
+            id: messageData.id,
+            sender: currentUserId && messageData.senderId === currentUserId ? 'me' : 'other',
+            text: isImage ? '' : messageData.content,
+            image: isImage ? messageData.content : null,
+            time: getTimeLabel(messageData.createdAt),
+            avatar: messageData.senderAvatar || 'https://i.pravatar.cc/150?img=12',
+            status: messageData.status,
+            messageType: messageData.messageType
+          };
+          setMessages((prev) => [...prev, mapped]);
+          setInputText('');
+          setSelectedImage(null);
+        }
+      } catch (error) {
+        const optimisticIsImage = !!imageToSend;
+        const optimistic = {
+          id: `temp-${Date.now()}`,
+          sender: 'me',
+          text: optimisticIsImage ? '' : content,
+          image: optimisticIsImage ? imageToSend : null,
+          time: getTimeLabel(new Date().toISOString()),
+          avatar: 'https://i.pravatar.cc/150?img=12',
+          status: 'SENDING',
+          messageType: optimisticIsImage ? 'IMAGE' : 'TEXT'
+        };
+        setMessages((prev) => [...prev, optimistic]);
+        setInputText('');
+        setSelectedImage(null);
+      }
     };
 
-    setMessages([...messages, newMessage]);
-    setInputText('');
-    setSelectedImage(null);
+    send();
   };
 
   // Handle image upload
@@ -273,15 +290,15 @@ const ChatInterface = () => {
     }
   };
 
-  // Filter messages based on search query
   const filteredMessages = messageSearchQuery
     ? messages.filter(message =>
         message.text.toLowerCase().includes(messageSearchQuery.toLowerCase())
       )
     : messages;
 
-  // Filter users based on search
-  const filteredUsers = mockUsers.filter(user =>
+  const users = conversations.map(mapConversationToUser);
+
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -343,41 +360,37 @@ const ChatInterface = () => {
                   </span>
                 </div>
               </div>
-              <div className="admin-chat-header-actions" ref={messageSearchRef}>
-                {showMessageSearch ? (
-                  <div className="admin-chat-header-search-box">
-                    <input
-                      type="text"
-                      placeholder="Search in messages..."
-                      value={messageSearchQuery}
-                      onChange={(e) => setMessageSearchQuery(e.target.value)}
-                      className="admin-chat-header-search-input"
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <button className="admin-chat-action-btn" onClick={handleToggleMessageSearch}>
-                    <SearchIcon size={20} />
-                  </button>
-                )}
+              <div className="admin-chat-header-actions">
+                <button className="admin-chat-action-btn">
+                  <SearchIcon size={20} />
+                </button>
               </div>
             </div>
 
             {/* Messages */}
             <div className="admin-chat-messages-container">
-              {filteredMessages.map((message) => (
+              {messages.map((message) => (
                 <div key={message.id} className={`admin-chat-message ${message.sender === 'other' ? 'received' : 'sent'}`}>
-                  {message.sender === 'other' && (
-                    <img src={selectedUser.avatar} alt="" className="admin-chat-message-avatar" />
+                  {message.avatar && (
+                    <img src={message.avatar} alt="" className="admin-chat-message-avatar" />
                   )}
                   <div>
                     <div className="admin-chat-message-bubble">
-                      {message.image && (
+                      {message.image ? (
                         <img src={message.image} alt="Uploaded" className="admin-chat-message-image" />
+                      ) : (
+                        message.text
                       )}
-                      {message.text}
                     </div>
-                    <div className="admin-chat-message-timestamp">{message.time}</div>
+                    <div className="admin-chat-message-timestamp">
+                      {message.time}
+                      {message.sender === 'me' && (
+                        <>
+                          {' · '}
+                          <span>{message.status === 'READ' ? 'Đã đọc' : 'Chưa đọc'}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -386,34 +399,7 @@ const ChatInterface = () => {
 
             {/* Input */}
             <form className="admin-chat-message-input-area" onSubmit={handleSendMessage}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                style={{ display: 'none' }}
-              />
-              <button
-                type="button"
-                className="admin-chat-image-btn"
-                onClick={handleImageButtonClick}
-                title="Upload image"
-              >
-                <ImageIcon size={20} />
-              </button>
               <div className="admin-chat-input-wrapper">
-                {selectedImage && (
-                  <div className="admin-chat-image-preview">
-                    <img src={selectedImage} alt="Preview" />
-                    <button
-                      type="button"
-                      className="admin-chat-remove-image"
-                      onClick={() => setSelectedImage(null)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
                 <input
                   type="text"
                   className="admin-chat-message-input"
@@ -425,7 +411,7 @@ const ChatInterface = () => {
               <button
                 type="submit"
                 className="admin-chat-send-btn"
-                disabled={inputText.trim() === '' && !selectedImage}
+                disabled={inputText.trim() === ''}
               >
                 <Send size={18} />
               </button>

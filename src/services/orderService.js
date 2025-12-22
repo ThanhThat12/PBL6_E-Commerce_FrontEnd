@@ -29,13 +29,14 @@ const orderService = {
   },
 
   /**
-   * Buyer gửi yêu cầu hoàn tiền cho từng sản phẩm
-   * @param {Object} data { orderItemId, reason, description, imageUrls, requestedAmount }
+   * Buyer gửi yêu cầu hoàn tiền cho đơn hàng
+   * @param {Object} data { orderId, amount, description, imageUrl }
    * @returns {Promise}
    */
   createRefundRequest: async (data) => {
     try {
-      const response = await api.post('refund/create', data);
+      const { orderId, ...requestData } = data;
+      const response = await api.post(`refund/request/${orderId}`, requestData);
       return response;
     } catch (error) {
       throw error;

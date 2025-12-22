@@ -181,23 +181,24 @@ const ReturnRequestPage = () => {
       toast.success(`Đã tải lên ${uploadedUrls.length} ảnh thành công!`);
 
       // Step 2: Create refund request
-      // Convert imageUrls array to JSON string for backend
-      const imageUrlsJson = JSON.stringify(uploadedUrls);
-      
       console.log('📝 Creating refund request with data:', {
-        orderId: parseInt(orderId),
-        amount: selectedItem.price * returnQuantity,
-        description: `${reason}\n\n${description}`,
-        imageUrl: imageUrlsJson
+        orderItemId: parseInt(itemId),
+        reason,
+        description: description.substring(0, 50) + '...',
+        quantity: returnQuantity,
+        imageUrls: uploadedUrls,
+        requestedAmount: selectedItem.price * returnQuantity
       });
 
       toast.loading('Đang gửi yêu cầu trả hàng...', { id: 'submit' });
       
       const requestData = {
-        orderId: parseInt(orderId),
-        amount: selectedItem.price * returnQuantity,
-        description: `${reason}\n\n${description}\n\nSản phẩm: ${selectedItem.productName}\nSố lượng: ${returnQuantity}/${selectedItem.quantity}`,
-        imageUrl: imageUrlsJson
+        orderItemId: parseInt(itemId),
+        reason,
+        description,
+        quantity: returnQuantity,
+        imageUrls: uploadedUrls,
+        requestedAmount: selectedItem.price * returnQuantity
       };
 
       const response = await orderService.createRefundRequest(requestData);

@@ -19,7 +19,7 @@ const StatCard = ({
   value, 
   trend, 
   trendType = 'neutral',
-  bgColor = 'bg-gradient-to-br from-blue-500 to-blue-600' 
+  bgColor = 'bg-blue-500' 
 }) => {
   const trendColor = {
     up: 'text-green-600',
@@ -27,27 +27,19 @@ const StatCard = ({
     neutral: 'text-gray-600',
   }[trendType];
 
-  const trendIcon = {
-    up: '📈',
-    down: '📉',
-    neutral: '➡️',
-  }[trendType];
-
   return (
-    <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-0 overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
-      <div className="flex items-center justify-between relative z-10">
+    <Card className="hover:shadow-lg transition-shadow">
+      <div className="flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-gray-500 text-sm mb-2 font-medium">{title}</p>
-          <h3 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">{value}</h3>
+          <p className="text-gray-500 text-sm mb-1">{title}</p>
+          <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
           {trend && (
-            <p className={`text-sm mt-2 ${trendColor} font-medium flex items-center gap-1`}>
-              <span>{trendIcon}</span>
+            <p className={`text-xs mt-1 ${trendColor}`}>
               {trend}
             </p>
           )}
         </div>
-        <div className={`w-16 h-16 rounded-2xl ${bgColor} flex items-center justify-center text-white text-2xl shadow-lg transform hover:scale-110 transition-transform`}>
+        <div className={`w-12 h-12 rounded-full ${bgColor} flex items-center justify-center text-white text-xl`}>
           {icon}
         </div>
       </div>

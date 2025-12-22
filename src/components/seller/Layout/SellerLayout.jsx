@@ -1,23 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
 import { message } from 'antd';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useNotificationContext } from '../../../context/NotificationContext';
-import { getRegistrationStatus } from '../../../services/seller/shopService';
 
 /**
  * SellerLayout Component
  * Main layout wrapper for all seller pages
  * Contains sidebar navigation and header
  * Handles WebSocket notifications for sellers
- * Guards against REJECTED shop status
  */
 const SellerLayout = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [lastNotificationId, setLastNotificationId] = useState(null);
-  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [lastNotificationId, setLastNotificationId] = React.useState(null);
   
   // Get notifications from shared WebSocket connection
   const { notifications, connected } = useNotificationContext();
@@ -74,41 +69,6 @@ const SellerLayout = () => {
     }
   }, [notifications, lastNotificationId]);
 
-  // Check shop registration status on mount
-  useEffect(() => {
-    const checkShopStatus = async () => {
-      // Skip check if already on rejection page
-      if (location.pathname === '/seller/registration-rejected') {
-        setCheckingStatus(false);
-        return;
-      }
-
-      try {
-        const statusData = await getRegistrationStatus();
-        console.log('Shop registration status:', statusData);
-
-        // If shop is REJECTED, redirect to rejection page
-        if (statusData.status === 'REJECTED') {
-          navigate('/seller/registration-rejected', {
-            state: {
-              rejectionReason: statusData.rejectionReason,
-              reviewedAt: statusData.reviewedAt,
-              shopName: statusData.shopName
-            },
-            replace: true
-          });
-        }
-      } catch (error) {
-        console.error('Failed to check shop status:', error);
-        // Allow access if status check fails (don't block seller)
-      } finally {
-        setCheckingStatus(false);
-      }
-    };
-
-    checkShopStatus();
-  }, [navigate, location.pathname]);
-
   // Log WebSocket connection status
   useEffect(() => {
     if (connected) {
@@ -117,18 +77,6 @@ const SellerLayout = () => {
       console.log('⚠️ Seller WebSocket disconnected');
     }
   }, [connected]);
-
-  // Show loading while checking status
-  if (checkingStatus) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang kiểm tra trạng thái cửa hàng...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-gray-50">

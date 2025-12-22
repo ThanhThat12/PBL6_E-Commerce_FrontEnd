@@ -488,16 +488,7 @@ Xem chi tiet don hang:
                           size="sm"
                           onClick={(e) => {
                             e.preventDefault();
-                            navigate('/orders/return', {
-                              state: {
-                                orderItemId: item.id,
-                                productName: item.productName,
-                                variantName: item.variantAttributes || '',
-                                price: item.price,
-                                maxQuantity: item.quantity,
-                                productImage: item.mainImage || item.productMainImage || item.image || item.productImage
-                              }
-                            });
+                            navigate(`/orders/return-request?orderId=${currentOrder.id}&itemId=${item.id}`);
                           }}
                           className="flex items-center gap-1 text-orange-600 border-orange-300 hover:bg-orange-50"
                         >
@@ -575,7 +566,7 @@ Xem chi tiet don hang:
               <Button
                 variant="outline"
                 className="w-full mt-4"
-                onClick={() => toast('Tính năng hỗ trợ đang được phát triển')}
+                onClick={() => toast.info('Tính năng hỗ trợ đang được phát triển')}
               >
                 Liên hệ hỗ trợ
               </Button>

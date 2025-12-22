@@ -84,7 +84,7 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
   const currentBanner = displayBanners[activeIndex];
 
   return (
-    <section className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-strong">
+    <section className="relative w-full h-[260px] md:h-[320px] lg:h-[360px] rounded-2xl overflow-hidden shadow-strong">
       {/* Background Image with Gradient Overlay */}
       <div className="absolute inset-0">
         <img
@@ -97,52 +97,76 @@ const HeroSection = ({ banners = [], autoPlayInterval = 4000 }) => {
         <div className={`absolute inset-0 bg-gradient-to-r ${currentBanner.bgGradient} opacity-80`}></div>
       </div>
 
-      {/* Content */}
       <div className="relative z-10 h-full flex items-center">
         <div className="container mx-auto px-4 md:px-8 lg:px-16">
-          <div className="max-w-2xl">
-            <div
-              className={`transition-all duration-500 transform ${
-                isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-              }`}
-            >
-              {/* Subtitle */}
-              <p className="text-white/90 text-sm md:text-base font-semibold mb-2 uppercase tracking-wide">
-                {currentBanner.subtitle}
-              </p>
-
-              {/* Title */}
-              <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
-                {currentBanner.title}
-              </h1>
-
-              {/* Description */}
-              <p className="text-white/90 text-base md:text-lg mb-6 md:mb-8">
-                {currentBanner.description}
-              </p>
-
-              {/* CTA Button */}
-              <Link to={currentBanner.buttonLink}>
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="shadow-colored-secondary hover:scale-105 transform transition-transform"
-                >
-                  {currentBanner.buttonText}
-                  <svg
-                    className="w-5 h-5 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4 md:gap-6 items-stretch">
+            <div className="max-w-2xl self-center">
+              <div
+                className={`transition-all duration-500 transform ${
+                  isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+                }`}
+              >
+                <p className="text-white/90 text-sm md:text-base font-semibold mb-2 uppercase tracking-wide">
+                  {currentBanner.subtitle}
+                </p>
+                <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+                  {currentBanner.title}
+                </h1>
+                <p className="text-white/90 text-base md:text-lg mb-6 md:mb-8">
+                  {currentBanner.description}
+                </p>
+                <Link to={currentBanner.buttonLink}>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="shadow-colored-secondary hover:scale-105 transform transition-transform"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
-                </Button>
+                    {currentBanner.buttonText}
+                    <svg
+                      className="w-5 h-5 ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                      />
+                    </svg>
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:flex flex-col gap-3 lg:gap-4 h-full">
+              <Link
+                to="/products?tag=qr-deal"
+                className="relative flex-1 rounded-2xl overflow-hidden bg-white/95 shadow-soft hover:shadow-medium transition-shadow no-underline"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-sky-500 to-sky-600 opacity-90" />
+                <div className="relative h-full flex items-center px-4 md:px-5">
+                  <div className="flex-1 text-white">
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-1">Thanh toán QR</p>
+                    <p className="text-lg font-bold leading-snug mb-1">Giảm ngay 50%</p>
+                    <p className="text-xs text-white/90">Áp dụng cho nhiều ngân hàng</p>
+                  </div>
+                  <div className="hidden lg:block w-20 h-20 rounded-xl bg-white/10 border border-white/30" />
+                </div>
+              </Link>
+              <Link
+                to="/products?tag=personal-care"
+                className="relative flex-1 rounded-2xl overflow-hidden bg-white/95 shadow-soft hover:shadow-medium transition-shadow no-underline"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-600 opacity-90" />
+                <div className="relative h-full flex items-center px-4 md:px-5">
+                  <div className="flex-1 text-white">
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-1">Ưu đãi tháng này</p>
+                    <p className="text-lg font-bold leading-snug mb-1">Deal chăm sóc cơ thể</p>
+                    <p className="text-xs text-white/90">Giảm sâu sản phẩm thiết yếu</p>
+                  </div>
+                  <div className="hidden lg:block w-20 h-20 rounded-xl bg-white/10 border border-white/30" />
+                </div>
               </Link>
             </div>
           </div>

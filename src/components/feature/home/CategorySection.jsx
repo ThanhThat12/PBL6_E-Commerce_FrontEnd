@@ -84,82 +84,45 @@ const CategorySection = ({ categories = [], title = 'Danh Mục Sản Phẩm' })
   console.log('Display categories:', displayCategories.length, 'items');
 
   return (
-    <section className="py-8 md:py-12">
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-text-primary mb-2">
-            {title}
-          </h2>
-          <p className="text-text-secondary">
-            Khám phá các danh mục thể thao phổ biến
-          </p>
-        </div>
-        <Link
-          to="/categories"
-          className="hidden md:flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors no-underline"
-        >
-          Xem tất cả
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
-
-      {/* Categories Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {displayCategories.map((category) => (
-          <Link
-            key={category.id}
-            to={`/category/${category.slug}`}
-            className="group no-underline"
-          >
-            <Card
-              hoverable
-              shadow="soft"
-              padding="none"
-              className="overflow-hidden h-full"
+    <section className="py-4 md:py-6">
+      <div className="overflow-x-auto">
+        <div className="grid grid-rows-2 grid-flow-col auto-cols-[minmax(110px,1fr)] gap-2.5 md:gap-3 py-1">
+          {displayCategories.map((category) => (
+            <Link
+              key={category.id}
+              to={`/category/${category.slug}`}
+              className="group no-underline"
             >
-              {/* Category Image */}
-              <div className="relative aspect-[4/3] overflow-hidden">
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                
-                {/* Icon Badge */}
-                <div className="absolute top-3 right-3 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-medium">
-                  {category.icon}
+              <Card
+                hoverable
+                shadow="soft"
+                padding="none"
+                className="overflow-hidden h-full"
+              >
+                <div className="relative aspect-[16/9] overflow-hidden">
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  <div className="absolute top-1.5 right-1.5 w-7 h-7 bg-white rounded-full flex items-center justify-center text-base shadow-medium">
+                    {category.icon}
+                  </div>
                 </div>
-              </div>
 
-              {/* Category Info */}
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-text-primary mb-1 group-hover:text-primary-600 transition-colors">
-                  {category.name}
-                </h3>
-                <p className="text-sm text-text-tertiary">
-                  {category.productCount} sản phẩm
-                </p>
-              </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      {/* Mobile "View All" Link */}
-      <div className="mt-6 md:hidden text-center">
-        <Link
-          to="/categories"
-          className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors no-underline"
-        >
-          Xem tất cả danh mục
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
+                <div className="px-2.5 py-2">
+                  <h3 className="text-xs md:text-sm font-semibold text-text-primary mb-0.5 group-hover:text-primary-600 transition-colors truncate">
+                    {category.name}
+                  </h3>
+                  <p className="text-[10px] md:text-xs text-text-tertiary">
+                    {category.productCount} sản phẩm
+                  </p>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   );

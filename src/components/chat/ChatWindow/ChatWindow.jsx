@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ChatWindow.css';
 import { X, Minus, ChevronLeft } from 'lucide-react';
 import RoomList from '../RoomList';
@@ -6,6 +6,7 @@ import MessageList from '../MessageList';
 import MessageInput from '../MessageInput';
 import useChatWebSocket from '../../../hooks/useChatWebSocket';
 import chatService from '../../../services/chatService';
+import chatbotService from '../../../services/chatbotService';
 import { requestNotificationPermission, showChatNotification, playNotificationSound } from '../../../utils/notification';
 
 /**
@@ -18,8 +19,8 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
   const [typingUsers, setTypingUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [view, setView] = useState(propConversationId ? 'chat' : 'list'); // 'list' or 'chat'
-  const messageIdsRef = useRef(new Set()); // Track message IDs to prevent duplicates
-  const pendingMessagesRef = useRef(new Map()); // Track pending optimistic messages
+  const [inputMode, setInputMode] = useState('chat'); // 'chat' | 'bot'
+  const [botMessages, setBotMessages] = useState([]);
 
   console.log('ChatWindow render - selectedConversationId:', selectedConversationId, 'view:', view, 'autoMessage:', autoMessage);
 
@@ -28,41 +29,13 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
     view === 'chat' ? selectedConversationId : null, // Only connect in chat view
     {
       onMessage: (message) => {
-        // Check if this is a real message (from server with actual ID)
-        if (message.id && typeof message.id === 'number') {
-          // Check if we already have this message
-          if (messageIdsRef.current.has(message.id)) {
-            console.log('⚠️ Duplicate message ignored:', message.id);
-            return;
+        setMessages((prev) => {
+          // Avoid duplicates
+          if (prev.find((m) => m.id === message.id)) {
+            return prev;
           }
-          
-          // Add to tracking set
-          messageIdsRef.current.add(message.id);
-          
-          // Check if this was an optimistic message
-          const tempId = Array.from(pendingMessagesRef.current.keys()).find(
-            key => pendingMessagesRef.current.get(key) === true
-          );
-          
-          setMessages((prev) => {
-            // Remove optimistic message and add real one
-            const filtered = tempId ? prev.filter(m => m.id !== tempId) : prev;
-            return [...filtered, message];
-          });
-          
-          // Clear pending
-          if (tempId) {
-            pendingMessagesRef.current.delete(tempId);
-          }
-        } else {
-          // Fallback for messages without proper ID
-          setMessages((prev) => {
-            if (prev.find((m) => m.id === message.id)) {
-              return prev;
-            }
-            return [...prev, message];
-          });
-        }
+          return [...prev, message];
+        });
 
         // Show notification if message is from someone else and window is not focused
         const currentUserId = getUserIdFromToken();
@@ -136,24 +109,12 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
     try {
       console.log('💬 Loading messages for conversation:', conversationId);
       setIsLoading(true);
-      
-      // Clear tracking for new conversation
-      messageIdsRef.current.clear();
-      pendingMessagesRef.current.clear();
-      
       const response = await chatService.getConversationMessages(conversationId);
       console.log('💬 Messages response:', response);
       
       // Handle both response.data and direct response
       const messagesData = response.data || response || [];
       console.log('💬 Messages data:', messagesData);
-      
-      // Add all loaded message IDs to tracking set
-      messagesData.forEach(msg => {
-        if (msg.id && typeof msg.id === 'number') {
-          messageIdsRef.current.add(msg.id);
-        }
-      });
       
       setMessages(messagesData);
     } catch (error) {
@@ -235,18 +196,61 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
   };
 
   const handleSendMessage = (messageData) => {
+    if (inputMode === 'bot') {
+      // Local-only chatbot flow
+      const currentUserId = getUserIdFromToken();
+      const userMsg = {
+        id: Date.now(),
+        senderId: currentUserId,
+        senderName: 'You',
+        messageType: messageData.messageType,
+        content: messageData.content,
+        createdAt: new Date().toISOString(),
+        status: 'SENT',
+      };
+      setBotMessages((prev) => [...prev, userMsg]);
+
+      // Call chatbot API
+      chatbotService
+        .ask({ question: messageData.content })
+        .then((reply) => {
+          const text = reply?.answer || reply?.data?.answer || reply?.message || 'Bot không có câu trả lời.';
+          const botMsg = {
+            id: Date.now() + 1,
+            senderId: 'BOT',
+            senderName: 'Chatbot',
+            messageType: 'TEXT',
+            content: text,
+            createdAt: new Date().toISOString(),
+            status: 'SENT',
+          };
+          setBotMessages((prev) => [...prev, botMsg]);
+        })
+        .catch((err) => {
+          const botMsg = {
+            id: Date.now() + 2,
+            senderId: 'BOT',
+            senderName: 'Chatbot',
+            messageType: 'TEXT',
+            content: 'Xin lỗi, chatbot đang gặp lỗi. Vui lòng thử lại.',
+            createdAt: new Date().toISOString(),
+            status: 'ERROR',
+          };
+          console.error('Chatbot error:', err);
+          setBotMessages((prev) => [...prev, botMsg]);
+        });
+      return;
+    }
+
+    // Normal chat flow
     const currentUserId = getUserIdFromToken();
     if (!currentUserId) {
       console.error('User not authenticated');
       return;
     }
 
-    // Generate unique temp ID for optimistic message
-    const tempId = `temp_${Date.now()}_${Math.random()}`;
-    
-    // Optimistic UI update
     const optimisticMessage = {
-      id: tempId,
+      id: Date.now(),
       conversationId: selectedConversationId,
       senderId: currentUserId,
       senderName: 'You',
@@ -254,29 +258,15 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
       content: messageData.content,
       createdAt: new Date().toISOString(),
       status: 'SENDING',
-      isOptimistic: true,
     };
 
-    // Track this as pending
-    pendingMessagesRef.current.set(tempId, true);
-    
     setMessages((prev) => [...prev, optimisticMessage]);
 
-    // Send via WebSocket
     sendMessage({
       senderId: currentUserId,
       messageType: messageData.messageType,
       content: messageData.content,
     });
-    
-    // Timeout to remove optimistic message if real one doesn't arrive
-    setTimeout(() => {
-      if (pendingMessagesRef.current.has(tempId)) {
-        console.warn('⚠️ Message send timeout, removing optimistic message:', tempId);
-        setMessages(prev => prev.filter(m => m.id !== tempId));
-        pendingMessagesRef.current.delete(tempId);
-      }
-    }, 10000); // 10 second timeout
   };
 
   const handleBackToList = () => {
@@ -298,14 +288,16 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
           </button>
         )}
         <h3 className="chat-window-title">
-          {view === 'chat' && selectedConversation
-            ? selectedConversation.type === 'SHOP' 
-              ? (selectedConversation.shopName || `Shop #${selectedConversation.id}`)
-              : (selectedConversation.otherParticipantName || 'Hỗ trợ khách hàng')
-            : 'Tin nhắn'}
+          {inputMode === 'bot'
+            ? 'Chatbot'
+            : (view === 'chat' && selectedConversation
+                ? (selectedConversation.type === 'SHOP'
+                    ? (selectedConversation.shopName || `Shop #${selectedConversation.id}`)
+                    : (selectedConversation.otherParticipantName || 'Hỗ trợ khách hàng'))
+                : 'Tin nhắn')}
         </h3>
         <div className="chat-window-actions">
-          {isConnected && view === 'chat' && (
+          {isConnected && view === 'chat' && inputMode !== 'bot' && (
             <span className="chat-connection-status">🟢</span>
           )}
           <button className="chat-action-btn" onClick={onMinimize} title="Thu nhỏ">
@@ -327,16 +319,26 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
           />
         ) : (
           <>
-            <MessageList
-              messages={messages}
-              currentUserId={getUserIdFromToken()}
-              typingUsers={typingUsers}
-            />
+            {inputMode === 'bot' ? (
+              <MessageList
+                messages={botMessages}
+                currentUserId={getUserIdFromToken()}
+                typingUsers={[]}
+              />
+            ) : (
+              <MessageList
+                messages={messages}
+                currentUserId={getUserIdFromToken()}
+                typingUsers={typingUsers}
+              />
+            )}
             <MessageInput
               onSendMessage={handleSendMessage}
-              disabled={!isConnected}
-              placeholder={isConnected ? 'Nhập tin nhắn...' : 'Đang kết nối...'}
+              disabled={inputMode === 'bot' ? false : !isConnected}
+              placeholder={inputMode === 'bot' ? 'Nhập tin nhắn cho chatbot...' : (isConnected ? 'Nhập tin nhắn...' : 'Đang kết nối...')}
               autoMessage={autoMessage}
+              mode={inputMode}
+              onChangeMode={setInputMode}
             />
           </>
         )}

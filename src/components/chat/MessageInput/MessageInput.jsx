@@ -7,7 +7,7 @@ import { uploadChatImage } from '../../../services/chatService';
 /**
  * MessageInput - Input để gửi tin nhắn
  */
-const MessageInput = ({ onSendMessage, disabled = false, placeholder = 'Nhập tin nhắn...', autoMessage }) => {
+const MessageInput = ({ onSendMessage, disabled = false, placeholder = 'Nhập tin nhắn...', autoMessage, mode = 'chat', onChangeMode }) => {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -210,6 +210,25 @@ const MessageInput = ({ onSendMessage, disabled = false, placeholder = 'Nhập t
 
   return (
     <form className="message-input-form" onSubmit={handleSubmit}>
+      {/* Toggle between normal chat and chatbot */}
+      {onChangeMode && (
+        <div className="message-mode-toggle" role="tablist" aria-label="Chọn chế độ nhắn tin">
+          <button
+            type="button"
+            className={`mode-btn ${mode === 'chat' ? 'active' : ''}`}
+            onClick={() => onChangeMode('chat')}
+          >
+            Nhắn thường
+          </button>
+          <button
+            type="button"
+            className={`mode-btn ${mode === 'bot' ? 'active' : ''}`}
+            onClick={() => onChangeMode('bot')}
+          >
+            Chatbot
+          </button>
+        </div>
+      )}
       {/* Image Preview */}
       {imagePreview && (
         <div className="image-preview-container">

@@ -64,11 +64,13 @@ const ProductDetailPage = () => {
   }, [isAuthenticated, hasRole, isShopOwner, product, selectedVariant]);
 
   // Wrapper for chat functionality
-  const onChatWithShop = (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    handleChatWithShop(shop?.id);
-  };
+const onChatWithShop = (e) => {
+  e?.preventDefault();
+  e?.stopPropagation();
+  const shopId = shop?.id || product.shop?.id || product.shopId; // ✅ Lấy shopId từ shop hoặc product
+  console.log('[ProductDetailPage] Initiating chat with shop ID:', shopId);
+  handleChatWithShop(shopId); // ✅ Truyền shopId vào hàm từ hook
+};
 
   // Load product
   useEffect(() => {
@@ -331,6 +333,7 @@ const ProductDetailPage = () => {
     }
   };
 
+  
 
   if (loading) {
     return (
@@ -682,8 +685,8 @@ const ProductDetailPage = () => {
                 selectedVariant={selectedVariant}
                 product={product}
                 adding={adding}
-                handleAddToCart={handleAddToCart}
-                handleBuyNow={handleBuyNow}
+                onAddToCart={handleAddToCart}
+                onBuyNow={handleBuyNow}
               />
             </div>
 
@@ -710,14 +713,14 @@ const ProductDetailPage = () => {
           </div>
         </div>
         </div>
-
+        
         {/* Shop Info Section */}
         <ShopInfo
           shopInfo={shopInfo}
           isShopOwner={isShopOwner}
           isAuthenticated={isAuthenticated}
           canChat={canChat}
-          handleChatWithShop={handleChatWithShop}
+          onChatWithShop={onChatWithShop}
         />
 
         {/* Product Description Section - Full Width */}

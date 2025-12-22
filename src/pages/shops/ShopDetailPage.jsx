@@ -271,7 +271,7 @@ const ShopDetailPage = () => {
             {!isShopOwner && (
               <div className="flex-shrink-0">
                 <button 
-                  onClick={handleChatWithShop}
+                  onClick={() => handleChatWithShop(shop?.id)}
                   disabled={!isAuthenticated}
                   className="flex items-center gap-2 px-5 py-2.5 border border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title={!isAuthenticated ? 'Vui lòng đăng nhập' : 'Chat với shop'}

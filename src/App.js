@@ -30,8 +30,7 @@ import ShopDetailPage from './pages/shops/ShopDetailPage';
 import CartPage from './pages/cart/CartPage';
 
 // Order Pages
-import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
-import ItemReturnPage from './pages/order/ItemReturnPage';
+import { CheckoutPage, OrderListPage, OrderDetailPage, ReturnRequestPage } from './pages/order';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -54,8 +53,6 @@ import SellerProtectedRoute from './components/seller/ProtectedRoute';
 import { SellerLayout } from './components/seller/Layout';
 import * as SellerPages from './pages/seller';
 import ReviewsPage from './pages/seller/Review';
-import RejectionStatusPage from './pages/seller/RejectionStatusPage';
-import SellerRegistrationGuard from './components/seller/SellerRegistrationGuard';
 
 // 🧑‍💼 Admin Pages
 import ProtectedRouteAdmin from "./components/admin/ProtectedRouteAdmin";
@@ -73,21 +70,20 @@ import AdminChatPage from './pages/admin/Chat/ChatPage';
 import AdminWalletPage from './pages/admin/Wallet/WalletPage';
 import AdminSellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
-// Chat Wrapper - Only show on authenticated pages
 const ConditionalChatContainer = () => {
   const location = useLocation();
   
-  // Hide chat on auth pages
-  const hideChat = [
-    ROUTES.LOGIN,
-    ROUTES.REGISTER,
-    '/forgot-password',
-    '/admin/login'
-  ].some(route => location.pathname.startsWith(route));
+  const hideChat =
+    [
+      ROUTES.LOGIN,
+      ROUTES.REGISTER,
+      '/forgot-password',
+      '/admin/login'
+    ].some(route => location.pathname.startsWith(route)) ||
+    location.pathname.startsWith('/admin');
   
   return !hideChat ? <ChatContainer /> : null;
 };
-
 
 
 function App() {
@@ -157,10 +153,10 @@ function App() {
                 } 
               />
               <Route 
-                path="/orders/return" 
+                path="/orders/return-request" 
                 element={
                   <ProtectedRoute>
-                    <ItemReturnPage />
+                    <ReturnRequestPage />
                   </ProtectedRoute>
                 } 
               />
@@ -231,18 +227,14 @@ function App() {
             {/* ================================================= */}
 
                         {/* ================= SELLER REGISTRATION ROUTES ================= */}
-            {/* Entry point uses Guard - other pages handle their own routing */}
             <Route 
               path="/seller/register" 
               element={
                 <ProtectedRoute>
-                  <SellerRegistrationGuard>
-                    <SellerRegistrationPage />
-                  </SellerRegistrationGuard>
+                  <SellerRegistrationPage />
                 </ProtectedRoute>
               } 
             />
-            {/* Status pages don't use Guard to avoid redirect loops */}
             <Route 
               path="/seller/registration-status" 
               element={
@@ -251,18 +243,9 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/seller/rejected" 
-              element={
-                <ProtectedRoute>
-                  <RejectionStatusPage />
-                </ProtectedRoute>
-              } 
-            />
             {/* ============================================================= */}
 
             {/* ================= SELLER ROUTES ================= */}
-
             <Route 
               path="/seller" 
               element={

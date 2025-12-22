@@ -36,8 +36,10 @@ const ProductDetailPage = () => {
 
   // Handle chat with shop
   const handleChatWithShop = async (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Chat button clicked!');
     
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để chat với shop');
@@ -46,54 +48,46 @@ const ProductDetailPage = () => {
     }
 
     const shopId = product.shop?.id || product.shopId;
+    console.log('Shop ID:', shopId);
     
     if (!shopId) {
       toast.error('Không tìm thấy thông tin shop');
       return;
     }
 
-    // Check if user is the shop owner (prevent self-chat)
-    if (isProductOwner()) {
-      toast.error('Bạn không thể chat với shop của chính mình');
-      return;
-    }
-
     try {
+      console.log('Creating conversation with shop:', shopId);
+      
       // Create or get conversation with shop
-      // chatService.createConversation already returns response.data
-      // Structure: { status, message, data: { id, type, ... } }
-      const apiResponse = await chatService.createConversation({
+      const response = await chatService.createConversation({
         type: 'SHOP',
         shopId: shopId,
       });
 
-      // Extract conversation from apiResponse.data
-      const conversationData = apiResponse.data;
+      console.log('Conversation response:', response);
+
+      // API trả về object trực tiếp, không có response.data
+      const conversationData = response.data || response;
       
       if (conversationData && conversationData.id) {
-        console.log('[ProductDetailPage_New] Opening chat with conversation:', conversationData.id);
         toast.success('Đã mở chat với shop');
+        
+        console.log('Dispatching openChat event with conversationId:', conversationData.id);
         
         // Dispatch event to open chat window
         const event = new CustomEvent('openChat', { 
           detail: { conversationId: conversationData.id } 
         });
-        console.log('[ProductDetailPage_New] Dispatching openChat event:', event.detail);
         window.dispatchEvent(event);
-        console.log('[ProductDetailPage_New] Event dispatched successfully');
+        
+        console.log('Event dispatched successfully');
       } else {
-        console.error('Invalid conversation response:', apiResponse);
-        toast.error('Không thể tạo cuộc trò chuyện');
+        console.error('Invalid conversation response:', conversationData);
+        toast.error('Không nhận được thông tin conversation');
       }
     } catch (error) {
       console.error('Error opening chat:', error);
-      // Check for specific backend error about self-chat
-      const errorMessage = error.response?.data?.message || '';
-      if (errorMessage.includes('shop của chính mình') || errorMessage.includes('own shop')) {
-        toast.error('Bạn không thể chat với shop của chính mình');
-      } else {
-        toast.error(errorMessage || 'Không thể mở chat với shop');
-      }
+      toast.error('Không thể mở chat với shop. Vui lòng thử lại.');
     }
   };
 
@@ -227,11 +221,6 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = async () => {
-    if (isProductOwner()) {
-      toast.error('Bạn không thể mua sản phẩm của chính shop bạn');
-      return;
-    }
-
     if (!selectedVariant) {
       toast.error('Vui lòng chọn phiên bản sản phẩm');
       return;
@@ -450,18 +439,14 @@ const ProductDetailPage = () => {
 
                   {/* Action Buttons */}
                   <div className="flex-shrink-0 flex flex-col gap-2">
-                    {/* Chat Button - Hidden for shop owner */}
-                    {!isProductOwner() && (
-                      <button
-                        onClick={handleChatWithShop}
-                        disabled={!isAuthenticated}
-                        title={!isAuthenticated ? 'Vui lòng đăng nhập' : 'Chat với shop'}
-                        className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <FiMessageCircle className="w-4 h-4" />
-                        Chat Ngay
-                      </button>
-                    )}
+                    {/* Chat Button */}
+                    <button
+                      onClick={handleChatWithShop}
+                      className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                      <FiMessageCircle className="w-4 h-4" />
+                      Chat Ngay
+                    </button>
                     
                     {/* View Shop Link */}
                     <Link 
@@ -586,11 +571,10 @@ const ProductDetailPage = () => {
             <div className="flex gap-4">
               <Button
                 onClick={handleAddToCart}
-                disabled={!product.isActive || !isInStock || adding || isProductOwner()}
+                disabled={!product.isActive || !isInStock || adding}
                 loading={adding}
                 variant="primary"
                 className="flex-1 py-4"
-                title={isProductOwner() ? 'Không thể mua sản phẩm của chính shop bạn' : ''}
               >
                 <FiShoppingCart className="w-5 h-5 mr-2" />
                 Thêm vào giỏ hàng
@@ -641,6 +625,7 @@ const ProductDetailPage = () => {
           </div>
         </div>
       </div>
+
       {/* Reviews Section - Using new ReviewSection component */}
       <ReviewSection 
         productId={id}
