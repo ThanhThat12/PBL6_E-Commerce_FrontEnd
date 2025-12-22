@@ -92,7 +92,13 @@ const VoucherManagement = () => {
       if (error?.response?.data) {
         const data = error.response.data;
         
-        // Case 1: Backend returns structured validation errors
+        // Case 1: Backend returns simple message (PRIORITY)
+        if (data.message) {
+          message.error(data.message, 5);
+          return;
+        }
+        
+        // Case 2: Backend returns structured validation errors
         if (data.errors && typeof data.errors === 'object' && !Array.isArray(data.errors)) {
           const errorMessages = [];
           
@@ -123,60 +129,54 @@ const VoucherManagement = () => {
 
           if (errorMessages.length > 0) {
             // Show first error as main message
-            message.error(errorMessages[0]);
+            message.error(errorMessages[0], 5);
             
             // Show additional errors if any
             if (errorMessages.length > 1) {
               setTimeout(() => {
                 errorMessages.slice(1, 3).forEach((msg, index) => {
-                  setTimeout(() => message.warning(msg), index * 500);
+                  setTimeout(() => message.warning(msg, 4), index * 600);
                 });
-              }, 500);
+              }, 600);
             }
             return;
           }
         }
         
-        // Case 2: Backend returns array of error messages
+        // Case 3: Backend returns array of error messages
         if (Array.isArray(data.errors)) {
           const errorMessages = data.errors.filter(msg => msg);
           if (errorMessages.length > 0) {
-            message.error(errorMessages[0]);
+            message.error(errorMessages[0], 5);
             if (errorMessages.length > 1) {
               setTimeout(() => {
                 errorMessages.slice(1, 3).forEach((msg, index) => {
-                  setTimeout(() => message.warning(msg), index * 500);
+                  setTimeout(() => message.warning(msg, 4), index * 600);
                 });
-              }, 500);
+              }, 600);
             }
             return;
           }
         }
         
-        // Case 3: Backend returns simple message
-        if (data.message) {
-          message.error(data.message);
-          return;
-        }
-        
-        // Case 4: Other error formats
-        if (data.error) {
-          message.error(data.error);
+        // Case 4: Backend returns error field
+        if (data.error && typeof data.error === 'string') {
+          message.error(data.error, 5);
           return;
         }
       }
       
       // Case 5: Network or other errors
       if (error?.response?.status === 400) {
-        message.error('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các thông tin đã nhập.');
+        message.error('❌ Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các thông tin đã nhập.', 5);
       } else if (error?.response?.status === 409) {
-        message.error('Mã voucher đã tồn tại. Vui lòng sử dụng mã khác.');
+        message.error('❌ Mã voucher đã tồn tại. Vui lòng sử dụng mã khác.', 5);
       } else if (error?.response?.status === 401 || error?.response?.status === 403) {
-        message.error('Bạn không có quyền thực hiện thao tác này.');
+        message.error('❌ Bạn không có quyền thực hiện thao tác này.', 5);
       } else if (error?.message) {
-        message.error(`Lỗi: ${error.message}`);
+        message.error(`❌ Lỗi: ${error.message}`, 5);
       } else {
-        message.error('Không thể tạo voucher. Vui lòng thử lại sau.');
+        message.error('❌ Không thể tạo voucher. Vui lòng thử lại sau.', 5);
       }
     }
   };
@@ -373,11 +373,26 @@ const VoucherManagement = () => {
             label="Mã Voucher"
             name="code"
             rules={[
-              { required: true, message: 'Vui lòng nhập mã voucher' },
-              { pattern: /^[A-Z0-9]+$/, message: 'Chỉ sử dụng chữ in hoa và số' }
+              { required: true, message: '⚠️ Vui lòng nhập mã voucher' },
+              { 
+                pattern: /^[A-Z0-9]+$/, 
+                message: '⚠️ Mã voucher chỉ được chứa chữ in hoa (A-Z) và số (0-9)' 
+              },
+              {
+                min: 3,
+                message: '⚠️ Mã voucher phải có ít nhất 3 ký tự'
+              },
+              {
+                max: 50,
+                message: '⚠️ Mã voucher không được vượt quá 50 ký tự'
+              }
             ]}
           >
-            <Input placeholder="VD: NEWYEAR2024" maxLength={50} />
+            <Input 
+              placeholder="VD: NEWYEAR2024" 
+              maxLength={50}
+              style={{ textTransform: 'uppercase' }}
+            />
           </Form.Item>
 
           <Form.Item
@@ -400,15 +415,43 @@ const VoucherManagement = () => {
           </Form.Item>
 
           <Form.Item
-            label="Giá Trị Giảm"
-            name="discountValue"
-            rules={[{ required: true, message: 'Vui lòng nhập giá trị giảm' }]}
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => 
+              prevValues.discountType !== currentValues.discountType
+            }
           >
-            <InputNumber
-              min={0}
-              style={{ width: '100%' }}
-              placeholder="VD: 20 (cho 20%) hoặc 50000 (cho 50k)"
-            />
+            {({ getFieldValue }) => {
+              const discountType = getFieldValue('discountType');
+              const isPercentage = discountType === 'PERCENTAGE';
+              
+              return (
+                <Form.Item
+                  label="Giá Trị Giảm"
+                  name="discountValue"
+                  rules={[
+                    { required: true, message: 'Vui lòng nhập giá trị giảm' },
+                    { 
+                      type: 'number', 
+                      min: 0.01, 
+                      message: 'Giá trị phải lớn hơn 0' 
+                    },
+                    isPercentage ? {
+                      type: 'number',
+                      max: 100,
+                      message: '⚠️ Giá trị giảm giá phần trăm không được vượt quá 100%'
+                    } : null
+                  ].filter(Boolean)}
+                >
+                  <InputNumber
+                    min={0.01}
+                    max={isPercentage ? 100 : undefined}
+                    style={{ width: '100%' }}
+                    placeholder={isPercentage ? "VD: 20 (cho 20%)" : "VD: 50000 (cho 50k)"}
+                    addonAfter={isPercentage ? '%' : '₫'}
+                  />
+                </Form.Item>
+              );
+            }}
           </Form.Item>
 
           <Form.Item
@@ -436,12 +479,17 @@ const VoucherManagement = () => {
           <Form.Item
             label="Giá Trị Đơn Tối Thiểu (₫)"
             name="minOrderValue"
-            rules={[{ required: true, message: 'Vui lòng nhập giá trị đơn tối thiểu' }]}
+            rules={[
+              { required: true, message: '⚠️ Vui lòng nhập giá trị đơn tối thiểu' },
+              { type: 'number', min: 0, message: '⚠️ Giá trị phải lớn hơn hoặc bằng 0' }
+            ]}
           >
             <InputNumber
               min={0}
               style={{ width: '100%' }}
               placeholder="VD: 100000"
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\$\s?|(,*)/g, '')}
             />
           </Form.Item>
 
@@ -460,12 +508,17 @@ const VoucherManagement = () => {
           <Form.Item
             label="Giới Hạn Sử Dụng"
             name="usageLimit"
-            rules={[{ required: true, message: 'Vui lòng nhập giới hạn sử dụng' }]}
+            rules={[
+              { required: true, message: '⚠️ Vui lòng nhập giới hạn sử dụng' },
+              { type: 'number', min: 1, message: '⚠️ Giới hạn sử dụng phải lớn hơn 0' }
+            ]}
           >
             <InputNumber
               min={1}
               style={{ width: '100%' }}
               placeholder="VD: 100"
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\$\s?|(,*)/g, '')}
             />
           </Form.Item>
 
