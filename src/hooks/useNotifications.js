@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
+import { getAccessToken } from '../utils/storage';
 
 // Automatically use https if page is loaded over https
 const WS_URL = `${process.env.REACT_APP_API_URL_WS}`;
@@ -57,7 +59,9 @@ export function useNotifications(userId, role = 'BUYER') {
     console.log('🔌 WebSocket URL:', WS_URL);
     console.log('🔌 Will subscribe to:', channel);
     
-    const socket = new SockJS(WS_URL);
+    const token = getAccessToken();
+    const socketUrlWithToken = token ? `${WS_URL}?token=${token}` : WS_URL;
+    const socket = new SockJS(socketUrlWithToken);
     const client = Stomp.over(socket);
     let subscription = null;
 

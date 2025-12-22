@@ -40,24 +40,10 @@ export const NotificationProvider = ({ children }) => {
   console.log('NotificationProvider - userId:', userId, 'role:', role);
   
   // Order notifications WebSocket connection
-  const notificationData = userId ? useNotifications(userId, role) : {
-    notifications: [],
-    connected: false,
-    unreadCount: 0,
-    markAsRead: () => {},
-    markAllAsRead: () => {},
-    clearAll: () => {},
-    deleteNotification: () => {},
-  };
+  const notificationData = useNotifications(userId, role);
 
   // Chat notifications WebSocket connection
-  const chatNotificationData = userId ? useChatNotifications(userId) : {
-    unreadCount: 0,
-    latestMessage: null,
-    connected: false,
-    refreshCount: () => {},
-    resetUnreadCount: () => {},
-  };
+  const chatNotificationData = useChatNotifications(userId);
 
   console.log('NotificationContext - Chat unread:', chatNotificationData.unreadCount, 'Latest message:', chatNotificationData.latestMessage);
 
@@ -143,4 +129,3 @@ export const useNotificationContext = () => {
 };
 
 export default NotificationContext;
-
