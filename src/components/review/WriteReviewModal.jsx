@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiAlertCircle, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 import RatingInput from './RatingInput';

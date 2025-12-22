@@ -53,7 +53,6 @@ const ProductDetailPage = () => {
   }, [isAuthenticated, isShopOwner]);
 
   const canAddToCart = useMemo(() => {
-    if (!isAuthenticated) return false;
     // Block admin from buying
     if (hasRole && hasRole('ADMIN')) return false;
     // Block shop owner from buying own products
@@ -61,7 +60,7 @@ const ProductDetailPage = () => {
     if (!product) return false;
     if (!selectedVariant) return false;
     return selectedVariant.stock > 0 && product.isActive;
-  }, [isAuthenticated, hasRole, isShopOwner, product, selectedVariant]);
+  }, [hasRole, isShopOwner, product, selectedVariant]);
 
   // Wrapper for chat functionality
 const onChatWithShop = (e) => {

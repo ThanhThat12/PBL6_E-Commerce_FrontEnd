@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './MessageList.css';
 import { format } from 'date-fns';
-import { getUserAvatar, handleImageError, DEFAULT_AVATAR_IMAGE } from '../../../utils/placeholderImage';
 
 /**
  * MessageList - Hiển thị danh sách tin nhắn
@@ -75,11 +74,13 @@ const MessageList = ({ messages = [], currentUserId, typingUsers = [] }) => {
         >
           {!isOwnMessage(message) && (
             <div className="message-avatar">
-              <img 
-                src={message.senderAvatar || DEFAULT_AVATAR_IMAGE} 
-                alt={message.senderName}
-                onError={(e) => handleImageError(e, DEFAULT_AVATAR_IMAGE)}
-              />
+              {message.senderAvatar ? (
+                <img src={message.senderAvatar} alt={message.senderName} />
+              ) : (
+                <div className="message-avatar-placeholder">
+                  {message.senderName?.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
           )}
           

@@ -115,9 +115,6 @@ const CategorySection = ({ categories = [], title = 'Danh Mục Sản Phẩm' })
                   <h3 className="text-xs md:text-sm font-semibold text-text-primary mb-0.5 group-hover:text-primary-600 transition-colors truncate">
                     {category.name}
                   </h3>
-                  <p className="text-[10px] md:text-xs text-text-tertiary">
-                    {category.productCount} sản phẩm
-                  </p>
                 </div>
               </Card>
             </Link>
@@ -135,7 +132,6 @@ CategorySection.propTypes = {
       name: PropTypes.string.isRequired,
       slug: PropTypes.string.isRequired,
       image: PropTypes.string.isRequired,
-      productCount: PropTypes.number,
       icon: PropTypes.string,
     })
   ),
