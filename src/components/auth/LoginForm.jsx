@@ -187,8 +187,13 @@ const LoginForm = () => {
    * Trigger Facebook SDK login flow, get access token and call backend
    */
   const handleFacebookButton = async () => {
-    if (!FACEBOOK_APP_ID) {
-      setAlert({ type: 'error', message: 'Facebook OAuth chưa được cấu hình' });
+    // Check if Facebook App ID is configured
+    if (!FACEBOOK_APP_ID || FACEBOOK_APP_ID === 'YOUR_FACEBOOK_APP_ID_HERE') {
+      setAlert({ 
+        type: 'error', 
+        message: 'Facebook OAuth chưa được cấu hình',
+        description: 'Vui lòng thêm REACT_APP_FACEBOOK_APP_ID vào file .env'
+      });
       return;
     }
 
@@ -196,15 +201,23 @@ const LoginForm = () => {
     setAlert(null);
 
     try {
+      console.log('[LoginForm] Loading Facebook SDK...');
       const FB = await loadFacebookSdk(FACEBOOK_APP_ID);
+      
+      console.log('[LoginForm] Requesting Facebook login...');
       const auth = await facebookLogin(FB, { scope: 'public_profile,email' });
 
+      console.log('[LoginForm] Facebook auth response:', auth);
+      
       if (!auth || !auth.accessToken) {
         throw new Error('No access token returned from Facebook');
       }
 
+      console.log('[LoginForm] Sending access token to backend...');
       // Send accessToken to backend
       const result = await loginWithFacebook(auth.accessToken);
+
+      console.log('[LoginForm] Backend response:', result);
 
       if (result.success) {
         setAlert({ type: 'success', message: 'Đăng nhập Facebook thành công', description: 'Đang chuyển hướng...' });
@@ -228,7 +241,22 @@ const LoginForm = () => {
       }
     } catch (err) {
       console.error('[LoginForm] Facebook login error:', err);
-      setAlert({ type: 'error', message: 'Đăng nhập Facebook thất bại', description: err.message || 'Vui lòng thử lại' });
+      
+      // Handle specific error cases
+      let errorMessage = 'Vui lòng thử lại';
+      if (err.status === 'not_authorized') {
+        errorMessage = 'Bạn đã từ chối quyền truy cập';
+      } else if (err.status === 'unknown') {
+        errorMessage = 'Người dùng đã đóng cửa sổ đăng nhập';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setAlert({ 
+        type: 'error', 
+        message: 'Đăng nhập Facebook thất bại', 
+        description: errorMessage 
+      });
     } finally {
       setLoading(false);
     }

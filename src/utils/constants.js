@@ -236,8 +236,8 @@ export const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 // OAuth Configuration
 export const GOOGLE_CLIENT_ID = '675831796221-gv53a00leksrq5f08lbds5kej9jjlm4q.apps.googleusercontent.com';
-export const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '';
-
+export const FACEBOOK_APP_ID = '1095601362306172';
+// export const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '';
 // Image Upload Configuration
 export const IMAGE_UPLOAD = {
   // File constraints

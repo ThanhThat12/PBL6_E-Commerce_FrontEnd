@@ -165,8 +165,8 @@ export const AuthProvider = ({ children }) => {
       
       console.log('[AuthContext] loginWithGoogle response:', response);
       
-      // Check for success status
-      if (response.status === 'success' && response.data) {
+      // Check for success status (backend returns statusCode: 200)
+      if ((response.status === 'success' || response.statusCode === 200) && response.data) {
         // Backend may not return user object directly
         let userData = response.data.user;
         
@@ -191,7 +191,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
         
-        return { success: true, data: response.data };
+        return { success: true, data: response.data, message: response.message };
       }
       
       return { 
@@ -232,8 +232,8 @@ export const AuthProvider = ({ children }) => {
       
       console.log('[AuthContext] loginWithFacebook response:', response);
       
-      // Check for success status
-      if (response.status === 'success' && response.data) {
+      // Check for success status (backend returns statusCode: 200)
+      if ((response.status === 'success' || response.statusCode === 200) && response.data) {
         // Backend may not return user object directly
         let userData = response.data.user;
         
@@ -258,7 +258,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
         
-        return { success: true, data: response.data };
+        return { success: true, data: response.data, message: response.message };
       }
       
       return { 
