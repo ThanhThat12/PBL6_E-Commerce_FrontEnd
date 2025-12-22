@@ -597,11 +597,27 @@ const PaymentPage = () => {
             window.location.href = momoResponse.data.payUrl;
             return;
           } else {
-            toast.error('Không thể tạo link thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
+            // Hiển thị lỗi chi tiết từ backend
+            const errorMsg = momoResponse.data?.message || 'Không thể tạo link thanh toán MoMo';
+            console.error('❌ MoMo Payment Failed - Response:', momoResponse.data);
+            toast.error(`${errorMsg}. Đơn hàng đã được tạo, bạn có thể thanh toán sau.`);
             await refreshCartAndNavigate('/orders');
           }
-        } catch {
-          toast.error('Lỗi tạo thanh toán MoMo. Đơn hàng đã được tạo, bạn có thể thanh toán sau.');
+        } catch (error) {
+          // Log chi tiết lỗi để debug
+          console.error('❌ MoMo Payment Error:', error);
+          console.error('Error Response:', error.response?.data);
+          
+          // Hiển thị thông báo lỗi chi tiết hơn
+          const errorMsg = error.response?.data?.message 
+            || error.response?.data?.error 
+            || error.message 
+            || 'Lỗi không xác định';
+          
+          toast.error(`Lỗi tạo thanh toán MoMo: ${errorMsg}. Đơn hàng đã được tạo, bạn có thể thanh toán sau.`, {
+            duration: 6000 // Hiển thị lâu hơn để user có thể đọc
+          });
+          
           await refreshCartAndNavigate('/orders');
         }
       } else if (paymentMethod === 'SPORTYPAY') {

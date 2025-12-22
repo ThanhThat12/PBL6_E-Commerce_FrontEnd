@@ -30,8 +30,7 @@ import ShopDetailPage from './pages/shops/ShopDetailPage';
 import CartPage from './pages/cart/CartPage';
 
 // Order Pages
-import { CheckoutPage, OrderListPage, OrderDetailPage } from './pages/order';
-import ItemReturnPage from './pages/order/ItemReturnPage';
+import { CheckoutPage, OrderListPage, OrderDetailPage, ReturnRequestPage } from './pages/order';
 
 // User Pages
 import ProfilePage from './pages/user/ProfilePage';
@@ -154,10 +153,10 @@ function App() {
                 } 
               />
               <Route 
-                path="/orders/return" 
+                path="/orders/return-request" 
                 element={
                   <ProtectedRoute>
-                    <ItemReturnPage />
+                    <ReturnRequestPage />
                   </ProtectedRoute>
                 } 
               />
