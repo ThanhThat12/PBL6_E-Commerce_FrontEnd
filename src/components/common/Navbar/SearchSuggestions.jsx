@@ -50,6 +50,7 @@ const SearchSuggestions = ({
     queries = [],
     products = [],
     categories = [],
+    shops = [],
     trending = [],
     didYouMean
   } = suggestions;
@@ -60,7 +61,7 @@ const SearchSuggestions = ({
     : recentSearches;
 
   const hasContent = queries.length > 0 || products.length > 0 || categories.length > 0 || 
-                     trending.length > 0 || combinedRecent.length > 0 || didYouMean;
+                     shops.length > 0 || trending.length > 0 || combinedRecent.length > 0 || didYouMean;
 
   if (!hasContent && !isLoading) {
     return null;
@@ -80,6 +81,11 @@ const SearchSuggestions = ({
       onSelectCategory(category);
     }
     navigate(`/products?categoryId=${category.id}`);
+  };
+
+  // Handle shop click - navigate to shop page
+  const handleShopClick = (shop) => {
+    navigate(`/shop/${shop.id}`);
   };
 
   // Format price to VND
@@ -278,7 +284,7 @@ const SearchSuggestions = ({
 
           {/* Product suggestions (mini cards) */}
           {products.length > 0 && (
-            <div className="p-3">
+            <div className="p-3 border-b border-gray-100">
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1 mb-2">
                 <BuildingStorefrontIcon className="w-4 h-4" />
                 Sản phẩm gợi ý
@@ -321,6 +327,63 @@ const SearchSuggestions = ({
                         {product.soldCount > 0 && (
                           <span className="text-xs text-gray-400">
                             Đã bán {product.soldCount}
+                          </span>
+                        )}
+                      </div>
+                      {product.shopName && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                          {product.shopName}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shop suggestions */}
+          {shops.length > 0 && (
+            <div className="p-3">
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1 mb-2">
+                <BuildingStorefrontIcon className="w-4 h-4" />
+                Shop gợi ý
+              </span>
+              <div className="space-y-2">
+                {shops.map((shop, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleShopClick(shop)}
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                  >
+                    {/* Shop logo */}
+                    <div className="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
+                      <img
+                        src={shop.logoUrl || '/default-shop-logo.png'}
+                        alt={shop.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/default-shop-logo.png';
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Shop info */}
+                    <div className="flex-1 min-w-0">
+                      <p 
+                        className="text-sm font-medium text-gray-900 truncate [&>b]:text-primary-600 [&>b]:font-semibold"
+                        dangerouslySetInnerHTML={{ __html: shop.highlightedName || shop.name }}
+                      />
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {shop.productCount !== undefined && (
+                          <span className="text-xs text-gray-500">
+                            {shop.productCount} sản phẩm
+                          </span>
+                        )}
+                        {shop.rating > 0 && (
+                          <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                            <span className="text-yellow-500">★</span>
+                            {shop.rating?.toFixed(1)}
                           </span>
                         )}
                       </div>
