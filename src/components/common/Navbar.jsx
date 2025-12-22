@@ -105,7 +105,7 @@ export default function NavbarNew({ isHomePage = false }) {
       {/* Top Bar */}
       <div className="bg-gradient-primary">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between py-2 gap-3">
+          <div className="flex items-center justify-between py-2.5 gap-3">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group flex-shrink-0 no-underline">
               <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-soft group-hover:shadow-medium transition-shadow">
@@ -198,47 +198,60 @@ export default function NavbarNew({ isHomePage = false }) {
         </div>
       </div>
       
-      <nav className="hidden lg:block bg-white border-b border-border">
+      <nav className="hidden lg:block bg-white border-b border-border shadow-sm">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-start py-2">
-            <ul className="flex items-center gap-1 xl:gap-2">
+          <div className="flex items-center justify-center">
+            <ul className="flex items-center gap-1">
               {menuItems.map((item, index) => (
-                <li key={index}>
+                <li key={index} className="flex items-center">
                   <Link
                     to={item.href}
                     className="
                       relative
                       flex
                       items-center
-                      gap-1
-                      px-2.5
-                      py-1.5
-                      text-xs md:text-sm
-                      font-medium
+                      gap-1.5
+                      px-3
+                      py-2.5
+                      text-sm
+                      font-semibold
                       text-text-primary
                       hover:text-primary-600
                       no-underline
-                      rounded-lg
+                      rounded-md
                       hover:bg-primary-50
-                      transition-colors
+                      transition-all
+                      duration-200
                       whitespace-nowrap
+                      group
+                      leading-tight
                     "
                   >
-                    {item.label}
+                    <span className="relative z-10 leading-none">{item.label}</span>
                     {item.badge && (
                       <span className="
+                        relative
+                        z-10
+                        inline-flex
+                        items-center
+                        justify-center
                         px-1.5
                         py-0.5
-                        text-xs
+                        min-w-[28px]
+                        h-4
+                        text-[10px]
                         font-bold
                         bg-secondary-500
                         text-white
-                        rounded
+                        rounded-full
                         animate-pulse
+                        leading-none
                       ">
                         {item.badge}
                       </span>
                     )}
+                    {/* Hover underline effect */}
+                    <span className="absolute bottom-1.5 left-0 right-0 h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-center rounded-full"></span>
                   </Link>
                 </li>
               ))}

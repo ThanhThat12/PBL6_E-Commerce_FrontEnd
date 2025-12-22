@@ -1,6 +1,8 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/constants';
 
-const API_URL = 'https://localhost:8081/api';
+// API_BASE_URL already includes '/api/' at the end, so we use it directly
+const API_URL = API_BASE_URL.replace(/\/api\/$/, '');
 
 /**
  * Admin Login - Đăng nhập cho admin

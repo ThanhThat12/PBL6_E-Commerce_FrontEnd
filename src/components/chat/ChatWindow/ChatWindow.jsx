@@ -30,10 +30,26 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
     {
       onMessage: (message) => {
         setMessages((prev) => {
-          // Avoid duplicates
+          // 1) If server message already exists by id, ignore
           if (prev.find((m) => m.id === message.id)) {
             return prev;
           }
+
+          // 2) Replace optimistic (SENDING) message from same sender & content
+          const optimisticIndex = prev.findIndex(
+            (m) =>
+              m.status === 'SENDING' &&
+              m.senderId === message.senderId &&
+              m.content === message.content
+          );
+
+          if (optimisticIndex !== -1) {
+            const newMessages = [...prev];
+            newMessages.splice(optimisticIndex, 1, message);
+            return newMessages;
+          }
+
+          // 3) Default: append new message
           return [...prev, message];
         });
 
@@ -292,7 +308,7 @@ const ChatWindow = ({ isOpen, onClose, onMinimize, selectedConversationId: propC
             ? 'Chatbot'
             : (view === 'chat' && selectedConversation
                 ? (selectedConversation.type === 'SHOP'
-                    ? (selectedConversation.shopName || `Shop #${selectedConversation.id}`)
+                    ? (selectedConversation.shopName || `Shop ${selectedConversation.id}`)
                     : (selectedConversation.otherParticipantName || 'Hỗ trợ khách hàng'))
                 : 'Tin nhắn')}
         </h3>

@@ -13,7 +13,7 @@ export default function useOrderNotification(userId, onMessage) {
   useEffect(() => {
     if (!userId) return;
 
-    const socket = new SockJS(`${process.env.REACT_APP_API_URL || 'https://localhost:8081'}/ws`);
+    const socket = new SockJS(`${process.env.REACT_APP_API_URL_WS}`);
     const client = Stomp.over(socket);
 
     client.debug = (str) => {

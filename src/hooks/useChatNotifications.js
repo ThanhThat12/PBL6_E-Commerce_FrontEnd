@@ -4,7 +4,7 @@ import { Stomp } from '@stomp/stompjs';
 import { getUnreadMessagesCount } from '../services/chatService';
 import { getAccessToken } from '../utils/storage';
 
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://localhost:8081/ws';
+const SOCKET_URL = `${process.env.REACT_APP_API_URL_WS}`;
 
 /**
  * Hook to manage chat notifications and unread message count

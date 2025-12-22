@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import useNotifications from '../hooks/useNotifications';
 import useChatNotifications from '../hooks/useChatNotifications';
 import { useAuth } from './AuthContext';
@@ -12,20 +13,51 @@ const NotificationContext = createContext(null);
  */
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
+  const location = useLocation();
   
   console.log('NotificationProvider render - user:', user?.id, user?.role);
   
-  // Determine role based on user data - memoize to prevent re-calculation
-  const role = useMemo(() => user?.role === 'SELLER' ? 'SELLER' : 'BUYER', [user?.role]);
+  // ✅ Determine role based on CURRENT PAGE or user.role
+  // If on admin pages → role = ADMIN
+  // If on seller pages → role = SELLER
+  // Otherwise → role = BUYER (even if user is a seller buying products)
+  const role = useMemo(() => {
+    console.log('🔍 [NotificationContext] Determining role - pathname:', location.pathname);
+    if (location.pathname.startsWith('/admin')) {
+      console.log('✅ [NotificationContext] Role: ADMIN');
+      return 'ADMIN';
+    }
+    if (location.pathname.startsWith('/seller')) {
+      console.log('✅ [NotificationContext] Role: SELLER');
+      return 'SELLER';
+    }
+    console.log('✅ [NotificationContext] Role: BUYER (default)');
+    return 'BUYER';
+  }, [location.pathname]);
+  
   const userId = useMemo(() => user?.id, [user?.id]);
   
   console.log('NotificationProvider - userId:', userId, 'role:', role);
   
   // Order notifications WebSocket connection
-  const notificationData = useNotifications(userId, role);
+  const notificationData = userId ? useNotifications(userId, role) : {
+    notifications: [],
+    connected: false,
+    unreadCount: 0,
+    markAsRead: () => {},
+    markAllAsRead: () => {},
+    clearAll: () => {},
+    deleteNotification: () => {},
+  };
 
   // Chat notifications WebSocket connection
-  const chatNotificationData = useChatNotifications(userId);
+  const chatNotificationData = userId ? useChatNotifications(userId) : {
+    unreadCount: 0,
+    latestMessage: null,
+    connected: false,
+    refreshCount: () => {},
+    resetUnreadCount: () => {},
+  };
 
   console.log('NotificationContext - Chat unread:', chatNotificationData.unreadCount, 'Latest message:', chatNotificationData.latestMessage);
 

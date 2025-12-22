@@ -60,8 +60,8 @@ export default function useChatWebSocket(conversationId, callbacks = {}) {
       return;
     }
 
-    const apiUrl = process.env.REACT_APP_API_URL || 'https://localhost:8081';
-    const socket = new SockJS(`${apiUrl}/ws`);
+    const apiUrl = process.env.REACT_APP_API_URL_WS;
+    const socket = new SockJS(`${apiUrl}`);
     const client = Stomp.over(socket);
 
     // Enable debug in development

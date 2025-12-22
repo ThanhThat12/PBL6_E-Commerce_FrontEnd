@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/constants';
 
-const API_BASE_URL = 'https://localhost:8081/api/admin/dashboard';
+const ADMIN_DASHBOARD_BASE_URL = `${API_BASE_URL}admin/dashboard`;
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('adminToken');
@@ -15,7 +16,7 @@ const adminDashboardService = {
   // 1. Get Dashboard Statistics
   getDashboardStats: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/stats`, getAuthHeader());
+      const response = await axios.get(`${ADMIN_DASHBOARD_BASE_URL}/stats`, getAuthHeader());
       return response.data;
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -26,7 +27,7 @@ const adminDashboardService = {
   // 2. Get Sales by Category
   getSalesByCategory: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/sales-by-category`, getAuthHeader());
+      const response = await axios.get(`${ADMIN_DASHBOARD_BASE_URL}/sales-by-category`, getAuthHeader());
       return response.data;
     } catch (error) {
       console.error('Error fetching sales by category:', error);
@@ -37,7 +38,7 @@ const adminDashboardService = {
   // 3. Get Top Selling Products
   getTopSellingProducts: async (limit = 10) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/top-products`, {
+      const response = await axios.get(`${ADMIN_DASHBOARD_BASE_URL}/top-products`, {
         ...getAuthHeader(),
         params: { limit }
       });
@@ -51,7 +52,7 @@ const adminDashboardService = {
   // 4. Get Recent Orders
   getRecentOrders: async (limit = 10) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/recent-orders`, {
+      const response = await axios.get(`${ADMIN_DASHBOARD_BASE_URL}/recent-orders`, {
         ...getAuthHeader(),
         params: { limit }
       });
@@ -65,7 +66,7 @@ const adminDashboardService = {
   // 5. Get Revenue Chart Data
   getRevenueChart: async (months = 12) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/revenue-chart`, {
+      const response = await axios.get(`${ADMIN_DASHBOARD_BASE_URL}/revenue-chart`, {
         ...getAuthHeader(),
         params: { months }
       });

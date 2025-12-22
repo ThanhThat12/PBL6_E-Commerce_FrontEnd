@@ -108,7 +108,7 @@ export const getFeaturedProducts = async (limit = 8) => {
  * @param {number} size - page size
  * @returns {Promise<{items: Array, page: number, totalPages: number, totalElements: number, pageSize: number}>}
  */
-export const getAllProductsPage = async (page = 0, size = 12) => {
+export const getAllProductsPage = async (page = 0, size = 20) => {
   try {
     const response = await api.get('products', {
       params: {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiPackage, FiMapPin } from 'react-icons/fi';
-import { getShopLogo, handleImageError, DEFAULT_SHOP_LOGO } from '../../utils/placeholderImage';
+import { FiPackage } from 'react-icons/fi';
+import { DEFAULT_SHOP_LOGO, handleImageError } from '../../utils/placeholderImage';
 
 /**
  * ShopCard Component - Display shop info in search results
@@ -33,12 +33,10 @@ const ShopCard = ({ shop }) => {
         {/* Shop Logo */}
         <div className="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden border-2 border-primary-100 group-hover:border-primary-300 transition-colors">
           <img
-            src={logoUrl || defaultLogo}
+            src={logoUrl || DEFAULT_SHOP_LOGO}
             alt={name}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = defaultLogo;
-            }}
+            onError={(e) => handleImageError(e, DEFAULT_SHOP_LOGO)}
           />
         </div>
 

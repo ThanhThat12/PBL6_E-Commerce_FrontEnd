@@ -216,9 +216,8 @@ const VouchersTable = () => {
     setShowDetailModal(true);
   };
 
-  // handleUpdateVoucher is handled internally by VoucherDetailModal
-  // eslint-disable-next-line no-unused-vars
-  const _handleUpdateVoucher = async (updatedData) => {
+  // Handle voucher update - refresh data after update
+  const handleUpdateVoucher = async (updatedData) => {
     try {
       console.log('🔄 [VouchersTable] Voucher updated, refreshing data...');
       

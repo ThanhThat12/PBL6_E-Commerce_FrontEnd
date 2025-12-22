@@ -3,9 +3,7 @@ import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
 
 // Automatically use https if page is loaded over https
-const WS_URL = window.location.protocol === 'https:' 
-  ? 'https://localhost:8081/ws' 
-  : 'http://localhost:8081/ws';
+const WS_URL = `${process.env.REACT_APP_API_URL_WS}`;
 
 /**
  * Custom hook để quản lý notifications với WebSocket

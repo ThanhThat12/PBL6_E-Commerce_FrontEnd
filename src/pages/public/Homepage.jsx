@@ -71,7 +71,7 @@ const HomePage = () => {
         setLoading(true);
         setError(null);
 
-        const result = await getAllProductsPage(currentPage, 12);
+        const result = await getAllProductsPage(currentPage, 20);
         setAllProducts(result.items);
         setTotalPages(result.totalPages);
       } catch (err) {

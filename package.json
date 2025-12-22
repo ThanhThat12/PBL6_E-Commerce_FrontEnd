@@ -44,7 +44,8 @@
     "zustand": "^5.0.8"
   },
   "scripts": {
-    "start": "cross-env HTTPS=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
+    "start": "cross-env HTTPS=true HOST=0.0.0.0 DISABLE_ESLINT_PLUGIN=true react-scripts start",
+    "start:http": "cross-env HOST=0.0.0.0 DISABLE_ESLINT_PLUGIN=true react-scripts start",
     "build": "cross-env DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
