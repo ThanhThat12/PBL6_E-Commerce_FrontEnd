@@ -73,28 +73,43 @@ export const loginWithGoogle = async (idToken) => {
     const response = await api.post(API_ENDPOINTS.AUTH.LOGIN_GOOGLE, {
       idToken,
     });
-    
+
     console.log('[loginWithGoogle] Response:', response);
-    
-    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
-    // Note: Backend does NOT return user object, need to fetch separately
-    if (response.statusCode === 200 && response.data) {
+
+    // Backend may return:
+    // - { statusCode: 200, data: { token, refreshToken }, message }
+    // - hoặc { status: 200, data: { token, refreshToken }, message }
+    // => Chuẩn hoá điều kiện success cho cả hai trường hợp
+    const isSuccessStatus =
+      response &&
+      (response.statusCode === 200 ||
+        response.status === 200 ||
+        response.status === 'success');
+
+    // Note: Backend thường không trả user object trực tiếp, cần fetch riêng
+    if (isSuccessStatus && response.data) {
       const { token, refreshToken } = response.data;
       
       // Save tokens first (without user info)
       if (token) saveAccessToken(token, true);
       if (refreshToken) saveRefreshToken(refreshToken, true);
-      
+
       // Fetch user info using the new token
       try {
         const userResponse = await api.get(API_ENDPOINTS.PROFILE.ME);
         console.log('[loginWithGoogle] User info:', userResponse);
-        
+
         // userResponse is ResponseDTO<UserInfoDTO>
-        if (userResponse.statusCode === 200 && userResponse.data) {
+        const isUserSuccess =
+          userResponse &&
+          (userResponse.statusCode === 200 ||
+            userResponse.status === 200 ||
+            userResponse.status === 'success');
+
+        if (isUserSuccess && userResponse.data) {
           const user = userResponse.data;
           saveUserInfo(user);
-          
+
           return {
             status: 'success',
             message: response.message || 'Đăng nhập Google thành công',
@@ -105,7 +120,7 @@ export const loginWithGoogle = async (idToken) => {
         console.error('[loginWithGoogle] Failed to fetch user info:', userError);
         // Continue without user info - will be fetched in AuthContext
       }
-      
+
       return {
         status: 'success',
         message: response.message || 'Đăng nhập Google thành công',
@@ -133,28 +148,42 @@ export const loginWithFacebook = async (accessToken) => {
     const response = await api.post(API_ENDPOINTS.AUTH.LOGIN_FACEBOOK, {
       accessToken,
     });
-    
+
     console.log('[loginWithFacebook] Response:', response);
-    
-    // Backend returns: ResponseDTO { statusCode: 200, data: { token, refreshToken }, message }
-    // Note: Backend does NOT return user object, need to fetch separately
-    if (response.statusCode === 200 && response.data) {
+
+    // Backend có cấu trúc ResponseDTO giống Google:
+    // { status: 200, error: null, message: '...', data: { token, refreshToken } }
+    // nhưng ta cũng support cả statusCode / status = 'success' cho đồng bộ.
+    const isSuccessStatus =
+      response &&
+      (response.statusCode === 200 ||
+        response.status === 200 ||
+        response.status === 'success');
+
+    // Note: Backend không trả user object trực tiếp, cần fetch riêng
+    if (isSuccessStatus && response.data) {
       const { token, refreshToken } = response.data;
-      
+
       // Save tokens first (without user info)
       if (token) saveAccessToken(token, true);
       if (refreshToken) saveRefreshToken(refreshToken, true);
-      
+
       // Fetch user info using the new token
       try {
         const userResponse = await api.get(API_ENDPOINTS.PROFILE.ME);
         console.log('[loginWithFacebook] User info:', userResponse);
-        
+
+        const isUserSuccess =
+          userResponse &&
+          (userResponse.statusCode === 200 ||
+            userResponse.status === 200 ||
+            userResponse.status === 'success');
+
         // userResponse is ResponseDTO<UserInfoDTO>
-        if (userResponse.statusCode === 200 && userResponse.data) {
+        if (isUserSuccess && userResponse.data) {
           const user = userResponse.data;
           saveUserInfo(user);
-          
+
           return {
             status: 'success',
             message: response.message || 'Đăng nhập Facebook thành công',
@@ -165,14 +194,14 @@ export const loginWithFacebook = async (accessToken) => {
         console.error('[loginWithFacebook] Failed to fetch user info:', userError);
         // Continue without user info - will be fetched in AuthContext
       }
-      
+
       return {
         status: 'success',
         message: response.message || 'Đăng nhập Facebook thành công',
         data: { token, refreshToken, user: null },
       };
     }
-    
+
     return {
       status: 'error',
       message: response.message || 'Đăng nhập Facebook thất bại',
