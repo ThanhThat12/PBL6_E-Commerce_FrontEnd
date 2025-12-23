@@ -246,7 +246,7 @@ const WriteReviewModal = ({
   if (!isOpen) return null;
 
   const commentLength = comment.length;
-  const isCommentWarning = commentLength >= MAX_COMMENT_LENGTH - 50;
+
   const isCommentError = commentLength >= MAX_COMMENT_LENGTH;
 
   return (

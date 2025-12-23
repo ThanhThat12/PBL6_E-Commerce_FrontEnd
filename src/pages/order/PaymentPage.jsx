@@ -565,13 +565,18 @@ const PaymentPage = () => {
 
         // total amount for payment - computed
 
-        const momoPayload = {
-          orderId: momoOrderId,
-          amount: Math.round(totalAmount),
-          orderInfo: `Thanh toán ${createdOrders.length} đơn hàng`,
-          returnUrl: `${window.location.origin}/payment-result`,
-          notifyUrl: `${window.location.origin}/api/payment/momo/callback`
-        };
+// ...existing code...
+      const returnUrl = process.env.REACT_APP_MOMO_RETURN_URL;
+      const notifyUrl = process.env.REACT_APP_MOMO_NOTIFY_URL;
+
+      const momoPayload = {
+        orderId: momoOrderId,
+        amount: Math.round(totalAmount),
+        orderInfo: `Thanh toán ${createdOrders.length} đơn hàng`,
+        returnUrl,
+        notifyUrl
+      };
+
 
         // MoMo payload prepared
 
