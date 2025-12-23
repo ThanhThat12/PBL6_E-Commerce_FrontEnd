@@ -1,6 +1,22 @@
 import React from "react";
 
 const ActivityFeed = ({ activities }) => {
+  // Map backend type to frontend type
+  const mapActivityType = (backendType) => {
+    switch (backendType) {
+      case 'NEW_ORDER':
+        return 'order';
+      case 'NEW_CUSTOMER':
+        return 'user';
+      case 'PRODUCT_UPDATED':
+        return 'product';
+      case 'ORDER_COMPLETED':
+        return 'payment';
+      default:
+        return 'default';
+    }
+  };
+
   const getActivityIcon = (type) => {
     switch (type) {
       case 'order':
@@ -38,22 +54,33 @@ const ActivityFeed = ({ activities }) => {
         <button className="view-all-btn">View All</button>
       </div>
       <div className="activity-list">
-        {activities.map((activity, index) => (
-          <div key={index} className="activity-item">
-            <div 
-              className="activity-icon"
-              style={{ backgroundColor: `${getActivityColor(activity.type)}20`, color: getActivityColor(activity.type) }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getActivityIcon(activity.type)} />
-              </svg>
-            </div>
+        {activities && activities.length > 0 ? (
+          activities.map((activity, index) => {
+            const mappedType = mapActivityType(activity.type);
+            return (
+              <div key={index} className="activity-item">
+                <div 
+                  className="activity-icon"
+                  style={{ backgroundColor: `${getActivityColor(mappedType)}20`, color: getActivityColor(mappedType) }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getActivityIcon(mappedType)} />
+                  </svg>
+                </div>
+                <div className="activity-content">
+                  <div className="activity-text">{activity.message}</div>
+                  <div className="activity-time">{activity.timeAgo}</div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="activity-item">
             <div className="activity-content">
-              <div className="activity-text">{activity.text}</div>
-              <div className="activity-time">{activity.time}</div>
+              <div className="activity-text" style={{ color: '#6B7280', fontStyle: 'italic' }}>Không có hoạt động gần đây</div>
             </div>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

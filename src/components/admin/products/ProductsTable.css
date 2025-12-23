@@ -199,6 +199,11 @@
   color: #ea580c;
 }
 
+.stat-red .stat-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
 .stat-purple .stat-icon {
   background: #ede9fe;
   color: #7c3aed;
@@ -396,6 +401,15 @@
 
 .status-pending .status-dot {
   color: #92400e;
+}
+
+.status-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-inactive .status-dot {
+  color: #991b1b;
 }
 
 /* Sales Styles */

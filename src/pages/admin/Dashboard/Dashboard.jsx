@@ -13,12 +13,15 @@ import "./Dashboard.css";
 const DashboardPage = () => {
   const [timeRange, setTimeRange] = useState("thisWeek");
   const [loading, setLoading] = useState(true);
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const [showAllOrders, setShowAllOrders] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     stats: null,
     categories: [],
     topProducts: [],
     recentOrders: [],
-    revenueChart: []
+    revenueChart: [],
+    recentActivities: []
   });
 
   // Fetch dashboard data from API
@@ -26,12 +29,13 @@ const DashboardPage = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [stats, categories, topProducts, recentOrders, revenueChart] = await Promise.all([
+        const [stats, categories, topProducts, recentOrders, revenueChart, recentActivities] = await Promise.all([
           adminDashboardService.getDashboardStats(),
           adminDashboardService.getSalesByCategory(),
           adminDashboardService.getTopSellingProducts(10),
           adminDashboardService.getRecentOrders(10),
-          adminDashboardService.getRevenueChart(12)
+          adminDashboardService.getRevenueChart(12),
+          adminDashboardService.getRecentActivities(4)
         ]);
 
         setDashboardData({
@@ -39,7 +43,8 @@ const DashboardPage = () => {
           categories,
           topProducts,
           recentOrders,
-          revenueChart
+          revenueChart,
+          recentActivities
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -98,7 +103,7 @@ const DashboardPage = () => {
 
   // Format top products data for TopProductsTable component
   const formatTopProducts = () => {
-    return dashboardData.topProducts.map(product => ({
+    const allProducts = dashboardData.topProducts.map(product => ({
       name: product.productName,
       sku: `PRD${product.productId}`,
       category: product.categoryName,
@@ -107,11 +112,14 @@ const DashboardPage = () => {
       status: product.status,
       image: product.mainImage
     }));
+    
+    // Return first 5 or all 10 based on state
+    return showAllProducts ? allProducts : allProducts.slice(0, 5);
   };
 
   // Format recent orders data for RecentOrdersTable component
   const formatRecentOrders = () => {
-    return dashboardData.recentOrders.map(order => ({
+    const allOrders = dashboardData.recentOrders.map(order => ({
       id: order.id,
       customer: {
         name: order.customerName,
@@ -122,6 +130,9 @@ const DashboardPage = () => {
       amount: order.totalAmount?.toLocaleString('vi-VN'),
       status: translateStatus(order.status)
     }));
+    
+    // Return first 5 or all 10 based on state
+    return showAllOrders ? allOrders : allOrders.slice(0, 5);
   };
 
   // Translate order status to Vietnamese
@@ -249,16 +260,24 @@ const DashboardPage = () => {
 
         {/* Top Selling Products - Full Width Row */}
         <div className="table-section">
-          <TopProductsTable products={formatTopProducts()} />
+          <TopProductsTable 
+            products={formatTopProducts()} 
+            onViewAll={() => setShowAllProducts(!showAllProducts)}
+            showingAll={showAllProducts}
+          />
         </div>
 
         {/* Recent Orders - Full Width Row */}
         <div className="table-section">
-          <RecentOrdersTable orders={formatRecentOrders()} />
+          <RecentOrdersTable 
+            orders={formatRecentOrders()} 
+            onViewAll={() => setShowAllOrders(!showAllOrders)}
+            showingAll={showAllOrders}
+          />
         </div>
 
         {/* Real-time Activity Stream */}
-        <ActivityFeed activities={activities} />
+        <ActivityFeed activities={dashboardData.recentActivities} />
       </div>
     </Layout>
   );

@@ -75,6 +75,20 @@ const adminDashboardService = {
       console.error('Error fetching revenue chart:', error);
       throw error;
     }
+  },
+
+  // 6. Get Recent Activities
+  getRecentActivities: async (limit = 10) => {
+    try {
+      const response = await axios.get(`${ADMIN_DASHBOARD_BASE_URL}/recent-activities`, {
+        ...getAuthHeader(),
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recent activities:', error);
+      throw error;
+    }
   }
 };
 

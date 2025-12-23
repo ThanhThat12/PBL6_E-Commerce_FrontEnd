@@ -1,0 +1,27 @@
+.banner-container {
+  padding: 24px;
+}
+
+.banner-header {
+  margin-bottom: 24px;
+}
+
+.banner-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.banner-subtitle {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.banner-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-height: 400px;
+}

@@ -1,12 +1,14 @@
 import React from "react";
 import { Package } from "lucide-react";
 
-const TopProductsTable = ({ products }) => {
+const TopProductsTable = ({ products, onViewAll, showingAll = false }) => {
   return (
     <div className="table-card">
       <div className="table-header">
         <h3 className="table-title">Top Sản Phẩm Bán Chạy</h3>
-        <button className="view-all-btn">Xem Tất Cả</button>
+        <button className="view-all-btn" onClick={onViewAll}>
+          {showingAll ? 'Thu gọn' : 'Xem Tất Cả'}
+        </button>
       </div>
       <div className="table-container">
         <table className="custom-table">

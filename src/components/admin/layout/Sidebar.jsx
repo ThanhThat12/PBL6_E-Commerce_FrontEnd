@@ -108,7 +108,7 @@ const Sidebar = ({ onToggle }) => {
     { name: "Wallet", icon: <Wallet size={20} />, path: "/admin/wallet" },
     { name: "Chat", icon: <MessageSquare size={20} />, path: "/admin/chat" },
     { name: "My Profile", icon: <User size={20} />, path: "/admin/myprofile" },
-    { name: "Setting", icon: <Settings size={20} />, path: "/admin/settings" },
+    { name: "Banner", icon: <Settings size={20} />, path: "/admin/banner" },
   ];
 
   return (

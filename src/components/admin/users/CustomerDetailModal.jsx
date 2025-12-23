@@ -236,7 +236,7 @@ const CustomerDetailModal = ({ customer, onClose, onUpdate }) => {
               <User size={32} />
             </div>
             <div>
-              <h2 className="admin-customer-detail-modal-title">{customer.username || 'N/A'}</h2>
+              <h2 className="admin-customer-detail-modal-title">{customer.fullName || customer.username || 'N/A'}</h2>
               <p className="admin-customer-detail-modal-subtitle">User ID: #{customer.id}</p>
             </div>
           </div>
