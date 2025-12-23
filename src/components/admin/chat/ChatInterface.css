@@ -257,11 +257,18 @@
 
 .admin-chat-message.received {
   align-self: flex-start;
+  flex-direction: row;
 }
 
 .admin-chat-message.sent {
   align-self: flex-end;
   flex-direction: row-reverse;
+}
+
+.admin-chat-message-avatar-container {
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
 }
 
 .admin-chat-message-avatar {
@@ -270,6 +277,34 @@
   border-radius: 50%;
   object-fit: cover;
   align-self: flex-end;
+}
+
+.admin-chat-message-avatar-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #0084ff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  align-self: flex-end;
+}
+
+.admin-chat-message-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.admin-chat-message-sender-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #65676b;
+  margin-bottom: 4px;
+  padding: 0 4px;
 }
 
 .admin-chat-message-bubble {

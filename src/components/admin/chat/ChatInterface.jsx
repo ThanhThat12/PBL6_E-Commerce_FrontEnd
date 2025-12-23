@@ -106,9 +106,12 @@ const ChatInterface = () => {
   const mapMessages = (rawMessages) =>
     rawMessages.map((m) => {
       const isImage = m.messageType === 'IMAGE';
+      const isOwnMessage = currentUserId && m.senderId === currentUserId;
       return {
         id: m.id,
-        sender: currentUserId && m.senderId === currentUserId ? 'me' : 'other',
+        sender: isOwnMessage ? 'me' : 'other',
+        senderId: m.senderId,
+        senderName: m.senderName || 'Người dùng',
         text: isImage ? '' : m.content,
         image: isImage ? m.content : null,
         time: getTimeLabel(m.createdAt),
@@ -230,16 +233,19 @@ const ChatInterface = () => {
         const messageData = response.data || response;
         if (messageData) {
           const isImage = messageData.messageType === 'IMAGE';
-          const mapped = {
-            id: messageData.id,
-            sender: currentUserId && messageData.senderId === currentUserId ? 'me' : 'other',
-            text: isImage ? '' : messageData.content,
-            image: isImage ? messageData.content : null,
-            time: getTimeLabel(messageData.createdAt),
-            avatar: messageData.senderAvatar || 'https://i.pravatar.cc/150?img=12',
-            status: messageData.status,
-            messageType: messageData.messageType
-          };
+        const isOwnMessage = currentUserId && messageData.senderId === currentUserId;
+        const mapped = {
+          id: messageData.id,
+          sender: isOwnMessage ? 'me' : 'other',
+          senderId: messageData.senderId,
+          senderName: messageData.senderName || 'Người dùng',
+          text: isImage ? '' : messageData.content,
+          image: isImage ? messageData.content : null,
+          time: getTimeLabel(messageData.createdAt),
+          avatar: messageData.senderAvatar || 'https://i.pravatar.cc/150?img=12',
+          status: messageData.status,
+          messageType: messageData.messageType
+        };
           setMessages((prev) => [...prev, mapped]);
           setInputText('');
           setSelectedImage(null);
@@ -371,10 +377,21 @@ const ChatInterface = () => {
             <div className="admin-chat-messages-container">
               {messages.map((message) => (
                 <div key={message.id} className={`admin-chat-message ${message.sender === 'other' ? 'received' : 'sent'}`}>
-                  {message.avatar && (
-                    <img src={message.avatar} alt="" className="admin-chat-message-avatar" />
+                  {message.sender === 'other' && (
+                    <div className="admin-chat-message-avatar-container">
+                      {message.avatar ? (
+                        <img src={message.avatar} alt={message.senderName} className="admin-chat-message-avatar" />
+                      ) : (
+                        <div className="admin-chat-message-avatar-placeholder">
+                          {message.senderName?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
+                    </div>
                   )}
-                  <div>
+                  <div className="admin-chat-message-content-wrapper">
+                    {message.sender === 'other' && (
+                      <div className="admin-chat-message-sender-name">{message.senderName}</div>
+                    )}
                     <div className="admin-chat-message-bubble">
                       {message.image ? (
                         <img src={message.image} alt="Uploaded" className="admin-chat-message-image" />
