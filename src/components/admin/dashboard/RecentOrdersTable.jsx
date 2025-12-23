@@ -1,12 +1,14 @@
 import React from "react";
 import { User } from "lucide-react";
 
-const RecentOrdersTable = ({ orders }) => {
+const RecentOrdersTable = ({ orders, onViewAll, showingAll = false }) => {
   return (
     <div className="table-card">
       <div className="table-header">
         <h3 className="table-title">Đơn Hàng Gần Đây</h3>
-        <button className="view-all-btn">Xem Tất Cả</button>
+        <button className="view-all-btn" onClick={onViewAll}>
+          {showingAll ? 'Thu gọn' : 'Xem Tất Cả'}
+        </button>
       </div>
       <div className="table-container">
         <table className="custom-table">

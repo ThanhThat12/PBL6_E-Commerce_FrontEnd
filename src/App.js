@@ -68,6 +68,7 @@ import AdminMyprofilePage from "./pages/admin/MyProfile/MyprofilePage";
 import AdminVouchersPage from "./pages/admin/Vouchers/VouchersPage";
 import AdminChatPage from './pages/admin/Chat/ChatPage';
 import AdminWalletPage from './pages/admin/Wallet/WalletPage';
+import AdminBannerPage from './pages/admin/Banner/BannerPage';
 import AdminSellerRegistrationsPage from "./pages/admin/SellerRegistrations/SellerRegistrationsPage";
 
 const ConditionalChatContainer = () => {
@@ -223,6 +224,7 @@ function App() {
             <Route path="/admin/myprofile" element={<ProtectedRouteAdmin><AdminMyprofilePage /></ProtectedRouteAdmin>} />
             <Route path="/admin/chat" element={<ProtectedRouteAdmin><AdminChatPage/></ProtectedRouteAdmin>} />            
             <Route path="/admin/wallet" element={<ProtectedRouteAdmin><AdminWalletPage /></ProtectedRouteAdmin>} />
+            <Route path="/admin/banner" element={<ProtectedRouteAdmin><AdminBannerPage /></ProtectedRouteAdmin>} />
             <Route path="/admin/settings" element={<ProtectedRouteAdmin><AdminSettingsPage /></ProtectedRouteAdmin>} />
             {/* ================================================= */}
 

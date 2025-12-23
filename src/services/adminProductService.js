@@ -171,6 +171,28 @@ export const getProductDetail = async (productId) => {
   }
 };
 
+/**
+ * Update product status (Active/Inactive)
+ * Backend endpoint: PUT /api/admin/products/{productId}/status?isActive={isActive}
+ * @param {number} productId - Product ID
+ * @param {boolean} isActive - New status (true = Active, false = Inactive)
+ * @returns {Promise} - Response with success message
+ */
+export const updateProductStatus = async (productId, isActive) => {
+  try {
+    console.log('📝 [adminProductService] Updating product status:', productId, 'isActive:', isActive);
+    const response = await apiClient.put(`/admin/products/${productId}/status`, null, {
+      params: { isActive }
+    });
+    console.log('✅ [adminProductService] Product status updated:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [adminProductService] Error updating product status:', error);
+    console.error('❌ Error response:', error.response?.data);
+    throw error;
+  }
+};
+
 export default {
   getProductsWithPaging,
   getProductStats,
@@ -178,5 +200,6 @@ export default {
   getProductsByStatus,
   deleteProduct,
   searchProducts,
-  getProductDetail
+  getProductDetail,
+  updateProductStatus
 };

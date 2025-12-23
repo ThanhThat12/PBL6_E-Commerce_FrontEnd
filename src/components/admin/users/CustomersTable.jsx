@@ -455,8 +455,9 @@ const CustomersTable = () => {
           <table className="customers-table">
             <thead>
               <tr>
-                <th>Username</th>
                 <th>Customer ID</th>
+                <th>Full Name</th>
+                <th>Username</th>
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Status</th>
@@ -481,8 +482,9 @@ const CustomersTable = () => {
                 })
                 .map((customer, index) => (
                   <tr key={customer.id || index} className="table-row">
-                    <td className="customer-name">{customer.username || customer.name || 'N/A'}</td>
                     <td className="customer-id">#{customer.id}</td>
+                    <td className="customer-name">{customer.fullName || 'N/A'}</td>
+                    <td className="customer-username">{customer.username || customer.name || 'N/A'}</td>
                     <td className="customer-email">{customer.email || 'N/A'}</td>
                     <td className="customer-phone">{customer.phoneNumber || customer.phone || 'N/A'}</td>
                     <td>

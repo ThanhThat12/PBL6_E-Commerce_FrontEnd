@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Calendar, Edit2, Save, X, Camera, Key, RotateCcw, CheckCircle, XCircle } from 'lucide-react';
 import './MyProfile.css';
-import { getAdminMyProfile, updateAdminMyProfile, changeAdminPassword, updateAdminAvatar } from '../../../services/adminService';
+import { getAdminMyProfile, updateAdminMyProfile, changeAdminPassword, updateAdminAvatar, resetUserPassword } from '../../../services/adminService';
 import Toast from '../common/Toast';
+import Confirm from '../common/Confirm';
+import ImageUploadService from '../../../services/ImageUploadService';
 
 const MyProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -10,6 +12,7 @@ const MyProfile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [showConfirm, setShowConfirm] = useState(false);
   const [profileData, setProfileData] = useState({
     id: '',
     username: '',
@@ -72,15 +75,55 @@ const MyProfile = () => {
       setLoading(true);
       setError(null);
 
-      // 1. Update avatar if changed
+      // 1. Upload avatar to Cloudinary if changed
+      let uploadedAvatarUrl = null;
       if (avatarFile) {
-        // TODO: Upload avatar file to server/cloud storage first
-        // For now, use the preview URL (base64)
-        const avatarResponse = await updateAdminAvatar(avatarPreview);
-        console.log('✅ Avatar updated:', avatarResponse.data);
+        try {
+          console.log('📤 Uploading avatar to Cloudinary...');
+          const uploadResponse = await ImageUploadService.uploadAvatar(avatarFile);
+          console.log('✅ Avatar uploaded to Cloudinary:', uploadResponse);
+          
+          if (uploadResponse && uploadResponse.data && uploadResponse.data.url) {
+            uploadedAvatarUrl = uploadResponse.data.url;
+            console.log('🖼️ Avatar URL:', uploadedAvatarUrl);
+          } else {
+            throw new Error('Invalid upload response format');
+          }
+        } catch (uploadError) {
+          console.error('❌ Error uploading avatar:', uploadError);
+          setToast({
+            show: true,
+            message: 'Failed to upload avatar: ' + (uploadError.message || 'Unknown error'),
+            type: 'error'
+          });
+          setLoading(false);
+          return;
+        }
       }
 
-      // 2. Update profile data
+      // 2. Update avatar URL in backend if uploaded
+      if (uploadedAvatarUrl) {
+        try {
+          console.log('📡 Updating avatar URL in backend...');
+          const avatarResponse = await updateAdminAvatar(uploadedAvatarUrl);
+          console.log('✅ Avatar URL updated in backend:', avatarResponse);
+          
+          if (avatarResponse && avatarResponse.data) {
+            setAvatarPreview(avatarResponse.data.avatar || uploadedAvatarUrl);
+          }
+        } catch (avatarError) {
+          console.error('❌ Error updating avatar URL:', avatarError);
+          setToast({
+            show: true,
+            message: 'Avatar uploaded but failed to save URL: ' + (avatarError.message || 'Unknown error'),
+            type: 'error'
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 3. Update profile data (username, fullName, email, phoneNumber)
       const profileUpdateData = {
         username: editedData.username,
         fullName: editedData.fullName,
@@ -92,7 +135,13 @@ const MyProfile = () => {
       
       if (response.status === 200 && response.data) {
         setProfileData(response.data);
-        setAvatarPreview(response.data.avatar || avatarPreview);
+        // Keep the uploaded avatar URL if it was changed, otherwise use the one from response
+        if (uploadedAvatarUrl) {
+          setProfileData(prev => ({ ...prev, avatar: uploadedAvatarUrl }));
+          setAvatarPreview(uploadedAvatarUrl);
+        } else {
+          setAvatarPreview(response.data.avatar);
+        }
         setIsEditing(false);
         setAvatarFile(null);
         setToast({
@@ -207,11 +256,36 @@ const MyProfile = () => {
     }
   };
 
-  const handleResetPassword = async () => {
-    if (window.confirm('Are you sure you want to reset your password? A reset link will be sent to your email.')) {
-      // TODO: Implement API call to reset password
-      console.log('Reset password for:', profileData.email);
-      alert('Password reset link has been sent to your email');
+  const handleResetPassword = () => {
+    setShowConfirm(true);
+  };
+
+  const confirmResetPassword = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔑 Resetting password for admin ID:', profileData.id);
+      const response = await resetUserPassword(profileData.id);
+      
+      if (response.status === 200) {
+        setToast({
+          show: true,
+          message: '✅ Password reset successfully! New password: Admin123@ - Please save this and change it after logging in.',
+          type: 'success'
+        });
+        console.log('✅ Password reset response:', response);
+      }
+    } catch (error) {
+      console.error('❌ Error resetting password:', error);
+      setError(error.message || 'Failed to reset password');
+      setToast({
+        show: true,
+        message: error.message || 'Failed to reset password',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -572,7 +646,19 @@ const MyProfile = () => {
         type={toast.type}
         isVisible={toast.show}
         onClose={() => setToast({ ...toast, show: false })}
-        duration={3000}
+        duration={6000}
+      />
+
+      {/* Confirm Modal */}
+      <Confirm
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={confirmResetPassword}
+        title="Reset Password"
+        message="Are you sure you want to reset your password to default (Admin123@)?\n\nYou will need to change it after logging in again."
+        confirmText="Reset Password"
+        cancelText="Cancel"
+        type="warning"
       />
     </div>
   );

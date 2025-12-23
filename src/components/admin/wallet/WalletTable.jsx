@@ -6,6 +6,7 @@ import adminWalletService from '../../../services/adminWalletService';
 const WalletTable = () => {
   const [activeTab, setActiveTab] = useState('today');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15);
   const [transactions, setTransactions] = useState([]);
@@ -60,14 +61,14 @@ const WalletTable = () => {
     fetchAdminBalance();
   }, []);
 
-  // Fetch transactions when page changes OR search query changes
+  // Fetch transactions when page changes OR search query changes OR status filter changes
   useEffect(() => {
     const fetchTransactions = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        console.log(`🔄 Fetching transactions - page: ${currentPage}, size: ${itemsPerPage}, search: "${searchQuery}"`);
+        console.log(`🔄 Fetching transactions - page: ${currentPage}, size: ${itemsPerPage}, search: "${searchQuery}", status: "${statusFilter}"`);
         
         let response;
         
@@ -109,7 +110,13 @@ const WalletTable = () => {
           return;
         }
         
-        setTransactions(content || []);
+        // Apply status filter on frontend if selected
+        let filteredContent = content || [];
+        if (statusFilter !== 'ALL') {
+          filteredContent = filteredContent.filter(tx => tx.type === statusFilter);
+        }
+        
+        setTransactions(filteredContent);
         setTotalPages(pageInfo?.totalPages || 1);
         setTotalElements(pageInfo?.totalElements || 0);
         
@@ -129,7 +136,7 @@ const WalletTable = () => {
     };
 
     fetchTransactions();
-  }, [currentPage, itemsPerPage, searchQuery]); // Added searchQuery to dependencies
+  }, [currentPage, itemsPerPage, searchQuery, statusFilter]); // Added searchQuery and statusFilter to dependencies
 
   // Fetch recent invoices
   useEffect(() => {
@@ -282,6 +289,13 @@ const WalletTable = () => {
     setCurrentPage(1);
   };
 
+  const handleStatusFilterChange = (e) => {
+    const value = e.target.value;
+    setStatusFilter(value);
+    // Reset to first page when filtering
+    setCurrentPage(1);
+  };
+
   const filterTransactions = () => {
     // TODO: Filter by active tab (monthly/weekly/today)
     return transactions;
@@ -336,6 +350,34 @@ const WalletTable = () => {
                   placeholder="Search by ID, description, order ID, date..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  className="wallet-search-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Section
+          <div className="wallet-filter-section">
+            <div className="wallet-status-filter">
+              <label htmlFor="status-filter">Filter by Status:</label>
+              <select 
+                id="status-filter"
+                value={statusFilter} 
+                onChange={handleStatusFilterChange}
+                className="wallet-status-select"
+              >
+                <option value="ALL">All Transactions</option>
+                <option value="DEPOSIT">Deposit</option>
+                <option value="WITHDRAWAL">Withdrawal</option>
+                <option value="ORDER_PAYMENT">Order Payment</option>
+                <option value="REFUND">Refund</option>
+                <option value="PAYMENT_TO_SELLER">Payment to Seller</option>
+                <option value="PLATFORM_FEE">Platform Fee</option>
+              </select>
+            </div>
+          </div> */}
+
+          {/*     onChange={handleSearchChange}
                   className="wallet-search-input"
                 />
               </div>

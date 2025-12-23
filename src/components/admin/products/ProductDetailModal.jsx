@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { X, Package, Edit2, Box, ShoppingBag, Star, MessageSquare, Calendar, Ruler, Weight, Trash2 } from 'lucide-react';
-import { getProductDetail, deleteProduct } from '../../../services/adminProductService';
+import { X, Package, Edit2, Box, ShoppingBag, Star, MessageSquare, Calendar, Ruler, Weight, Trash2, Save } from 'lucide-react';
+import { getProductDetail, deleteProduct, updateProductStatus } from '../../../services/adminProductService';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import Confirm from '../common/Confirm';
 import Toast from '../common/Toast';
 import './ProductDetailModal.css';
 
@@ -13,6 +14,7 @@ const ProductDetailModal = ({ product, onClose, onUpdate }) => {
   const [editedStatus, setEditedStatus] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showConfirmSave, setShowConfirmSave] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Fetch product detail
@@ -63,11 +65,51 @@ const ProductDetailModal = ({ product, onClose, onUpdate }) => {
     }
   };
 
-  const handleSaveStatus = () => {
-    // TODO: Call update API when available
-    console.log('Update product status to:', editedStatus);
-    setIsEditing(false);
-    // onUpdate?.(); // Refresh data after update
+  const handleSaveClick = () => {
+    setShowConfirmSave(true);
+  };
+
+  const handleConfirmSave = async () => {
+    if (!productDetail) return;
+    
+    try {
+      console.log('💾 [ProductDetailModal] Saving product status:', editedStatus);
+      
+      const response = await updateProductStatus(productDetail.id, editedStatus);
+      
+      if (response.statusCode === 200 || response.status === 200) {
+        console.log('✅ [ProductDetailModal] Product status updated successfully');
+        
+        // Update local state immediately
+        setProductDetail({
+          ...productDetail,
+          isActive: editedStatus
+        });
+        
+        setToast({
+          show: true,
+          message: `Product status updated to ${editedStatus ? 'Active' : 'Inactive'} successfully`,
+          type: 'success'
+        });
+        
+        setIsEditing(false);
+        
+        // Refresh parent list immediately (no delay)
+        onUpdate?.();
+      }
+    } catch (err) {
+      console.error('❌ [ProductDetailModal] Error updating product status:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to update product status';
+      
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: 'error'
+      });
+      
+      // Reset to original status on error
+      setEditedStatus(productDetail?.isActive);
+    }
   };
 
   const handleDelete = async () => {
@@ -223,21 +265,33 @@ const ProductDetailModal = ({ product, onClose, onUpdate }) => {
                             className="status-select"
                           >
                             <option value="true">Active</option>
-                            <option value="false">Pending</option>
+                            <option value="false">Inactive</option>
                           </select>
                         ) : (
-                          <span className={`status-badge ${productDetail.isActive ? 'status-active' : 'status-pending'}`}>
-                            {productDetail.isActive ? 'Active' : 'Pending'}
+                          <span className={`status-badge ${productDetail.isActive ? 'status-active' : 'status-inactive'}`}>
+                            {productDetail.isActive ? 'Active' : 'Inactive'}
                           </span>
                         )}
-                        <button 
-                          className="status-edit-btn" 
-                          onClick={handleEditToggle}
-                          title={isEditing ? 'Cancel' : 'Edit Status'}
-                        >
-                          <Edit2 size={16} />
-                          {isEditing ? 'Cancel' : 'Edit'}
-                        </button>
+                        <div className="status-buttons-group">
+                          {isEditing && (
+                            <button 
+                              className="status-save-btn" 
+                              onClick={handleSaveClick}
+                              title="Save Changes"
+                            >
+                              <Save size={16} />
+                              Save
+                            </button>
+                          )}
+                          <button 
+                            className="status-edit-btn" 
+                            onClick={handleEditToggle}
+                            title={isEditing ? 'Cancel' : 'Edit Status'}
+                          >
+                            <Edit2 size={16} />
+                            {isEditing ? 'Cancel' : 'Edit'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -384,17 +438,6 @@ const ProductDetailModal = ({ product, onClose, onUpdate }) => {
                 </div>
               </div>
 
-              {/* Save button when editing */}
-              {isEditing && (
-                <div className="detail-actions">
-                  <button className="btn-save" onClick={handleSaveStatus}>
-                    Save Changes
-                  </button>
-                  <button className="btn-cancel" onClick={handleEditToggle}>
-                    Cancel
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -415,6 +458,18 @@ const ProductDetailModal = ({ product, onClose, onUpdate }) => {
           `Total Stock: ${productDetail?.totalStock || 0}`,
           `All variants and associated data`
         ]}
+      />
+
+      {/* Confirm Save Status Modal */}
+      <Confirm
+        isOpen={showConfirmSave}
+        onClose={() => setShowConfirmSave(false)}
+        onConfirm={handleConfirmSave}
+        title="Update Product Status"
+        message={`Are you sure you want to change this product status to ${editedStatus ? 'Active' : 'Inactive'}?${!editedStatus ? ' Note: This action will fail if the product is currently in any customer carts.' : ''}`}
+        confirmText="Yes, Update"
+        cancelText="Cancel"
+        type="warning"
       />
 
       {/* Toast Notification */}

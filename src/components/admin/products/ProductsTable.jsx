@@ -177,11 +177,11 @@ const ProductsTable = () => {
       description: 'Currently available'
     },
     { 
-      title: 'Pending Products', 
+      title: 'Inactive Products', 
       value: stats.pendingProducts?.toLocaleString() || '0', 
       icon: <AlertTriangle size={24} />, 
-      color: 'orange',
-      description: 'Awaiting approval'
+      color: 'red',
+      description: 'Currently inactive'
     },
     { 
       title: 'Total Products Sold', 
@@ -274,6 +274,7 @@ const ProductsTable = () => {
   const getStatusClass = (status) => {
     switch(status) {
       case 'Active': return 'status-active';
+      case 'Inactive': return 'status-inactive';
       case 'Pending': return 'status-pending';
       default: return 'status-default';
     }
@@ -356,11 +357,11 @@ const ProductsTable = () => {
     }
   };
 
-  const handleUpdateProduct = async (productId, updatedData) => {
-    console.log('Updating product:', productId, updatedData);
-    // TODO: Call API to update product
-    // For now, just simulate success
-    return Promise.resolve();
+  const handleUpdateProduct = async () => {
+    console.log('🔄 [ProductsTable] Refreshing product list after update...');
+    // Refresh product list and stats
+    await fetchProducts(currentPage);
+    await fetchStats();
   };
 
   const handleCloseModal = () => {
@@ -368,7 +369,7 @@ const ProductsTable = () => {
     setSelectedProduct(null);
   };
 
-  const statuses = ['All', 'Active', 'Pending'];
+  const statuses = ['All', 'Active', 'Inactive'];
 
   return (
     <div>

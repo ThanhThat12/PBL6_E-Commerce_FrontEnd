@@ -373,6 +373,52 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
+/* Filter Section */
+.wallet-filter-section {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+.wallet-status-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wallet-status-filter label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.wallet-status-select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23334155' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  min-width: 200px;
+}
+
+.wallet-status-select:hover {
+  border-color: #10b981;
+}
+
+.wallet-status-select:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
 /* Transaction Table */
 .transaction-table-wrapper {
   overflow-x: auto;
