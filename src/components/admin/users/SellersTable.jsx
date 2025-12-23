@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Eye, Trash2, Users, CheckCircle, Clock, XCircle } from 'lucide-react';
 import SellerDetailModal from './SellerDetailModal';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -7,6 +8,7 @@ import { getSellerStats, getSellerDetail, getSellersPageByStatus, deleteUser } f
 import './SellersTable.css';
 
 const SellersTable = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedSeller, setSelectedSeller] = useState(null);
@@ -382,14 +384,13 @@ const SellersTable = () => {
           </div>
           
           <div className="action-buttons">
-            <button className="approve-btn">
+            <button 
+              className="approve-btn" 
+              onClick={() => navigate('/admin/seller-registrations')}
+            >
               <CheckCircle size={18} />
               Approve Pending
             </button>
-            {/* <button className="export-btn">
-              <TrendingUp size={18} />
-              Export Report
-            </button> */}
           </div>
         </div>
       </div>
