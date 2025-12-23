@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiFacebook } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { GoogleLogin } from '@react-oauth/google';
@@ -17,6 +17,7 @@ import useAuth from '../../hooks/useAuth';
  */
 const LoginForm = () => {
   const { login, loginWithGoogle, loginWithFacebook, error: authError, clearError } = useAuth();
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -84,15 +85,17 @@ const LoginForm = () => {
         console.log('[LoginForm] Login result:', result);
         console.log('[LoginForm] User role:', userRole);
         
+        // Use navigate instead of window.location.href to avoid page reload
+        // This preserves React state and allows AuthContext to properly initialize
         setTimeout(() => {
           if (userRole === 'ADMIN') {
             console.log('[LoginForm] Redirecting to admin dashboard');
-            window.location.href = '/admin/dashboard';
+            navigate('/admin/dashboard');
           } else {
             console.log('[LoginForm] Redirecting to home');
-            window.location.href = ROUTES.HOME;
+            navigate(ROUTES.HOME);
           }
-        }, 1000);
+        }, 500);
       } else {
         // Handle specific error codes
         let errorMessage = result.message || 'Vui lòng kiểm tra lại thông tin đăng nhập';
@@ -144,15 +147,17 @@ const LoginForm = () => {
         console.log('[LoginForm] Google login result:', result);
         console.log('[LoginForm] Google login - User role:', userRole);
         
+        // Use navigate instead of window.location.href to avoid page reload
+        // This preserves React state and allows AuthContext to properly initialize
         setTimeout(() => {
           if (userRole === 'ADMIN') {
             console.log('[LoginForm] Redirecting to admin dashboard');
-            window.location.href = '/admin/dashboard';
+            navigate('/admin/dashboard');
           } else {
             console.log('[LoginForm] Redirecting to home');
-            window.location.href = ROUTES.HOME;
+            navigate(ROUTES.HOME);
           }
-        }, 1000);
+        }, 500);
       } else {
         setAlert({
           type: 'error',
@@ -227,15 +232,17 @@ const LoginForm = () => {
         console.log('[LoginForm] Facebook login result:', result);
         console.log('[LoginForm] Facebook login - User role:', userRole);
         
+        // Use navigate instead of window.location.href to avoid page reload
+        // This preserves React state and allows AuthContext to properly initialize
         setTimeout(() => {
           if (userRole === 'ADMIN') {
             console.log('[LoginForm] Redirecting to admin dashboard');
-            window.location.href = '/admin/dashboard';
+            navigate('/admin/dashboard');
           } else {
             console.log('[LoginForm] Redirecting to home');
-            window.location.href = ROUTES.HOME;
+            navigate(ROUTES.HOME);
           }
-        }, 900);
+        }, 500);
       } else {
         setAlert({ type: 'error', message: 'Đăng nhập Facebook thất bại', description: result.message });
       }

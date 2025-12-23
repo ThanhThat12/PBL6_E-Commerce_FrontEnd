@@ -76,15 +76,12 @@ export const loginWithGoogle = async (idToken) => {
 
     console.log('[loginWithGoogle] Response:', response);
 
-    // Backend may return:
-    // - { statusCode: 200, data: { token, refreshToken }, message }
-    // - hoặc { status: 200, data: { token, refreshToken }, message }
-    // => Chuẩn hoá điều kiện success cho cả hai trường hợp
+    // Backend returns ResponseDTO structure:
+    // { status: 200 (int), error: null, message: "...", data: { token, refreshToken } }
     const isSuccessStatus =
       response &&
-      (response.statusCode === 200 ||
-        response.status === 200 ||
-        response.status === 'success');
+      (response.status === 200 ||
+        response.statusCode === 200);
 
     // Note: Backend thường không trả user object trực tiếp, cần fetch riêng
     if (isSuccessStatus && response.data) {
@@ -100,11 +97,11 @@ export const loginWithGoogle = async (idToken) => {
         console.log('[loginWithGoogle] User info:', userResponse);
 
         // userResponse is ResponseDTO<UserInfoDTO>
+        // Backend returns: { status: 200 (int), error: null, message: "...", data: UserInfoDTO }
         const isUserSuccess =
           userResponse &&
-          (userResponse.statusCode === 200 ||
-            userResponse.status === 200 ||
-            userResponse.status === 'success');
+          (userResponse.status === 200 ||
+            userResponse.statusCode === 200);
 
         if (isUserSuccess && userResponse.data) {
           const user = userResponse.data;
@@ -151,14 +148,12 @@ export const loginWithFacebook = async (accessToken) => {
 
     console.log('[loginWithFacebook] Response:', response);
 
-    // Backend có cấu trúc ResponseDTO giống Google:
-    // { status: 200, error: null, message: '...', data: { token, refreshToken } }
-    // nhưng ta cũng support cả statusCode / status = 'success' cho đồng bộ.
+    // Backend returns ResponseDTO structure:
+    // { status: 200 (int), error: null, message: "...", data: { token, refreshToken } }
     const isSuccessStatus =
       response &&
-      (response.statusCode === 200 ||
-        response.status === 200 ||
-        response.status === 'success');
+      (response.status === 200 ||
+        response.statusCode === 200);
 
     // Note: Backend không trả user object trực tiếp, cần fetch riêng
     if (isSuccessStatus && response.data) {
@@ -173,11 +168,12 @@ export const loginWithFacebook = async (accessToken) => {
         const userResponse = await api.get(API_ENDPOINTS.PROFILE.ME);
         console.log('[loginWithFacebook] User info:', userResponse);
 
+        // userResponse is ResponseDTO<UserInfoDTO>
+        // Backend returns: { status: 200 (int), error: null, message: "...", data: UserInfoDTO }
         const isUserSuccess =
           userResponse &&
-          (userResponse.statusCode === 200 ||
-            userResponse.status === 200 ||
-            userResponse.status === 'success');
+          (userResponse.status === 200 ||
+            userResponse.statusCode === 200);
 
         // userResponse is ResponseDTO<UserInfoDTO>
         if (isUserSuccess && userResponse.data) {
@@ -404,8 +400,8 @@ export const getCurrentUser = async () => {
     console.log('[getCurrentUser] Response:', response);
     
     // Response is ResponseDTO<UserInfoDTO> structure:
-    // { statusCode, message, data: UserInfoDTO }
-    if (response.statusCode === 200 && response.data) {
+    // { status: 200 (int), error: null, message: "...", data: UserInfoDTO }
+    if ((response.status === 200 || response.statusCode === 200) && response.data) {
       console.log('[getCurrentUser] User data:', response.data);
       return response.data;  // Returns UserInfoDTO with id, email, username, role
     }

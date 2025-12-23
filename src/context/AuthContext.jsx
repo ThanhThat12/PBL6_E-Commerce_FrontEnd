@@ -165,8 +165,8 @@ export const AuthProvider = ({ children }) => {
       
       console.log('[AuthContext] loginWithGoogle response:', response);
       
-      // Check for success status (backend returns statusCode: 200)
-      if ((response.status === 'success' || response.statusCode === 200) && response.data) {
+      // Backend returns ResponseDTO: { status: 200 (int), error: null, message: "...", data: {...} }
+      if ((response.status === 200 || response.statusCode === 200 || response.status === 'success') && response.data) {
         // Backend may not return user object directly
         let userData = response.data.user;
         
@@ -232,8 +232,8 @@ export const AuthProvider = ({ children }) => {
       
       console.log('[AuthContext] loginWithFacebook response:', response);
       
-      // Check for success status (backend returns statusCode: 200)
-      if ((response.status === 'success' || response.statusCode === 200) && response.data) {
+      // Backend returns ResponseDTO: { status: 200 (int), error: null, message: "...", data: {...} }
+      if ((response.status === 200 || response.statusCode === 200 || response.status === 'success') && response.data) {
         // Backend may not return user object directly
         let userData = response.data.user;
         
