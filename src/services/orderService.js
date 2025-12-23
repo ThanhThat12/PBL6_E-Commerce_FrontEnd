@@ -1,5 +1,20 @@
+
+
 import api from './api';
 import { API_ENDPOINTS } from '../utils/constants';
+/**
+ * Buyer gửi yêu cầu hoàn tiền cho 1 sản phẩm cụ thể (order item)
+ * @param {Object} data { orderItemId, reason, description, quantity, imageUrls, requestedAmount }
+ * @returns {Promise}
+ */
+const refundItem = async (data) => {
+  try {
+    const response = await api.post('refund/create', data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 
 /**
  * Order Service
@@ -7,6 +22,7 @@ import { API_ENDPOINTS } from '../utils/constants';
  */
 
 const orderService = {
+  refundItem,
   /**
    * Buyer gửi yêu cầu hoàn tiền
    * @param {number} orderId

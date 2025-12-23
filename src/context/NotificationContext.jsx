@@ -14,31 +14,38 @@ const NotificationContext = createContext(null);
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
   const location = useLocation();
-  
+
   console.log('NotificationProvider render - user:', user?.id, user?.role);
-  
+
   // ✅ Determine role based on CURRENT PAGE or user.role
   // If on admin pages → role = ADMIN
   // If on seller pages → role = SELLER
   // Otherwise → role = BUYER (even if user is a seller buying products)
   const role = useMemo(() => {
-    console.log('🔍 [NotificationContext] Determining role - pathname:', location.pathname);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔍 [NotificationContext] DETERMINING ROLE');
+    console.log(`   Current pathname: ${location.pathname}`);
+    console.log(`   User role from auth: ${user?.role || 'N/A'}`);
+
     if (location.pathname.startsWith('/admin')) {
-      console.log('✅ [NotificationContext] Role: ADMIN');
+      console.log('✅ [NotificationContext] Role: ADMIN (based on pathname /admin)');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       return 'ADMIN';
     }
     if (location.pathname.startsWith('/seller')) {
-      console.log('✅ [NotificationContext] Role: SELLER');
+      console.log('✅ [NotificationContext] Role: SELLER (based on pathname /seller)');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       return 'SELLER';
     }
-    console.log('✅ [NotificationContext] Role: BUYER (default)');
+    console.log('✅ [NotificationContext] Role: BUYER (default - not admin or seller page)');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     return 'BUYER';
-  }, [location.pathname]);
-  
+  }, [location.pathname, user?.role]);
+
   const userId = useMemo(() => user?.id, [user?.id]);
-  
+
   console.log('NotificationProvider - userId:', userId, 'role:', role);
-  
+
   // Order notifications WebSocket connection
   const notificationData = useNotifications(userId, role);
 
@@ -51,7 +58,7 @@ export const NotificationProvider = ({ children }) => {
   const contextValue = useMemo(() => {
     // Combine order notifications with chat notification
     const allNotifications = [...notificationData.notifications];
-    
+
     // Add chat notification if there are unread messages
     if (chatNotificationData.unreadCount > 0) {
       // If we have latest message from WebSocket, show it
@@ -120,11 +127,11 @@ export const NotificationProvider = ({ children }) => {
  */
 export const useNotificationContext = () => {
   const context = useContext(NotificationContext);
-  
+
   if (!context) {
     throw new Error('useNotificationContext must be used within NotificationProvider');
   }
-  
+
   return context;
 };
 

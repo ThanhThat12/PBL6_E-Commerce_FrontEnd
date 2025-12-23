@@ -79,7 +79,7 @@ const OrderDetailPage = () => {
     if (currentOrder?.status === 'COMPLETED' && currentOrder?.items?.length > 0) {
       fetchReviewEligibility(currentOrder.items);
     }
-  }, [currentOrder?.id, currentOrder?.status, fetchReviewEligibility]);
+  }, [currentOrder?.id, currentOrder?.status, currentOrder?.items, fetchReviewEligibility]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -448,7 +448,13 @@ Xem chi tiet don hang:
                 Sản phẩm đã đặt
               </h2>
               <div className="space-y-4">
-                {currentOrder.items?.map((item, index) => (
+                {currentOrder.items?.map((item, index) => {
+                  // Map backend status to returnStatus for UI logic
+                  let returnStatus = 'NONE';
+                  if (item.status === 'RETURN_REQUESTED') returnStatus = 'REQUESTED';
+                  else if (item.status === 'RETURNED') returnStatus = 'RETURNED';
+                  // else if COMPLETED or undefined, keep as NONE
+                  return (
                   <div key={index} className="pb-4 border-b border-gray-200 last:border-0">
                     <Link
                       to={`/products/${item.productId}`}
@@ -482,25 +488,38 @@ Xem chi tiet don hang:
                     {/* Action Buttons - Only show for COMPLETED orders */}
                     {currentOrder.status === 'COMPLETED' && (
                       <div className="mt-3 flex justify-end gap-2 items-start flex-wrap">
-                        {/* Return/Refund Button */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate(`/orders/return-request?orderId=${currentOrder.id}&itemId=${item.id}`);
-                          }}
-                          className="flex items-center gap-1 text-orange-600 border-orange-300 hover:bg-orange-50"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                          </svg>
-                          Trả hàng/Hoàn tiền
-                        </Button>
-                        
+                        {/* Return/Refund Button - chỉ hiển thị nếu chưa gửi trả hàng */}
+                        {returnStatus === 'NONE' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate(`/orders/return-request?orderId=${currentOrder.id}&itemId=${item.id}`);
+                            }}
+                            className="flex items-center gap-1 text-orange-600 border-orange-300 hover:bg-orange-50"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            </svg>
+                            Trả hàng/Hoàn tiền
+                          </Button>
+                        )}
+                        {returnStatus === 'REQUESTED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            className="flex items-center gap-1 text-gray-400 border-gray-200 cursor-not-allowed"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            </svg>
+                            Đang chờ trả hàng
+                          </Button>
+                        )}
                         {/* Review Button with eligibility check */}
                         {renderReviewButton(item)}
-                        
                         {/* Contact Shop Button */}
                         <Button
                           variant="outline"
@@ -517,7 +536,8 @@ Xem chi tiet don hang:
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

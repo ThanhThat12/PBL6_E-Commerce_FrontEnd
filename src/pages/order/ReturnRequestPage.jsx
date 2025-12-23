@@ -194,13 +194,15 @@ const ReturnRequestPage = () => {
       toast.loading('Đang gửi yêu cầu trả hàng...', { id: 'submit' });
       
       const requestData = {
-        orderId: parseInt(orderId),
-        amount: selectedItem.price * returnQuantity,
-        description: `${reason}\n\n${description}\n\nSản phẩm: ${selectedItem.productName}\nSố lượng: ${returnQuantity}/${selectedItem.quantity}`,
-        imageUrl: imageUrlsJson
+        orderItemId: selectedItem.id,
+        reason,
+        description,
+        quantity: returnQuantity,
+        imageUrls: uploadedUrls,
+        requestedAmount: selectedItem.price * returnQuantity
       };
 
-      const response = await orderService.createRefundRequest(requestData);
+      const response = await orderService.refundItem(requestData);
       toast.dismiss('submit');
       
       console.log('✅ Refund request created successfully:', response);

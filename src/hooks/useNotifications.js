@@ -51,15 +51,25 @@ export function useNotifications(userId, role = 'BUYER') {
     }
 
     // Determine channel based on role
-    const channelPrefix = role === 'SELLER' ? 'sellerws' : 'orderws';
+    const channelPrefix = role === 'SELLER' ? 'sellerws' : role === 'ADMIN' ? 'admin' : 'orderws';
     const channel = `/topic/${channelPrefix}/${userId}`;
     const connectionId = Math.random().toString(36).substr(2, 9);
 
-    console.log(`🔌 [${role}] [${connectionId}] Connecting to WebSocket for user:`, userId);
-    console.log('🔌 WebSocket URL:', WS_URL);
-    console.log('🔌 Will subscribe to:', channel);
-    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`🔌 [${role}] [${connectionId}] INITIATING WEBSOCKET CONNECTION`);
+    console.log(`   User ID: ${userId}`);
+    console.log(`   Role: ${role}`);
+    console.log(`   Channel: ${channel}`);
+    console.log(`   WebSocket URL: ${WS_URL}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const token = getAccessToken();
+    if (!token) {
+      console.error(`❌ [${connectionId}] No auth token found! WebSocket may fail to connect.`);
+    } else {
+      console.log(`🔑 [${connectionId}] Auth token found (length: ${token.length})`);
+    }
+
     const socketUrlWithToken = token ? `${WS_URL}?token=${token}` : WS_URL;
     const socket = new SockJS(socketUrlWithToken);
     const client = Stomp.over(socket);
@@ -75,75 +85,96 @@ export function useNotifications(userId, role = 'BUYER') {
     client.connect(
       {},
       () => {
-        console.log(`✅ [${role}] [${connectionId}] WebSocket connected`);
+        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        console.log(`✅ [${role}] [${connectionId}] WEBSOCKET CONNECTED SUCCESSFULLY`);
+        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
         setIsConnected(true);
         setStompClient(client);
 
         // Subscribe to notification channel
-        console.log(`📡 [${connectionId}] Subscribing to channel:`, channel);
-        
-        subscription = client.subscribe(
-          channel,
-          (message) => {
-            try {
-              const notification = JSON.parse(message.body);
-              console.log(`📬 [${connectionId}] Received notification:`, notification);
-              console.log(`   Type: ${notification.type}, Message: ${notification.message}`);
+        console.log(`📡 [${connectionId}] Subscribing to channel: ${channel}`);
 
-              // Add notification to list (avoid duplicates)
-              const now = Date.now();
-              const newNotification = {
-                id: `${now}_${Math.random()}`, // Unique ID
-                ...notification,
-                read: false,
-                timestamp: now, // Add timestamp in milliseconds for timeAgo calculation
-                receivedAt: new Date().toISOString() // Add received timestamp
-              };
+        try {
+          subscription = client.subscribe(
+            channel,
+            (message) => {
+              console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+              console.log(`📬 [${role}] [${connectionId}] NOTIFICATION RECEIVED`);
+              try {
+                const notification = JSON.parse(message.body);
+                console.log(`   Type: ${notification.type}`);
+                console.log(`   Message: ${notification.message}`);
+                console.log(`   Order ID: ${notification.orderId || 'N/A'}`);
+                console.log(`   Full notification:`, notification);
+                console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
-              setNotifications((prev) => {
-                // Check if notification already exists (by message and type)
-                const isDuplicate = prev.some(n => 
-                  n.message === newNotification.message && 
-                  n.type === newNotification.type &&
-                  // Check if received within last 2 seconds (handle rapid duplicates)
-                  n.receivedAt && Math.abs(new Date(n.receivedAt) - new Date(newNotification.receivedAt)) < 2000
-                );
-                
-                if (isDuplicate) {
-                  console.log(`⚠️ [${connectionId}] Duplicate notification detected, skipping`);
-                  return prev;
-                }
-                
-                console.log(`✅ [${connectionId}] Adding new notification`);
-                return [newNotification, ...prev];
-              });
+                // Add notification to list (avoid duplicates)
+                const now = Date.now();
+                const newNotification = {
+                  id: notification.id || `${now}_${Math.random()}`, // Use DB id if available
+                  ...notification,
+                  read: notification.read || notification.isRead || false,
+                  timestamp: now, // Add timestamp in milliseconds for timeAgo calculation
+                  receivedAt: new Date().toISOString() // Add received timestamp
+                };
 
-              // NOTE: Toast notifications are now handled by the parent components
-              // (SellerLayout for sellers, buyer pages for buyers) to avoid duplicates
-              
-              // Play notification sound (optional)
-              playNotificationSound();
-            } catch (error) {
-              console.error(`❌ [${connectionId}] Error parsing notification:`, error);
+                setNotifications((prev) => {
+                  // Check if notification already exists (by id if available, or message/type)
+                  const isDuplicate = prev.some(n => {
+                    if (notification.id && n.id) {
+                      return n.id === notification.id;
+                    }
+                    return n.message === newNotification.message &&
+                      n.type === newNotification.type &&
+                      n.receivedAt &&
+                      Math.abs(new Date(n.receivedAt) - new Date(newNotification.receivedAt)) < 2000;
+                  });
+
+                  if (isDuplicate) {
+                    console.log(`⚠️ [${connectionId}] Duplicate notification detected, skipping`);
+                    return prev;
+                  }
+
+                  console.log(`✅ [${connectionId}] Adding new notification to list`);
+                  return [newNotification, ...prev];
+                });
+
+                // NOTE: Toast notifications are now handled by the parent components
+                // (SellerLayout for sellers, buyer pages for buyers) to avoid duplicates
+
+                // Play notification sound (optional)
+                playNotificationSound();
+              } catch (error) {
+                console.error(`❌ [${connectionId}] Error parsing notification:`, error);
+                console.error(`   Raw message:`, message.body);
+              }
             }
-          }
-        );
+          );
+          console.log(`✅ [${connectionId}] Successfully subscribed to ${channel}`);
+        } catch (error) {
+          console.error(`❌ [${connectionId}] Failed to subscribe to channel:`, error);
+        }
       },
       (error) => {
-        console.error(`❌ [${connectionId}] WebSocket connection error:`, error);
+        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        console.error(`❌ [${role}] [${connectionId}] WEBSOCKET CONNECTION ERROR`);
+        console.error(`   Error:`, error);
+        console.error(`   User ID: ${userId}`);
+        console.error(`   Channel: ${channel}`);
+        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
         setIsConnected(false);
       }
     );
 
     // Cleanup on unmount or dependency change
     return () => {
-      console.log(`🔌 [${connectionId}] Cleaning up WebSocket connection`);
-      
+      console.log(`🔌 [${connectionId}] Cleaning up WebSocket connection for ${role}`);
+
       if (subscription) {
         subscription.unsubscribe();
-        console.log(`📡 [${connectionId}] Unsubscribed from channel`);
+        console.log(`📡 [${connectionId}] Unsubscribed from ${channel}`);
       }
-      
+
       if (client && client.connected) {
         client.disconnect(() => {
           console.log(`🔌 [${connectionId}] WebSocket disconnected`);

@@ -13,7 +13,7 @@ import { useNotificationContext } from '../../../context/NotificationContext';
  */
 const SellerLayout = () => {
   const [lastNotificationId, setLastNotificationId] = React.useState(null);
-  
+
   // Get notifications from shared WebSocket connection
   const { notifications, connected } = useNotificationContext();
 
@@ -21,11 +21,11 @@ const SellerLayout = () => {
   useEffect(() => {
     if (notifications.length > 0) {
       const latestNotification = notifications[0]; // Newest is at index 0
-      
+
       // Only show if it's a new notification (not seen before)
       if (latestNotification.id !== lastNotificationId) {
         setLastNotificationId(latestNotification.id);
-        
+
         // Show notification based on type
         switch (latestNotification.type) {
           case 'NEW_ORDER':
@@ -50,20 +50,44 @@ const SellerLayout = () => {
             });
             break;
           case 'RETURN_REQUESTED':
+          case 'REFUND_REQUESTED':  // ✅ Backend sends this type
             message.warning({
+              content: latestNotification.message,
+              duration: 6,
+              style: { marginTop: '20px' }
+            });
+            break;
+          case 'REFUND_APPROVED':
+            message.success({
+              content: latestNotification.message,
+              duration: 5,
+              style: { marginTop: '20px' }
+            });
+            break;
+          case 'REFUND_REJECTED':
+            message.error({
+              content: latestNotification.message,
+              duration: 5,
+              style: { marginTop: '20px' }
+            });
+            break;
+          case 'PAYMENT_RECEIVED':
+            message.success({
               content: latestNotification.message,
               duration: 5,
               style: { marginTop: '20px' }
             });
             break;
           default:
+            // Show all other notifications as info
+            console.log('📢 Unknown notification type:', latestNotification.type);
             message.info({
               content: latestNotification.message,
-              duration: 4,
+              duration: 5,
               style: { marginTop: '20px' }
             });
         }
-        
+
         console.log('🔔 Seller notification displayed:', latestNotification);
       }
     }
