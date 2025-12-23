@@ -5,7 +5,7 @@ import {
   ShoppingBagIcon,
   UserCircleIcon
 } from '@heroicons/react/24/outline';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 /**
  * MobileMenu Component - Sidebar menu cho mobile/tablet
@@ -23,9 +23,25 @@ const MobileMenu = ({
   menuItems = [],
   cartItemCount = 0
 }) => {
+  const location = useLocation();
+  
   if (!isOpen) return null;
 
-  const handleLinkClick = () => {
+  const handleLinkClick = (e, href) => {
+    // Check if it's a hash link (starts with /#)
+    if (href && href.startsWith('/#')) {
+      const hash = href.substring(2); // Remove '/#' to get section id
+      const element = document.getElementById(hash);
+      
+      // If we're already on homepage and element exists, smooth scroll
+      if (location.pathname === '/' && element) {
+        e.preventDefault();
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.history.pushState(null, '', href);
+      }
+      // Otherwise, let Link handle navigation to homepage with hash
+    }
+    
     onClose();
   };
 
@@ -212,7 +228,7 @@ const MobileMenu = ({
                 <Link
                   key={index}
                   to={item.href}
-                  onClick={handleLinkClick}
+                  onClick={(e) => handleLinkClick(e, item.href)}
                   className="
                     flex
                     items-center

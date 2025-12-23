@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import usePendingOrderCleanup from "../../hooks/usePendingOrderCleanup";
 import Navbar from "../../components/common/Navbar";
 import HeroSection from "../../components/feature/home/HeroSection";
+import VoucherSection from "../../components/feature/home/VoucherSection";
 import CategorySection from "../../components/feature/home/CategorySection";
 import FeaturedProducts, { ProductCard as FeaturedProductCard } from "../../components/feature/home/FeaturedProducts";
 import ButtonUp from "../../components/ui/buttonUp/ButtonUp";
 import Footer from "../../components/layout/footer/Footer";
-import { getCategories, getFeaturedProducts, getAllProductsPage } from "../../services/homeService";
+import { getCategories, getAllProductsPage, getPlatformVouchers, getBestSellingProducts, getTopRatedProducts } from "../../services/homeService";
 // Note: useAuth and getNewArrivals available but not currently used
 
 /**
@@ -23,7 +24,9 @@ const HomePage = () => {
 
   // State cho data từ API
   const [categories, setCategories] = useState([]);
-  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
+  const [bestSellingProducts, setBestSellingProducts] = useState([]);
+  const [topRatedProducts, setTopRatedProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,20 +42,39 @@ const HomePage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch static homepage data: categories + featured products
+  // Handle smooth scroll to section when hash is present in URL
+  useEffect(() => {
+    // Wait for content to load before scrolling
+    if (!loading && window.location.hash) {
+      const hash = window.location.hash.substring(1); // Remove '#' from hash
+      const element = document.getElementById(hash);
+      if (element) {
+        // Small delay to ensure DOM is fully rendered
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }, [loading]); // Run when loading changes to false
+
+  // Fetch static homepage data: categories + vouchers + best-selling + top-rated products
   useEffect(() => {
     const fetchStaticHomeData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const [categoriesData, featuredData] = await Promise.all([
+        const [categoriesData, vouchersData, bestSellingData, topRatedData] = await Promise.all([
           getCategories(),
-          getFeaturedProducts(8),
+          getPlatformVouchers(8),
+          getBestSellingProducts(8),
+          getTopRatedProducts(8), // Get top-rated products (min 4 stars)
         ]);
 
         setCategories(categoriesData);
-        setFeaturedProducts(featuredData);
+        setVouchers(vouchersData);
+        setBestSellingProducts(bestSellingData);
+        setTopRatedProducts(topRatedData);
       } catch (err) {
         console.error('Failed to load homepage static data:', err);
         setError('Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -142,15 +164,37 @@ const HomePage = () => {
         <main className="w-full">
           <div className="container mx-auto px-4 lg:px-8 py-6">
             <HeroSection autoPlayInterval={5000} />
-            <CategorySection 
-              categories={categories}
-              title="Danh Mục Sản Phẩm"
-            />
+            
+            {/* Voucher Sàn - Nổi bật ngay sau banner */}
+            <div id="vouchers">
+              <VoucherSection 
+                vouchers={vouchers}
+                title="Voucher Sàn - Ưu Đãi Hot"
+              />
+            </div>
+            
+            <div id="categories">
+              <CategorySection 
+                categories={categories}
+                title="Danh Mục Sản Phẩm"
+              />
+            </div>
 
-            <FeaturedProducts 
-              products={featuredProducts}
-              title="Sản Phẩm Nổi Bật"
-            />
+            {/* Sản Phẩm Bán Chạy */}
+            <div id="best-selling">
+              <FeaturedProducts 
+                products={bestSellingProducts}
+                title="Sản Phẩm Bán Chạy"
+              />
+            </div>
+
+            {/* Sản Phẩm Nổi Bật (Top-Rated >= 4 stars) */}
+            <div id="top-rated">
+              <FeaturedProducts 
+                products={topRatedProducts}
+                title="Sản Phẩm Được Đánh Giá Cao"
+              />
+            </div>
 
             {allProducts.length > 0 && (
               <section className="py-8 md:py-12">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
 import { useNotificationContext } from "../../context/NotificationContext";
@@ -19,14 +19,14 @@ import MobileMenu from './Navbar/MobileMenu';
  * Sử dụng color pattern từ Tailwind config và tích hợp với backend
  */
 
-// Menu items - Có thể fetch từ backend
+// Menu items - Dẫn đến sections trong homepage hoặc pages thực tế
 const menuItems = [
   { label: "Trang chủ", href: "/", badge: null },
-  { label: "Hot Deals", href: "/deals", badge: "HOT" },
+  { label: "Hot Deals", href: "/#vouchers", badge: "HOT" },
   { label: "Sản phẩm", href: "/products", badge: null },
-  { label: "Thương hiệu", href: "/brands", badge: null },
-  { label: "Tin tức", href: "/blog", badge: null },
-  { label: "Liên hệ", href: "/contact", badge: null },
+  { label: "Danh mục", href: "/#categories", badge: null },
+  { label: "Bán chạy", href: "/#best-selling", badge: null },
+  { label: "Đánh giá cao", href: "/#top-rated", badge: null },
 ];
 
 export default function NavbarNew({ isHomePage = false }) {
@@ -35,6 +35,8 @@ export default function NavbarNew({ isHomePage = false }) {
   const [isHidden, setIsHidden] = useState(false);
   const lastScrollYRef = useRef(0);
   
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth(); // Sử dụng AuthContext
   const { cartCount } = useCart(); // Sử dụng CartContext
   const { 
@@ -78,6 +80,23 @@ export default function NavbarNew({ isHomePage = false }) {
     // TODO: Implement search logic hoặc navigate to search page
     console.log('Searching for:', searchTerm);
     // Example: navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
+  };
+
+  const handleNavClick = (e, href) => {
+    // Check if it's a hash link (starts with /#)
+    if (href.startsWith('/#')) {
+      const hash = href.substring(2); // Remove '/#' to get section id
+      const element = document.getElementById(hash);
+      
+      // If we're already on homepage and element exists, smooth scroll
+      if (location.pathname === '/' && element) {
+        e.preventDefault();
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Update URL hash without triggering navigation
+        window.history.pushState(null, '', href);
+      }
+      // Otherwise, let Link handle navigation to homepage with hash
+    }
   };
 
   const handleLogout = async () => {
@@ -206,6 +225,7 @@ export default function NavbarNew({ isHomePage = false }) {
                 <li key={index} className="flex items-center">
                   <Link
                     to={item.href}
+                    onClick={(e) => handleNavClick(e, item.href)}
                     className="
                       relative
                       flex

@@ -240,3 +240,15 @@ img[loading="lazy"].loaded {
 .animate-scaleIn {
   animation: scaleIn 0.3s ease-out;
 }
+
+/* ========================================
+   Hide Scrollbar
+   ======================================== */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
