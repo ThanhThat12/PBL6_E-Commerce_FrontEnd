@@ -107,7 +107,7 @@ export const getSearchHistory = async (limit = 10) => {
  */
 export const clearSearchHistory = async () => {
   try {
-    await api.delete(API_ENDPOINTS.SEARCH.HISTORY);
+await api.delete(API_ENDPOINTS.SEARCH.HISTORY);
     return true;
   } catch (error) {
     console.error('Error clearing search history:', error);
@@ -220,8 +220,7 @@ export const saveRecentSearch = (query) => {
     
     // Keep only last N searches
     const trimmed = filtered.slice(0, MAX_RECENT_SEARCHES);
-    
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(trimmed));
+localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(trimmed));
   } catch (error) {
     console.warn('Error saving recent search:', error);
   }
