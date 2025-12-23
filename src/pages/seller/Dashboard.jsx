@@ -88,8 +88,8 @@ const Dashboard = () => {
               style: 'currency',
               currency: 'VND'
             }).format(stats?.totalRevenue || 0)}
-            trend="+12% từ tháng trước"
-            trendType="up"
+            trend={stats?.revenueGrowth ? `+${stats.revenueGrowth}% từ tháng trước` : undefined}
+            trendType={stats?.revenueGrowth > 0 ? 'up' : stats?.revenueGrowth < 0 ? 'down' : 'neutral'}
             bgColor="bg-gradient-to-br from-green-500 to-emerald-600"
           />
         </Col>
@@ -98,8 +98,8 @@ const Dashboard = () => {
             icon={<ShoppingCartOutlined />}
             title="Tổng đơn hàng"
             value={stats?.totalOrders || 0}
-            trend="+8% từ tháng trước"
-            trendType="up"
+            trend={stats?.ordersTrend}
+            trendType={stats?.ordersGrowth > 0 ? 'up' : stats?.ordersGrowth < 0 ? 'down' : 'neutral'}
             bgColor="bg-gradient-to-br from-blue-500 to-cyan-600"
           />
         </Col>
@@ -108,8 +108,8 @@ const Dashboard = () => {
             icon={<ShoppingOutlined />}
             title="Tổng sản phẩm"
             value={stats?.totalProducts || 0}
-            trend="+3 sản phẩm mới"
-            trendType="neutral"
+            trend={stats?.productsTrend}
+            trendType={stats?.productsGrowth > 0 ? 'up' : stats?.productsGrowth < 0 ? 'down' : 'neutral'}
             bgColor="bg-gradient-to-br from-purple-500 to-pink-600"
           />
         </Col>
@@ -118,8 +118,8 @@ const Dashboard = () => {
             icon={<UserOutlined />}
             title="Khách hàng"
             value={stats?.totalCustomers || 0}
-            trend="+5% từ tháng trước"
-            trendType="up"
+            trend={stats?.customersTrend}
+            trendType={stats?.customersGrowth > 0 ? 'up' : stats?.customersGrowth < 0 ? 'down' : 'neutral'}
             bgColor="bg-gradient-to-br from-orange-500 to-red-600"
           />
         </Col>

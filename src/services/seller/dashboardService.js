@@ -10,14 +10,12 @@
 import api from '../api';
 
 /**
- * Get dashboard statistics from shop analytics
- * @param {number} year - Year for analytics (optional)
- * @returns {Promise<object>} { totalRevenue, totalOrders, monthlyRevenue }
+ * Get dashboard statistics
+ * @returns {Promise<object>} { totalRevenue, totalOrders, totalProducts, totalCustomers, trends }
  */
-export const getDashboardStats = async (year) => {
+export const getDashboardStats = async () => {
   try {
-    const params = year ? { year } : {};
-    const response = await api.get('/seller/shop/analytics', { params });
+    const response = await api.get('/seller/dashboard/stats');
     return response.data;
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
